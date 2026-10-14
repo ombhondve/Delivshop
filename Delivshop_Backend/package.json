@@ -6,10 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'),path=require('path');const s=path.join('src','database','migrations'),d=path.join('dist','database','migrations');if(fs.existsSync(s)){fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).filter(f=>f.endsWith('.sql')).forEach(f=>fs.copyFileSync(path.join(s,f),path.join(d,f)));}\"",
     "start": "node dist/server.js",
     "test": "vitest run",
     "migrate": "tsx src/database/migrate.ts",
+    "migrate:status": "tsx -e \"import { checkDatabaseHealth } from './src/config/database.js'; checkDatabaseHealth().then(s => console.log('Database Status:', JSON.stringify(s, null, 2))).then(() => process.exit(0));\"",
     "seed": "tsx src/database/seed.ts",
     "typecheck": "tsc --noEmit"
   },

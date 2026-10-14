@@ -9,6 +9,11 @@ export const authService = {
     data: { email: string; password: string; name: string; role: UserRole; phone?: string },
     ipAddress?: string
   ) {
+    // Privilege escalation protection: Administrator accounts must never be created via public registration
+    if (data.role === 'ADMIN') {
+      throw new Error('Registration with administrator privileges is prohibited via public API');
+    }
+
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
       throw new Error('An account with this email address already exists');

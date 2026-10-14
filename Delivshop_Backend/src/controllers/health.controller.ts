@@ -17,6 +17,8 @@ export const healthController = {
         api: 'UP',
         database: dbHealth.healthy ? 'UP' : 'DOWN',
         schemaInitialized: dbHealth.schemaInitialized,
+        usersTableExists: dbHealth.usersTableExists,
+        appliedMigrations: dbHealth.appliedMigrations,
         latencyMs: dbHealth.latencyMs,
       },
     });

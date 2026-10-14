@@ -46,8 +46,11 @@ export const createApp = (): Application => {
         return true;
       }
 
-      // Allow Vercel preview and production deployments for Delivshop
-      if (hostname === 'delivshop.vercel.app' || hostname.endsWith('.vercel.app')) {
+      // Allow specific Delivshop Vercel deployments (production or delivshop pull-request previews)
+      if (
+        hostname === 'delivshop.vercel.app' ||
+        (hostname.startsWith('delivshop-') && hostname.endsWith('.vercel.app'))
+      ) {
         return true;
       }
 

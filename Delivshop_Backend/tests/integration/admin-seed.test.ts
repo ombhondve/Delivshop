@@ -198,4 +198,60 @@ describe('Default Admin Account Seeding & Authentication', () => {
       if (originalAllow) process.env.ALLOW_PRODUCTION_SEED = originalAllow;
     }
   });
+
+  it('should strictly prohibit public registration with ADMIN role', async () => {
+    await expect(
+      authService.register({
+        email: 'attacker@evil.com',
+        password: 'Password123!',
+        name: 'Attacker',
+        role: 'ADMIN' as any,
+      })
+    ).rejects.toThrow(/prohibited via public API/i);
+  });
+
+  it('should reject CORS requests from untrusted third-party origins', async () => {
+    const app = createApp();
+    await new Promise<void>((resolve) => {
+      server = app.listen(0, () => {
+        const addr = server.address() as { port: number };
+        baseUrl = `http://127.0.0.1:${addr.port}`;
+        resolve();
+      });
+    });
+
+    try {
+      const response = await fetch(`${baseUrl}/api/health`, {
+        headers: { Origin: 'https://evil-unauthorized-app.vercel.app' },
+      });
+
+      // Untrusted origin should NOT receive access-control-allow-origin header
+      const allowedOrigin = response.headers.get('access-control-allow-origin');
+      expect(allowedOrigin).toBeNull();
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('should allow CORS requests from trusted frontend origin https://delivshop.vercel.app', async () => {
+    const app = createApp();
+    await new Promise<void>((resolve) => {
+      server = app.listen(0, () => {
+        const addr = server.address() as { port: number };
+        baseUrl = `http://127.0.0.1:${addr.port}`;
+        resolve();
+      });
+    });
+
+    try {
+      const response = await fetch(`${baseUrl}/api/health`, {
+        headers: { Origin: 'https://delivshop.vercel.app' },
+      });
+
+      const allowedOrigin = response.headers.get('access-control-allow-origin');
+      expect(allowedOrigin).toBe('https://delivshop.vercel.app');
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
 });

@@ -1,6 +1,8 @@
 -- Delivshop PostgreSQL Schema Migration 001
 -- Constraints, Enums, Foreign Keys, and Audit Log tables
 
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- 1. Create Enums (Idempotent check prevents failure if types already exist)
 DO $$
 BEGIN
