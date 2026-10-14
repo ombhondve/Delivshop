@@ -5,9 +5,17 @@ import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { requireShopOrderOwnership } from '../middleware/ownership.middleware.js';
 import { validateRequest } from '../middleware/validate.middleware.js';
-import { updateOrderStatusSchema } from '../schemas/order.schema.js';
+import { updateOrderStatusSchema, createOrderSchema } from '../schemas/order.schema.js';
 
 const router = Router();
+
+router.post(
+  '/',
+  authenticate,
+  authorizeRoles('SHOP', 'ADMIN'),
+  validateRequest(createOrderSchema),
+  orderController.createOrder
+);
 
 router.get(
   '/:orderId',

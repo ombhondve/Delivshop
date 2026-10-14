@@ -3,6 +3,17 @@ import { Shop, ShopStats } from '@/types/shop';
 import { Product } from '@/types/product';
 import { Order, OrderStatus } from '@/types/order';
 
+export interface CreateOrderPayload {
+  shopId?: string;
+  items: Array<{ productId: string; quantity: number }>;
+  deliveryAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    notes?: string;
+  };
+}
+
 export const shopApi = {
   async getShopDetails(shopId: string): Promise<Shop> {
     return apiClient<Shop>(`shops/${shopId}`);
@@ -14,6 +25,10 @@ export const shopApi = {
 
   async getMyProfile(): Promise<any> {
     return apiClient<any>('shop/me');
+  },
+
+  async getMyProducts(): Promise<Product[]> {
+    return apiClient<Product[]>('shop/products');
   },
 
   async getMyOrders(): Promise<Order[]> {
@@ -30,6 +45,19 @@ export const shopApi = {
 
   async getMyDeliveries(): Promise<any[]> {
     return apiClient<any[]>('shop/deliveries');
+  },
+
+  async createOrder(payload: CreateOrderPayload, idempotencyKey?: string): Promise<Order> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers['Idempotency-Key'] = idempotencyKey;
+    }
+
+    return apiClient<Order>('shop/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
   },
 
   async getProducts(shopId: string): Promise<Product[]> {

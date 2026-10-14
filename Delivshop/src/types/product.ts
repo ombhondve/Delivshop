@@ -5,12 +5,14 @@ export interface Product {
   description?: string;
   sku: string;
   price: number;
-  stockQuantity: number;
+  stockQuantity?: number;
+  stock_quantity?: number;
   category: string;
-  isActive: boolean;
+  isActive?: boolean;
+  is_active?: boolean;
   imageUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ProductCategory {

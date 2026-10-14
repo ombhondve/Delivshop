@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { shopAuthController } from '../controllers/shop-auth.controller.js';
 import { shopController } from '../controllers/shop.controller.js';
 import { orderController } from '../controllers/order.controller.js';
+import { fileController } from '../controllers/file.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 
@@ -20,6 +21,14 @@ router.get('/orders', (req: Request, res: Response, next: NextFunction) => {
     (req.params as any).shopId = req.user.shopId;
   }
   return orderController.getShopOrders(req, res, next);
+});
+
+// POST /api/shop/orders
+router.post('/orders', (req: Request, res: Response, next: NextFunction) => {
+  if (req.user?.shopId) {
+    req.body.shopId = req.user.shopId;
+  }
+  return orderController.createOrder(req, res, next);
 });
 
 // GET /api/shop/invoices
@@ -53,5 +62,14 @@ router.get('/products', (req: Request, res: Response, next: NextFunction) => {
   }
   return shopController.getProducts(req, res, next);
 });
+
+// GET /api/shop/invoices/:invoiceId/statement
+router.get('/invoices/:invoiceId/statement', fileController.downloadInvoiceStatement);
+
+// POST /api/shop/documents
+router.post('/documents', fileController.uploadShopDocument);
+
+// GET /api/shop/documents/:documentId
+router.get('/documents/:documentId', fileController.getShopDocument);
 
 export default router;

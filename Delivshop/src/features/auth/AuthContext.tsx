@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, LoginCredentials, ShopLoginResponse } from '@/types/auth';
 import { authApi } from '@/services/api/authApi';
 import { SecureTokenStorage } from '@/utils/storage';
+import { CacheManager } from '@/services/offline/cacheManager';
 
 interface AuthContextType {
   user: User | null;
@@ -97,8 +98,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setIsLoading(true);
     try {
+      if (shop?.id) {
+        await CacheManager.clearShopCache(shop.id);
+      }
       await authApi.logout();
     } finally {
+      await SecureTokenStorage.clearTokens();
       setUser(null);
       setShop(null);
       setIsLoading(false);

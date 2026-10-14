@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { shopAuthService } from '../services/shop-auth.service.js';
-import { sendSuccess } from '../utils/response.js';
+import { sendSuccess, sendError } from '../utils/response.js';
 
 export const shopAuthController = {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -19,7 +19,27 @@ export const shopAuthController = {
       }
 
       sendSuccess(res, result);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode, err.details);
+        return;
+      }
+      if (
+        err.message?.includes('Invalid Shop ID') ||
+        err.message?.includes('Invalid credentials') ||
+        err.message?.includes('Invalid password')
+      ) {
+        sendError(res, 'Invalid Shop ID or security access key', 401);
+        return;
+      }
+      if (err.message?.includes('deactivated')) {
+        sendError(res, err.message, 403);
+        return;
+      }
+      if (err.message?.includes('temporarily locked')) {
+        sendError(res, err.message, 429);
+        return;
+      }
       next(err);
     }
   },
@@ -27,7 +47,8 @@ export const shopAuthController = {
   async completeSetup(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user?.id) {
-        throw new Error('Authentication required');
+        sendError(res, 'Authentication required to complete account setup', 401);
+        return;
       }
       const result = await shopAuthService.completeSetup(
         req.user.id,
@@ -35,7 +56,15 @@ export const shopAuthController = {
         req.ip
       );
       sendSuccess(res, result);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      if (err.message?.includes('Password must be') || err.message?.includes('Password contains')) {
+        sendError(res, err.message, 400);
+        return;
+      }
       next(err);
     }
   },
@@ -43,11 +72,20 @@ export const shopAuthController = {
   async getMyProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user?.id) {
-        throw new Error('Authentication required');
+        sendError(res, 'Authentication required', 401);
+        return;
       }
       const profile = await shopAuthService.getMyProfile(req.user.id);
       sendSuccess(res, profile);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      if (err.message?.includes('not found')) {
+        sendError(res, 'Shop profile not found', 404);
+        return;
+      }
       next(err);
     }
   },

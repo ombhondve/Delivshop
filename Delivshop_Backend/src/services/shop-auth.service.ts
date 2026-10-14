@@ -3,6 +3,7 @@ import { shopRepository } from '../repositories/shop.repository.js';
 import { comparePassword, hashPassword } from '../utils/password.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/tokens.js';
 import { auditService } from './audit.service.js';
+import { AppError } from '../utils/errors.js';
 
 export const shopAuthService = {
   /**
@@ -26,20 +27,20 @@ export const shopAuthService = {
 
     if (shopRes.rowCount === 0) {
       // Uniform timing/message to prevent user/shop enumeration
-      throw new Error('Invalid Shop ID or password');
+      throw new AppError('Invalid Shop ID or security access key', 401);
     }
 
     const row = shopRes.rows[0];
 
     // Check account status
     if (row.status === 'INACTIVE' || !row.user_active) {
-      throw new Error('Shop account is currently deactivated. Please contact your supplier.');
+      throw new AppError('Shop account is currently deactivated. Please contact your supplier.', 403);
     }
 
     // Check progressive brute-force lockout
     if (row.locked_until && new Date(row.locked_until) > new Date()) {
       const waitMinutes = Math.ceil((new Date(row.locked_until).getTime() - Date.now()) / 60000);
-      throw new Error(`Account temporarily locked due to repeated failed attempts. Please try again in ${waitMinutes} minutes.`);
+      throw new AppError(`Account temporarily locked due to repeated failed attempts. Please try again in ${waitMinutes} minutes.`, 429);
     }
 
     // Verify password with Argon2id / bcrypt fallback
@@ -68,7 +69,7 @@ export const shopAuthService = {
         ipAddress,
       });
 
-      throw new Error('Invalid Shop ID or password');
+      throw new AppError('Invalid Shop ID or security access key', 401);
     }
 
     // Reset failed login attempts on successful credentials
@@ -161,7 +162,7 @@ export const shopAuthService = {
     );
 
     if (res.rowCount === 0) {
-      throw new Error('Shop account not found');
+      throw new AppError('Shop account not found', 404);
     }
 
     const row = res.rows[0];
@@ -223,7 +224,7 @@ export const shopAuthService = {
     );
 
     if (res.rowCount === 0) {
-      throw new Error('Shop profile not found');
+      throw new AppError('Shop profile not found', 404);
     }
 
     return res.rows[0];
