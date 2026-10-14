@@ -12,6 +12,7 @@
     "migrate": "tsx src/database/migrate.ts",
     "migrate:status": "tsx src/database/status.ts",
     "seed": "tsx src/database/seed.ts",
+    "admin:provision": "tsx src/database/provision-admin.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
