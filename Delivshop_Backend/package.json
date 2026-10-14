@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "migrate": "tsx src/database/migrate.ts",
+    "seed": "tsx src/database/seed.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
