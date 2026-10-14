@@ -14,17 +14,13 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="header-actions">
-        {user ? (
+        {user && (
           <div className="user-profile">
             <span className="user-name">{user.name}</span>
             <Badge variant="info">{user.role}</Badge>
             <Button variant="outline" size="sm" onClick={() => logout()}>
               Sign Out
             </Button>
-          </div>
-        ) : (
-          <div className="guest-badge">
-            <Badge variant="default">Guest View</Badge>
           </div>
         )}
       </div>

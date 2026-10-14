@@ -6,14 +6,16 @@ import { tokenStore } from '../../services/api/client';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
+  login: (credentials: { email: string; password: string }) => Promise<User>;
+  setAuthenticatedUser: (user: User) => void;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: async () => {},
+  login: async () => { throw new Error('Not implemented'); },
+  setAuthenticatedUser: () => {},
   logout: async () => {},
 });
 
@@ -41,14 +43,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, []);
 
-  const login = async (credentials: { email: string; password: string }) => {
+  const login = async (credentials: { email: string; password: string }): Promise<User> => {
     setLoading(true);
     try {
       const res = await api.auth.login(credentials);
-      setUser(res.user);
+      return res.user;
     } finally {
       setLoading(false);
     }
+  };
+
+  const setAuthenticatedUser = (authUser: User) => {
+    setUser(authUser);
   };
 
   const logout = async () => {
@@ -62,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, setAuthenticatedUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

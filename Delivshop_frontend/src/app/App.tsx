@@ -8,13 +8,11 @@ import { ProductCatalog } from '../features/products/ProductCatalog';
 import { OrdersList } from '../features/orders/OrdersList';
 import { DeliveriesTracking } from '../features/deliveries/DeliveriesTracking';
 import { ReportsSummary } from '../features/reports/ReportsSummary';
-import { LoginPage } from '../features/auth/LoginPage';
-import { Button } from '../components/common/Button';
+import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 
 const MainContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -35,25 +33,28 @@ const MainContent: React.FC = () => {
     }
   };
 
+  // While checking existing session token with backend:
+  if (loading) {
+    return (
+      <div className="cinematic-login-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+          <div className="status-dot-idle" style={{ margin: '0 auto 16px auto', width: '12px', height: '12px' }} />
+          <p style={{ fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.1em' }}>
+            INITIALIZING DELIVSHOP FACILITY CLEARANCE...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Authentication gate: unauthenticated users MUST unlock via the 3D cinematic vault experience
+  if (!user) {
+    return <CinematicLoginExperience />;
+  }
+
+  // Authenticated application: real dashboard
   return (
     <Layout activeTab={activeTab} onSelectTab={setActiveTab}>
-      {!user && (
-        <div className="login-banner">
-          <div>
-            <strong>Guest Mode:</strong> You are viewing read-only demo data. Authenticate to test backend API roles.
-          </div>
-          <Button size="sm" onClick={() => setShowLoginModal(!showLoginModal)}>
-            {showLoginModal ? 'Close Form' : 'Sign In'}
-          </Button>
-        </div>
-      )}
-
-      {showLoginModal && !user ? (
-        <div className="mb-6">
-          <LoginPage />
-        </div>
-      ) : null}
-
       {renderTabContent()}
     </Layout>
   );
