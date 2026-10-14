@@ -7,7 +7,7 @@ export const shopController = {
   async createShop(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await shopService.createShop(req.body, req.user?.id, req.ip);
-      sendSuccess(res, result, 201);
+      sendSuccess(res, result, 'Shop created successfully', 201);
     } catch (err) {
       next(err);
     }

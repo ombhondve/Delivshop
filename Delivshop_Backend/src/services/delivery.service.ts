@@ -35,4 +35,28 @@ export const deliveryService = {
 
     return updated;
   },
+
+  async assignDriver(
+    orderId: string,
+    driverId: string,
+    actorId?: string,
+    ipAddress?: string
+  ) {
+    const assigned = await deliveryRepository.assignDriverToOrder(orderId, driverId);
+
+    await auditService.log({
+      actorId,
+      action: 'ORDER_DRIVER_ASSIGNED',
+      entityType: 'order',
+      entityId: orderId,
+      details: { driverId, deliveryId: assigned.id },
+      ipAddress,
+    });
+
+    return assigned;
+  },
+
+  async listDrivers() {
+    return deliveryRepository.listAvailableDrivers();
+  },
 };

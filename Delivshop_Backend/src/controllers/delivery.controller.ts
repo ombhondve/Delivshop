@@ -23,13 +23,14 @@ export const deliveryController = {
 
   async updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const { status, currentLatitude, currentLongitude, notes } = req.body;
       const updated = await deliveryService.updateStatus(
         req.params.deliveryId,
-        req.body.status,
+        status,
         req.user!.id,
-        req.body.currentLatitude,
-        req.body.currentLongitude,
-        req.body.notes,
+        currentLatitude,
+        currentLongitude,
+        notes,
         req.ip
       );
       sendSuccess(res, updated, 'Delivery status updated');
@@ -38,8 +39,27 @@ export const deliveryController = {
     }
   },
 
-  async updateLocation(req: Request, res: Response): Promise<void> {
-    // In production, update real-time driver coordinates
-    sendSuccess(res, { updated: true });
+  async assignDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { orderId, driverId } = req.body;
+      const result = await deliveryService.assignDriver(
+        orderId,
+        driverId,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, result, 'Driver assigned to order');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async listDrivers(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const drivers = await deliveryService.listDrivers();
+      sendSuccess(res, drivers);
+    } catch (err) {
+      next(err);
+    }
   },
 };

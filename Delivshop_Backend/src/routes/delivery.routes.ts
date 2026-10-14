@@ -8,7 +8,7 @@ import { updateDeliveryStatusSchema } from '../schemas/delivery.schema.js';
 
 const router = Router();
 
-// Driver only can retrieve their assigned deliveries
+// Driver delivery routes
 router.get(
   '/assigned',
   authenticate,
@@ -16,10 +16,25 @@ router.get(
   deliveryController.getAssignedDeliveries
 );
 
+// Supplier / Admin driver assignment & management routes
+router.get(
+  '/drivers',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN'),
+  deliveryController.listDrivers
+);
+
+router.post(
+  '/assign',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN'),
+  deliveryController.assignDriver
+);
+
 router.get(
   '/:deliveryId',
   authenticate,
-  authorizeRoles('DRIVER', 'ADMIN', 'SHOP'),
+  authorizeRoles('DRIVER', 'ADMIN', 'SHOP', 'SUPPLIER'),
   requireDriverDeliveryAssignment,
   deliveryController.getDelivery
 );
