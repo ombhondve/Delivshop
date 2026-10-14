@@ -1454,13 +1454,15 @@ select.input-field:focus {
 }
 
 /* ==========================================================================
-   Minimal Secure Vault Login Screen (Preserved and Refined)
+   Palette 9: Emerald & Ivory Login Page & Dashboard Entrance Transition
+   Primary Bg: #F8F8F2 | Card: #FFFFFF | Button: #16805D | Text: #20342C
    ========================================================================== */
 
+.login-screen-wrapper,
 .secure-vault-login-screen {
   min-height: 100vh;
   width: 100vw;
-  background-color: #070a13;
+  background-color: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1469,22 +1471,24 @@ select.input-field:focus {
   overflow-y: auto;
 }
 
+.login-card-container,
 .secure-vault-card {
   width: 100%;
   max-width: 440px;
-  background: #0d1527;
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  border-radius: 20px;
-  padding: 32px 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
-  animation: vaultCardFadeIn 0.4s ease-out forwards;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, box-shadow 0.35s ease;
+  animation: loginCardFadeIn 0.35s ease-out forwards;
 }
 
-@keyframes vaultCardFadeIn {
+@keyframes loginCardFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -1492,229 +1496,323 @@ select.input-field:focus {
   }
 }
 
-.vault-header {
+/* Card success transition fade */
+.login-card-success-fade {
+  transform: scale(0.98) translateY(-4px);
+  opacity: 0;
+  box-shadow: 0 0 30px rgba(22, 128, 93, 0.25);
+}
+
+/* Brand Header */
+.login-brand-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-bottom: 16px;
+  gap: 12px;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
 }
 
-.terminal-tag {
+.login-brand-logo-box {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-sidebar);
+  border: 1.5px solid var(--color-accent);
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(18, 59, 50, 0.25);
 }
 
-.cyan-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #00e5ff;
-  box-shadow: 0 0 10px #00e5ff;
-  animation: pulseCyan 2.2s infinite ease-in-out;
+.login-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
 }
 
-@keyframes pulseCyan {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(0.92);
-    box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.08);
-    box-shadow: 0 0 14px rgba(0, 229, 255, 0.95);
-  }
+.login-brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--color-sidebar);
 }
 
-.terminal-id {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #38bdf8;
-}
-
-.logistics-badge {
-  font-family: inherit;
+.login-brand-subtitle {
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  background: rgba(30, 41, 59, 0.85);
-  color: #94a3b8;
-  padding: 4px 9px;
-  border-radius: 4px;
-  border: 1px solid rgba(71, 85, 105, 0.5);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
 }
 
-.vault-title-group {
+/* Security Badge */
+.login-security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: var(--color-primary-subtle);
+  border: 1px solid #BBF7D0;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  margin-bottom: 16px;
+}
+
+/* Heading & Subheading */
+.login-title-group {
   margin-bottom: 22px;
 }
 
-.vault-title {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #f8fafc;
+.login-heading {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--text-primary);
   margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
 }
 
-.vault-subtitle {
+.login-subheading {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-.vault-alert {
+/* Alert Box */
+.login-alert-box {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid #ef4444;
-  border-radius: 6px;
-  padding: 10px 14px;
+  background-color: var(--color-danger-bg);
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
   margin-bottom: 18px;
-  color: #fca5a5;
-  font-size: 12.5px;
+  color: var(--color-danger);
+  font-size: 13px;
   line-height: 1.4;
+  animation: alertShake 0.3s ease;
 }
 
-.vault-login-form {
+@keyframes alertShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.login-alert-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.login-alert-text {
+  flex: 1;
+}
+
+/* Form */
+.login-form-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.vault-input-group {
+.login-field-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.vault-label {
-  font-size: 11px;
+.login-field-label {
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
 }
 
-.vault-input-wrapper {
+.login-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.vault-input-icon {
+.login-field-icon {
   position: absolute;
-  left: 12px;
-  color: #64748b;
+  left: 14px;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
-.vault-input-field {
+.login-input-control {
   width: 100%;
-  height: 42px;
-  background-color: #0b111e;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  color: #f8fafc;
-  padding: 0 38px 0 38px;
+  height: var(--control-height);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  padding: 0 42px 0 42px;
   font-size: 13.5px;
   font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
-.vault-input-field::placeholder {
-  color: #475569;
+.login-input-control::placeholder {
+  color: var(--text-muted);
 }
 
-.vault-input-field:focus {
+.login-input-control:focus {
   outline: none;
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(22, 128, 93, 0.2);
 }
 
-.vault-input-field:disabled {
-  opacity: 0.6;
+.login-input-control:disabled {
+  background-color: var(--bg-muted);
   cursor: not-allowed;
+  color: var(--text-muted);
 }
 
-.vault-eye-toggle {
+.login-eye-toggle {
   position: absolute;
   right: 8px;
   background: transparent;
   border: none;
-  color: #64748b;
+  color: var(--text-secondary);
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: color 0.2s ease;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
-.vault-eye-toggle:hover {
-  color: #f8fafc;
+.login-eye-toggle:hover {
+  color: var(--color-primary);
+  background-color: var(--bg-hover);
 }
 
-.vault-unlock-button {
-  margin-top: 8px;
+/* Action Button */
+.login-action-btn {
+  margin-top: 6px;
   width: 100%;
-  height: 46px;
-  background: linear-gradient(135deg, #16805D, #11674A);
-  border: 1px solid #16805D;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  height: var(--control-height);
+  background-color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(22, 128, 93, 0.35);
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(22, 128, 93, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
 }
 
-.vault-unlock-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #18986F, #16805D);
-  box-shadow: 0 6px 18px rgba(22, 128, 93, 0.45);
+.login-action-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 4px 14px rgba(22, 128, 93, 0.35);
   transform: translateY(-1px);
 }
 
-.vault-unlock-button:active:not(:disabled) {
+.login-action-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(22, 128, 93, 0.4);
+  box-shadow: 0 2px 6px rgba(22, 128, 93, 0.3);
 }
 
-.vault-unlock-button:disabled {
-  opacity: 0.7;
+.login-action-btn:disabled {
+  opacity: 0.75;
   cursor: not-allowed;
 }
 
-.vault-card-footer {
-  margin-top: 22px;
+/* Success state on submit button */
+.login-action-btn.is-success {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px rgba(22, 128, 93, 0.45);
+  transform: scale(1.01);
+}
+
+.login-check-icon {
+  animation: checkPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Card Footer */
+.login-card-footer {
+  margin-top: 24px;
   padding-top: 14px;
-  border-top: 1px solid rgba(51, 65, 85, 0.4);
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
-  color: #64748b;
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-muted);
   text-align: center;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Dashboard Entrance Transition
+   Smooth upward 8-12px fade-in for layout & subtle stagger for KPI metrics
+   ========================================================================== */
+
+.dashboard-entrance-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  animation: dashboardFadeInUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dashboardFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-entrance-wrapper .metrics-grid {
+  animation: dashboardContentStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: 0.06s;
+}
+
+.dashboard-entrance-wrapper .dashboard-grid,
+.dashboard-entrance-wrapper .search-filter-toolbar,
+.dashboard-entrance-wrapper .business-card {
+  animation: dashboardContentStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: 0.12s;
+}
+
+@keyframes dashboardContentStagger {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Fallback loading indicator */
 .cinematic-login-wrapper {
   min-height: 100vh;
   width: 100vw;
-  background-color: #070a13;
+  background-color: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1725,5 +1823,50 @@ select.input-field:focus {
   height: 12px;
   border-radius: 50%;
   background-color: var(--color-primary);
-  animation: pulseCyan 1.5s infinite ease-in-out;
+  animation: pulseEmerald 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseEmerald {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.92);
+    box-shadow: 0 0 6px rgba(22, 128, 93, 0.4);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 0 14px rgba(22, 128, 93, 0.8);
+  }
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .login-card-container,
+  .dashboard-entrance-wrapper,
+  .dashboard-entrance-wrapper .metrics-grid,
+  .dashboard-entrance-wrapper .dashboard-grid,
+  .dashboard-entrance-wrapper .search-filter-toolbar,
+  .dashboard-entrance-wrapper .business-card,
+  .login-action-btn,
+  .status-dot-idle {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card-container {
+    padding: 24px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  .login-heading {
+    font-size: 19px;
+  }
+
+  .login-brand-title {
+    font-size: 15px;
+  }
 }

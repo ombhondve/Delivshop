@@ -45,27 +45,29 @@ const MainContent: React.FC = () => {
   // While checking existing session token with backend:
   if (loading) {
     return (
-      <div className="cinematic-login-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+      <div className="login-screen-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#64748B' }}>
           <div className="status-dot-idle" style={{ margin: '0 auto 16px auto', width: '12px', height: '12px' }} />
-          <p style={{ fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.1em' }}>
-            INITIALIZING DELIVSHOP FACILITY CLEARANCE...
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#20342C' }}>
+            Connecting to Delivshop Facility...
           </p>
         </div>
       </div>
     );
   }
 
-  // Authentication gate: unauthenticated users MUST unlock via the 3D cinematic vault experience
+  // Authentication gate: unauthenticated users enter via Palette 9 login screen
   if (!user) {
     return <CinematicLoginExperience />;
   }
 
-  // Authenticated application: real dashboard
+  // Authenticated application: smooth entrance transition into dashboard
   return (
-    <Layout activeTab={activeTab} onSelectTab={setActiveTab}>
-      {renderTabContent()}
-    </Layout>
+    <div className="dashboard-entrance-wrapper">
+      <Layout activeTab={activeTab} onSelectTab={setActiveTab}>
+        {renderTabContent()}
+      </Layout>
+    </div>
   );
 };
 

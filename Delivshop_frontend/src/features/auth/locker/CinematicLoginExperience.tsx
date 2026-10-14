@@ -1,5 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { Eye, EyeOff, Lock, Mail, KeyRound, Loader2, ShieldAlert } from 'lucide-react';
+import {
+  Milk,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  ShieldCheck,
+} from 'lucide-react';
 import { api } from '../../../services/api/endpoints';
 import { useAuth } from '../AuthContext';
 
@@ -13,18 +24,18 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authStatus, setAuthStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (authStatus !== 'idle') return;
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setErrorMessage('Please enter your operator identifier.');
+      setErrorMessage('Please enter your operator email address.');
       emailInputRef.current?.focus();
       return;
     }
@@ -35,18 +46,26 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
       return;
     }
     if (!password) {
-      setErrorMessage('Please enter your security access key.');
+      setErrorMessage('Please enter your security access password.');
       passwordInputRef.current?.focus();
       return;
     }
 
-    setIsSubmitting(true);
+    setAuthStatus('loading');
     setErrorMessage(null);
 
     try {
+      // 1. Authenticate with real backend endpoint
       const res = await api.auth.login({ email: trimmedEmail, password });
-      setAuthenticatedUser(res.user);
-      onAuthenticated?.();
+
+      // 2. Trigger brief emerald success confirmation
+      setAuthStatus('success');
+
+      // 3. Smooth transition to dashboard after brief visual feedback (380ms)
+      setTimeout(() => {
+        setAuthenticatedUser(res.user);
+        onAuthenticated?.();
+      }, 380);
     } catch (err: any) {
       const rawMsg = err?.message || '';
       if (
@@ -57,9 +76,9 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
       ) {
         setErrorMessage('Security database service temporarily unreachable.');
       } else {
-        setErrorMessage(rawMsg || 'Invalid operator identifier or security key.');
+        setErrorMessage(rawMsg || 'Invalid operator credentials or unauthorized access.');
       }
-      setIsSubmitting(false);
+      setAuthStatus('idle');
       setPassword('');
       setTimeout(() => {
         passwordInputRef.current?.focus();
@@ -68,40 +87,53 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
   };
 
   return (
-    <div className="secure-vault-login-screen">
-      <div className="secure-vault-card" role="main">
-        {/* Header */}
-        <div className="vault-header">
-          <div className="terminal-tag">
-            <span className="cyan-status-dot" aria-hidden="true" />
-            <span className="terminal-id">TERMINAL ID: DLV-SEC-01</span>
+    <div className="login-screen-wrapper">
+      <div
+        className={`login-card-container ${authStatus === 'success' ? 'login-card-success-fade' : ''}`}
+        role="main"
+      >
+        {/* Brand Header */}
+        <div className="login-brand-header">
+          <div className="login-brand-logo-box">
+            <Milk size={24} className="text-white" />
           </div>
-          <div className="logistics-badge">LOGISTICS GATEWAY</div>
+          <div className="login-brand-text">
+            <span className="login-brand-title">DELIVSHOP</span>
+            <span className="login-brand-subtitle">DAIRY DISTRIBUTION MANAGEMENT</span>
+          </div>
         </div>
 
-        {/* Title & Subtitle */}
-        <div className="vault-title-group">
-          <h1 className="vault-title">DELIVSHOP SECURE VAULT</h1>
-          <p className="vault-subtitle">Enter credentials to unlock facility operations</p>
+        {/* Security Badge Pill */}
+        <div className="login-security-pill">
+          <ShieldCheck size={14} className="text-emerald" />
+          <span>PORTAL AUTHENTICATION GATEWAY</span>
         </div>
 
-        {/* Error Alert */}
+        {/* Welcome Title */}
+        <div className="login-title-group">
+          <h1 className="login-heading">Sign In to Dashboard</h1>
+          <p className="login-subheading">
+            Enter your operator credentials to access dispatch, fleet routes, and shop management
+          </p>
+        </div>
+
+        {/* Error Alert Box */}
         {errorMessage && (
-          <div className="vault-alert" role="alert" aria-live="assertive">
-            <ShieldAlert size={16} className="alert-icon" />
-            <span className="alert-text">{errorMessage}</span>
+          <div className="login-alert-box" role="alert" aria-live="assertive">
+            <AlertCircle size={16} className="login-alert-icon" />
+            <span className="login-alert-text">{errorMessage}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="vault-login-form" noValidate>
-          {/* Operator Identifier (Email) */}
-          <div className="vault-input-group">
-            <label htmlFor="operator-email" className="vault-label">
-              OPERATOR IDENTIFIER
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="login-form-body" noValidate>
+          {/* Email / Operator Identifier */}
+          <div className="login-field-group">
+            <label htmlFor="operator-email" className="login-field-label">
+              OPERATOR EMAIL
             </label>
-            <div className="vault-input-wrapper">
-              <Mail size={16} className="vault-input-icon" aria-hidden="true" />
+            <div className="login-input-wrapper">
+              <Mail size={16} className="login-field-icon" aria-hidden="true" />
               <input
                 id="operator-email"
                 ref={emailInputRef}
@@ -111,22 +143,22 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
                   setEmail(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                disabled={isSubmitting}
+                disabled={authStatus !== 'idle'}
                 placeholder="admin@gmail.com"
                 autoComplete="email"
                 required
-                className="vault-input-field"
+                className="login-input-control"
               />
             </div>
           </div>
 
-          {/* Security Access Key (Password) */}
-          <div className="vault-input-group">
-            <label htmlFor="security-key" className="vault-label">
-              SECURITY ACCESS KEY
+          {/* Password / Access Key */}
+          <div className="login-field-group">
+            <label htmlFor="security-key" className="login-field-label">
+              SECURITY PASSWORD
             </label>
-            <div className="vault-input-wrapper">
-              <Lock size={16} className="vault-input-icon" aria-hidden="true" />
+            <div className="login-input-wrapper">
+              <Lock size={16} className="login-field-icon" aria-hidden="true" />
               <input
                 id="security-key"
                 ref={passwordInputRef}
@@ -136,17 +168,17 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
                   setPassword(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                disabled={isSubmitting}
+                disabled={authStatus !== 'idle'}
                 placeholder="••••••••••••"
                 autoComplete="current-password"
                 required
-                className="vault-input-field"
+                className="login-input-control"
               />
               <button
                 type="button"
-                className="vault-eye-toggle"
+                className="login-eye-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide security key' : 'Show security key'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 tabIndex={0}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -154,29 +186,40 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
             </div>
           </div>
 
-          {/* Submit Action Button */}
+          {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
-            className={`vault-unlock-button ${isSubmitting ? 'is-loading' : ''}`}
+            disabled={authStatus !== 'idle'}
+            className={`login-action-btn ${
+              authStatus === 'loading'
+                ? 'is-loading'
+                : authStatus === 'success'
+                ? 'is-success'
+                : ''
+            }`}
           >
-            {isSubmitting ? (
+            {authStatus === 'loading' ? (
               <>
                 <Loader2 size={16} className="spin-icon" />
-                <span>VERIFYING CLEARANCE...</span>
+                <span>Verifying Credentials...</span>
+              </>
+            ) : authStatus === 'success' ? (
+              <>
+                <CheckCircle2 size={16} className="login-check-icon" />
+                <span>Access Granted • Entering Dashboard</span>
               </>
             ) : (
               <>
-                <KeyRound size={16} />
-                <span>UNLOCK VAULT PORTAL</span>
+                <span>Sign In to Portal</span>
+                <ArrowRight size={16} />
               </>
             )}
           </button>
         </form>
 
-        {/* Footer */}
-        <div className="vault-card-footer">
-          <span>ENCRYPTED HARDWARE ACCESS • TLS 1.3</span>
+        {/* Security Footer */}
+        <div className="login-card-footer">
+          <span>TLS 1.3 ENCRYPTED • VERIFIED OPERATOR SESSION</span>
         </div>
       </div>
     </div>
