@@ -1,14 +1,41 @@
+# Dependencies
 node_modules/
-.next/
-out/
+*/node_modules/
+
+# Production Builds
 dist/
-coverage/
+build/
+web-build/
+out/
+.next/
+
+# Expo & Mobile
+.expo/
+.kotlin/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Environment Variables
 .env
 .env.*
 !.env.example
+
+# Testing & Coverage
+coverage/
+
+# Logs & Temporary Files
 *.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
 .DS_Store
 Thumbs.db
+*.tsbuildinfo
+
+# IDE & Tooling
 .vscode/
 .idea/
-*.tsbuildinfo
+.claude/
