@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "migrate": "tsx src/database/migrate.ts",
-    "migrate:status": "tsx -e \"import { checkDatabaseHealth } from './src/config/database.js'; checkDatabaseHealth().then(s => console.log('Database Status:', JSON.stringify(s, null, 2))).then(() => process.exit(0));\"",
+    "migrate:status": "tsx src/database/status.ts",
     "seed": "tsx src/database/seed.ts",
     "typecheck": "tsc --noEmit"
   },
