@@ -18,26 +18,89 @@ export const createApp = (): Application => {
     })
   );
 
-  // 2. Strict CORS Configuration
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
-        if (ALLOWED_ORIGIN_LIST.includes(origin) || ENV.NODE_ENV === 'development') {
-          return callback(null, true);
+  // 2. Comprehensive & Safe CORS Configuration
+  const isAllowedOrigin = (origin: string): boolean => {
+    // Development or test mode permits all origins
+    if (ENV.NODE_ENV === 'development' || ENV.NODE_ENV === 'test') {
+      return true;
+    }
+
+    // Wildcard configuration
+    if (ALLOWED_ORIGIN_LIST.includes('*')) {
+      return true;
+    }
+
+    // Exact match in configured ALLOWED_ORIGIN_LIST
+    if (ALLOWED_ORIGIN_LIST.includes(origin)) {
+      return true;
+    }
+
+    // Domain & subdomain pattern matching
+    try {
+      const parsedUrl = new URL(origin);
+      const hostname = parsedUrl.hostname;
+
+      // Allow local development origins (web / mobile emulator)
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return true;
+      }
+
+      // Allow Vercel preview and production deployments for Delivshop
+      if (hostname.endsWith('.vercel.app')) {
+        return true;
+      }
+
+      // Wildcard prefix matching, e.g. *.delivshop.com
+      for (const allowed of ALLOWED_ORIGIN_LIST) {
+        if (allowed.startsWith('*.')) {
+          const rootDomain = allowed.slice(2);
+          if (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) {
+            return true;
+          }
         }
-        return callback(new Error(`CORS origin '${origin}' is not allowed by policy`));
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    })
-  );
+      }
+    } catch {
+      return false;
+    }
+
+    return false;
+  };
+
+  const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+      // Allow non-browser requests (mobile apps, native curl, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      // Origin not permitted: notify CORS without throwing a 500 error
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 204,
+  };
+
+  app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
 
   // 3. Body Parsing with Strict Size Limit (DoS protection)
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+  // Root health endpoint for deployment probes
+  app.get('/', (_req: Request, res: Response) => {
+    res.json({
+      status: 'UP',
+      service: 'Delivshop Backend API',
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   // 4. Rate Limiting
   app.use('/api', generalRateLimiter);

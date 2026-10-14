@@ -8,7 +8,13 @@ export const dbPool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-  ssl: ENV.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl:
+    ENV.NODE_ENV === 'production' ||
+    ENV.NODE_ENV === 'preview' ||
+    ENV.DATABASE_URL.includes('neon.tech') ||
+    ENV.DATABASE_URL.includes('sslmode=require')
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 dbPool.on('error', (err) => {
