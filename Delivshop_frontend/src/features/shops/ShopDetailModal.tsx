@@ -637,7 +637,7 @@ export const ShopDetailModal: React.FC<ShopDetailModalProps> = ({
                           New Temporary Password Provisioned
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <code style={{ fontSize: '16px', padding: '6px 12px', backgroundColor: '#0F172A', color: '#F8FAFC' }}>
+                          <code style={{ fontSize: '16px', padding: '6px 12px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
                             {reissuedPassword}
                           </code>
                           <button

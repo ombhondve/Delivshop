@@ -2,21 +2,22 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Search,
-  Filter,
+  ListFilter,
   RefreshCw,
   Eye,
-  Edit2,
+  Pencil,
   Power,
   MapPin,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
   Building2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Shop, PaginatedResult } from '../../types';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
+import { Button } from '../../components/common/Button';
 import { AddShopModal } from './AddShopModal';
 import { ShopDetailModal } from './ShopDetailModal';
 import { EditShopModal } from './EditShopModal';
@@ -91,7 +92,7 @@ export const ShopOverview: React.FC = () => {
 
   return (
     <div className="page-container">
-      {/* Header */}
+      {/* 1. Page Header */}
       <div className="page-header">
         <div>
           <h2 className="page-title">Shop Management</h2>
@@ -99,184 +100,206 @@ export const ShopOverview: React.FC = () => {
             Oversee registered merchant shops, atomic Shop IDs, GPS delivery routing, and credit terms
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
+        <div className="page-header-actions">
+          <Button
+            type="button"
+            variant="secondary"
             onClick={() => fetchShops()}
-            className="btn btn-outline"
-            style={{ gap: '6px' }}
-            title="Refresh Directory"
+            disabled={loading}
+            icon={<RefreshCw size={16} className={loading ? 'spin-icon' : ''} />}
           >
-            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-            Refresh
-          </button>
-          <button
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
             onClick={() => setIsAddModalOpen(true)}
-            className="btn btn-primary"
-            style={{ gap: '8px' }}
+            icon={<Plus size={18} />}
           >
-            <Plus size={16} />
             Add New Shop
+          </Button>
+        </div>
+      </div>
+
+      {/* 2. Search and Filter Toolbar (Clean Light Surface, 44px Controls) */}
+      <div className="search-filter-toolbar">
+        {/* Search Field & Search Button */}
+        <form onSubmit={handleSearchSubmit} className="toolbar-search-form">
+          <div className="search-input-wrapper">
+            <Search size={18} className="search-input-icon" />
+            <input
+              type="text"
+              className="toolbar-search-input"
+              placeholder="Search by store name, Shop ID, phone, or owner..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search merchant shops"
+            />
+          </div>
+          <button type="submit" className="btn btn-primary toolbar-search-btn">
+            Search
+          </button>
+        </form>
+
+        {/* Dropdown Filters & Sort Control */}
+        <div className="toolbar-filters-group">
+          {/* Shop Type Filter */}
+          <div className="filter-select-wrapper">
+            <ListFilter size={16} className="filter-leading-icon" />
+            <select
+              className="toolbar-select-field"
+              value={shopType}
+              onChange={(e) => {
+                setShopType(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Filter by Shop Type"
+            >
+              <option value="">All Shop Types</option>
+              <option value="Retail Shop">Retail Shop</option>
+              <option value="Wholesale Shop">Wholesale Shop</option>
+              <option value="Distributor">Distributor</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <select
+            className="toolbar-select-field"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+            aria-label="Filter by Status"
+          >
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+
+          {/* Sort By Filter */}
+          <select
+            className="toolbar-select-field"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            aria-label="Sort by column"
+          >
+            <option value="created_at">Sort by Date</option>
+            <option value="name">Sort by Name</option>
+            <option value="shop_id">Sort by Shop ID</option>
+            <option value="outstanding_balance">Sort by Balance</option>
+            <option value="credit_limit">Sort by Credit Limit</option>
+          </select>
+
+          {/* Direction Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')}
+            className="btn btn-secondary toolbar-sort-btn"
+            title={sortOrder === 'ASC' ? 'Currently Ascending (Click for Descending)' : 'Currently Descending (Click for Ascending)'}
+            aria-label="Toggle sort direction"
+          >
+            <ArrowUpDown size={15} />
+            <span>{sortOrder === 'ASC' ? 'Ascending' : 'Descending'}</span>
           </button>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <Card>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', flex: '1 1 300px' }}>
-            <div style={{ position: 'relative', width: '100%' }}>
-              <Search
-                size={16}
-                color="var(--text-muted)"
-                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
-              />
-              <input
-                className="input-field"
-                style={{ width: '100%', paddingLeft: '36px', height: '38px', margin: 0 }}
-                placeholder="Search by store name, Shop ID, phone, or owner..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '0 16px', height: '38px' }}>
-              Search
-            </button>
-          </form>
-
-          {/* Filters */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Filter size={15} color="var(--text-muted)" />
-              <select
-                className="input-field"
-                style={{ height: '38px', padding: '0 12px', margin: 0, fontSize: '13px' }}
-                value={shopType}
-                onChange={(e) => {
-                  setShopType(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">All Shop Types</option>
-                <option value="Retail Shop">Retail Shop</option>
-                <option value="Wholesale Shop">Wholesale Shop</option>
-                <option value="Distributor">Distributor</option>
-              </select>
-            </div>
-
-            <select
-              className="input-field"
-              style={{ height: '38px', padding: '0 12px', margin: 0, fontSize: '13px' }}
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-
-            <select
-              className="input-field"
-              style={{ height: '38px', padding: '0 12px', margin: 0, fontSize: '13px' }}
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="created_at">Sort by Date</option>
-              <option value="name">Sort by Name</option>
-              <option value="shop_id">Sort by Shop ID</option>
-              <option value="outstanding_balance">Sort by Balance</option>
-              <option value="credit_limit">Sort by Credit Limit</option>
-            </select>
-
-            <button
-              type="button"
-              onClick={() => setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')}
-              className="btn btn-outline btn-sm"
-              style={{ height: '38px' }}
-              title="Toggle Sort Order"
-            >
-              {sortOrder === 'ASC' ? '↑ Asc' : '↓ Desc'}
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Directory Table */}
-      <Card title="Affiliated Merchant Stores" subtitle={`Total registered shops: ${data.total}`}>
+      {/* 3. Shop Results Table */}
+      <Card
+        title="Affiliated Merchant Stores"
+        subtitle={`Total registered merchant shops: ${data.total}`}
+        noPadding
+      >
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-            Retrieving live shop records from database...
+          <div className="table-loading-container">
+            <RefreshCw size={24} className="spin-icon text-muted" />
+            <p>Retrieving live shop records from database...</p>
           </div>
         ) : error ? (
-          <div className="alert-error">{error}</div>
+          <div className="table-error-container">
+            <p className="error-message">{error}</p>
+            <Button variant="secondary" size="sm" onClick={fetchShops}>
+              Retry Connection
+            </Button>
+          </div>
         ) : data.items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
-            <Building2 size={36} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-            <div style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text-primary)' }}>
-              No matching merchant shops found
-            </div>
-            <p style={{ fontSize: '13px', marginTop: '4px' }}>
-              Create a new shop or adjust your search and filter criteria.
+          <div className="table-empty-container">
+            <Building2 size={40} className="empty-state-icon" />
+            <h4 className="empty-state-title">No matching merchant shops found</h4>
+            <p className="empty-state-desc">
+              Try adjusting your search criteria, clearing filters, or onboard a new merchant store.
             </p>
+            <div style={{ marginTop: '16px' }}>
+              <Button
+                variant="primary"
+                onClick={() => setIsAddModalOpen(true)}
+                icon={<Plus size={16} />}
+              >
+                Add New Shop
+              </Button>
+            </div>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+          <div className="business-table-container">
+            <table className="business-table">
               <thead>
                 <tr>
-                  <th>Shop ID</th>
+                  <th style={{ width: '130px' }}>Shop ID</th>
                   <th>Store Name & Type</th>
                   <th>Owner & Contact</th>
-                  <th>Location & Verification</th>
+                  <th>Location & Delivery Pin</th>
                   <th>Credit & Balance</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '110px' }}>Status</th>
+                  <th style={{ width: '150px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.map((shop) => (
                   <tr key={shop.id}>
                     <td>
-                      <code style={{ fontWeight: 700, fontSize: '13px' }}>
+                      <code className="shop-id-code">
                         {shop.shop_id || 'N/A'}
                       </code>
                     </td>
                     <td>
-                      <div className="font-semibold">{shop.name}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {shop.shop_type}
+                      <div className="font-semibold text-primary">{shop.name}</div>
+                      <div className="text-secondary text-xs">
+                        {shop.shop_type || 'Retail Shop'}
                       </div>
                     </td>
                     <td>
-                      <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                      <div className="font-medium text-primary">
                         {shop.owner_name}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <div className="text-secondary text-xs">
                         {shop.phone}
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <MapPin size={13} color="var(--color-primary)" />
+                      <div className="shop-location-row">
+                        <MapPin size={13} className="text-emerald" />
                         <span>{shop.area || shop.address}, {shop.city}</span>
                       </div>
-                      <div style={{ marginTop: '2px' }}>
+                      <div style={{ marginTop: '3px' }}>
                         <span
-                          className={`badge ${shop.is_location_verified ? 'badge-info' : 'badge-default'}`}
-                          style={{ fontSize: '10px', padding: '2px 6px' }}
+                          className={`badge ${shop.is_location_verified ? 'badge-info' : 'badge-neutral'}`}
+                          style={{ fontSize: '10.5px' }}
                         >
                           {shop.is_location_verified ? 'GPS Pin Verified' : 'Unverified Pin'}
                         </span>
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <div className="text-secondary text-xs">
                         Limit: ₹{Number(shop.credit_limit || 0).toLocaleString('en-IN')}
                       </div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: Number(shop.outstanding_balance) > 0 ? '#F87171' : '#34D399' }}>
+                      <div
+                        className="text-xs font-semibold"
+                        style={{
+                          color: Number(shop.outstanding_balance) > 0 ? '#B91C1C' : '#16805D',
+                        }}
+                      >
                         Bal: ₹{Number(shop.outstanding_balance || 0).toLocaleString('en-IN')}
                       </div>
                     </td>
@@ -286,41 +309,45 @@ export const ShopOverview: React.FC = () => {
                       </Badge>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                      <div className="table-actions-group">
+                        {/* Details Button */}
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedShopId(shop.id);
                             setIsDetailModalOpen(true);
                           }}
-                          className="btn btn-outline btn-sm"
+                          className="btn btn-secondary btn-table-action"
                           title="View Complete Profile & Invoices"
-                          style={{ padding: '6px 10px' }}
+                          aria-label={`View details for ${shop.name}`}
                         >
-                          <Eye size={13} /> Details
+                          <Eye size={14} />
+                          <span>Details</span>
                         </button>
 
+                        {/* Edit Button (Icon-only) */}
                         <button
                           type="button"
                           onClick={() => {
                             setShopToEdit(shop);
                             setIsEditModalOpen(true);
                           }}
-                          className="btn btn-outline btn-sm"
+                          className="btn-icon-square"
                           title="Edit Information"
-                          style={{ padding: '6px 8px' }}
+                          aria-label={`Edit ${shop.name}`}
                         >
-                          <Edit2 size={13} />
+                          <Pencil size={15} />
                         </button>
 
+                        {/* Power Toggle Button (Icon-only) */}
                         <button
                           type="button"
                           onClick={() => handleQuickStatusToggle(shop)}
-                          className="btn btn-outline btn-sm"
+                          className={`btn-icon-square ${shop.status === 'ACTIVE' ? 'btn-power-active' : 'btn-power-inactive'}`}
                           title={shop.status === 'ACTIVE' ? 'Deactivate Shop' : 'Activate Shop'}
-                          style={{ padding: '6px 8px' }}
+                          aria-label={shop.status === 'ACTIVE' ? `Deactivate ${shop.name}` : `Activate ${shop.name}`}
                         >
-                          <Power size={13} color={shop.status === 'ACTIVE' ? '#EF4444' : '#10B981'} />
+                          <Power size={15} />
                         </button>
                       </div>
                     </td>
@@ -333,51 +360,41 @@ export const ShopOverview: React.FC = () => {
 
         {/* Pagination Controls */}
         {data.totalPages > 1 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: '18px',
-              paddingTop: '16px',
-              borderTop: '1px solid var(--border-color)',
-            }}
-          >
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Page {data.page} of {data.totalPages} ({data.total} total shops)
+          <div className="table-pagination-footer">
+            <div className="pagination-info">
+              Showing page <strong>{data.page}</strong> of <strong>{data.totalPages}</strong> ({data.total} total shops)
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="pagination-buttons">
               <button
                 type="button"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
-                className="btn btn-outline btn-sm"
-                style={{ gap: '4px' }}
+                className="btn btn-secondary btn-sm"
               >
-                <ChevronLeft size={14} /> Previous
+                <ChevronLeft size={15} />
+                <span>Previous</span>
               </button>
               <button
                 type="button"
-                onClick={() => setCurrentPage(p => Math.min(data.totalPages, p + 1))}
+                onClick={() => setCurrentPage((p) => Math.min(data.totalPages, p + 1))}
                 disabled={currentPage >= data.totalPages}
-                className="btn btn-outline btn-sm"
-                style={{ gap: '4px' }}
+                className="btn btn-secondary btn-sm"
               >
-                Next <ChevronRight size={14} />
+                <span>Next</span>
+                <ChevronRight size={15} />
               </button>
             </div>
           </div>
         )}
       </Card>
 
-      {/* Add Shop Modal */}
+      {/* Modals */}
       <AddShopModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onShopCreated={fetchShops}
       />
 
-      {/* View Shop Details Modal */}
       <ShopDetailModal
         shopId={selectedShopId}
         isOpen={isDetailModalOpen}
@@ -388,7 +405,6 @@ export const ShopOverview: React.FC = () => {
         onStatusChanged={fetchShops}
       />
 
-      {/* Edit Shop Modal */}
       <EditShopModal
         shop={shopToEdit}
         isOpen={isEditModalOpen}

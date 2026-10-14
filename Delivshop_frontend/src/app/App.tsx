@@ -8,6 +8,9 @@ import { ProductCatalog } from '../features/products/ProductCatalog';
 import { OrdersList } from '../features/orders/OrdersList';
 import { DeliveriesTracking } from '../features/deliveries/DeliveriesTracking';
 import { ReportsSummary } from '../features/reports/ReportsSummary';
+import { DriversRoster } from '../features/drivers/DriversRoster';
+import { CollectionsLedger } from '../features/collections/CollectionsLedger';
+import { SettingsPage } from '../features/settings/SettingsPage';
 import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 
 const MainContent: React.FC = () => {
@@ -26,8 +29,14 @@ const MainContent: React.FC = () => {
         return <OrdersList />;
       case 'deliveries':
         return <DeliveriesTracking />;
+      case 'drivers':
+        return <DriversRoster />;
+      case 'collections':
+        return <CollectionsLedger />;
       case 'reports':
         return <ReportsSummary />;
+      case 'settings':
+        return <SettingsPage />;
       default:
         return <DashboardPage />;
     }

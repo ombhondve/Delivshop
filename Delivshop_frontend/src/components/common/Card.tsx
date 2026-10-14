@@ -5,7 +5,9 @@ interface CardProps {
   subtitle?: string;
   children: React.ReactNode;
   action?: React.ReactNode;
+  icon?: React.ReactNode;
   className?: string;
+  noPadding?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -13,20 +15,25 @@ export const Card: React.FC<CardProps> = ({
   subtitle,
   children,
   action,
+  icon,
   className = '',
+  noPadding = false,
 }) => {
   return (
-    <div className={`card ${className}`}>
-      {(title || action) && (
+    <div className={`business-card ${className}`}>
+      {(title || action || icon) && (
         <div className="card-header">
-          <div>
-            {title && <h3 className="card-title">{title}</h3>}
-            {subtitle && <p className="card-subtitle">{subtitle}</p>}
+          <div className="card-header-left">
+            {icon && <div className="card-header-icon">{icon}</div>}
+            <div>
+              {title && <h3 className="card-title">{title}</h3>}
+              {subtitle && <p className="card-subtitle">{subtitle}</p>}
+            </div>
           </div>
           {action && <div className="card-action">{action}</div>}
         </div>
       )}
-      <div className="card-body">{children}</div>
+      <div className={`card-body ${noPadding ? 'no-padding' : ''}`}>{children}</div>
     </div>
   );
 };

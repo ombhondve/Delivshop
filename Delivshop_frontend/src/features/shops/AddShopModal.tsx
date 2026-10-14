@@ -336,14 +336,14 @@ export const AddShopModal: React.FC<AddShopModalProps> = ({
                   <div
                     style={{
                       flex: 1,
-                      backgroundColor: '#0F172A',
+                      backgroundColor: 'var(--bg-primary)',
                       padding: '12px 16px',
                       borderRadius: 'var(--radius-sm)',
-                      border: '1px solid #334155',
+                      border: '1px solid var(--border-color)',
                       fontFamily: 'monospace',
                       fontSize: '18px',
                       letterSpacing: '0.05em',
-                      color: '#F8FAFC',
+                      color: 'var(--text-primary)',
                       userSelect: 'all',
                     }}
                   >

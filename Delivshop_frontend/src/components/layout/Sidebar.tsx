@@ -1,36 +1,177 @@
 import React from 'react';
+import {
+  LayoutDashboard,
+  Store,
+  Package,
+  ClipboardList,
+  Truck,
+  Users,
+  Wallet,
+  FileText,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Milk,
+  LogOut,
+} from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
-export type ActiveTab = 'dashboard' | 'shops' | 'products' | 'orders' | 'deliveries' | 'reports';
+export type ActiveTab =
+  | 'dashboard'
+  | 'shops'
+  | 'products'
+  | 'orders'
+  | 'deliveries'
+  | 'drivers'
+  | 'collections'
+  | 'reports'
+  | 'settings';
 
 interface SidebarProps {
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  isMobileOpen: boolean;
+  onCloseMobile: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
-  const navItems: { id: ActiveTab; label: string; icon: string }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'shops', label: 'Shops Overview', icon: '🏪' },
-    { id: 'products', label: 'Products', icon: '🏷️' },
-    { id: 'orders', label: 'Orders', icon: '📋' },
-    { id: 'deliveries', label: 'Deliveries', icon: '🚚' },
-    { id: 'reports', label: 'Audit & Reports', icon: '📑' },
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeTab,
+  onSelectTab,
+  isCollapsed,
+  onToggleCollapse,
+  isMobileOpen,
+  onCloseMobile,
+}) => {
+  const { user, logout } = useAuth();
+
+  const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={19} /> },
+    { id: 'shops', label: 'Shops Management', icon: <Store size={19} /> },
+    { id: 'products', label: 'Products & Inventory', icon: <Package size={19} /> },
+    { id: 'orders', label: 'Orders Dispatch', icon: <ClipboardList size={19} /> },
+    { id: 'deliveries', label: 'Delivery Fleet', icon: <Truck size={19} /> },
+    { id: 'drivers', label: 'Drivers Roster', icon: <Users size={19} /> },
+    { id: 'collections', label: 'Payments & Ledger', icon: <Wallet size={19} /> },
+    { id: 'reports', label: 'Audit & Reports', icon: <FileText size={19} /> },
+    { id: 'settings', label: 'Settings', icon: <Settings size={19} /> },
   ];
 
+  const handleNavClick = (tabId: ActiveTab) => {
+    onSelectTab(tabId);
+    if (isMobileOpen) {
+      onCloseMobile();
+    }
+  };
+
   return (
-    <aside className="app-sidebar">
-      <nav className="sidebar-nav">
-        {navItems.map((item) => (
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={onCloseMobile}
+          aria-label="Close navigation menu"
+        />
+      )}
+
+      <aside
+        className={`app-sidebar ${isCollapsed ? 'is-collapsed' : ''} ${
+          isMobileOpen ? 'is-mobile-open' : ''
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="sidebar-brand-container">
+          <div className="sidebar-brand">
+            <div className="brand-logo-icon">
+              <Milk size={20} className="text-white" />
+            </div>
+            {!isCollapsed && (
+              <div className="brand-text-block">
+                <span className="brand-name">DELIVSHOP</span>
+                <span className="brand-tagline">DAIRY DISTRIBUTION</span>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Close Button */}
           <button
-            key={item.id}
-            className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-            onClick={() => onSelectTab(item.id)}
+            type="button"
+            className="sidebar-mobile-close-btn"
+            onClick={onCloseMobile}
+            aria-label="Close navigation drawer"
           >
-            <span className="nav-icon">{item.icon}</span>
-            <span className="nav-label">{item.label}</span>
+            <X size={20} />
           </button>
-        ))}
-      </nav>
-    </aside>
+        </div>
+
+        {/* Navigation List */}
+        <div className="sidebar-nav-wrapper">
+          <nav className="sidebar-nav">
+            {!isCollapsed && <div className="nav-section-title">CORE OPERATIONS</div>}
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`nav-item ${isActive ? 'active' : ''}`}
+                  onClick={() => handleNavClick(item.id)}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <span className="nav-icon-container">{item.icon}</span>
+                  {!isCollapsed && <span className="nav-label">{item.label}</span>}
+                  {!isCollapsed && item.badge && (
+                    <span className="nav-badge-count">{item.badge}</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Desktop Collapse Toggle */}
+        <div className="sidebar-collapse-container">
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={onToggleCollapse}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {!isCollapsed && <span>Collapse Sidebar</span>}
+          </button>
+        </div>
+
+        {/* User Mini Profile Footer */}
+        {user && (
+          <div className="sidebar-user-footer">
+            <div className="user-avatar-circle" title={user.name}>
+              {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+            </div>
+            {!isCollapsed && (
+              <div className="user-info-text">
+                <span className="user-display-name">{user.name}</span>
+                <span className="user-role-label">{user.role}</span>
+              </div>
+            )}
+            {!isCollapsed && (
+              <button
+                type="button"
+                className="user-logout-quick-btn"
+                onClick={() => logout()}
+                title="Sign out of portal"
+                aria-label="Sign out"
+              >
+                <LogOut size={16} />
+              </button>
+            )}
+          </div>
+        )}
+      </aside>
+    </>
   );
 };
