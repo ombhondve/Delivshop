@@ -17,3 +17,16 @@ export interface CameraWaypoint {
   target: [number, number, number];
   fov?: number;
 }
+
+export interface VaultTelemetry {
+  currentTime: number;
+  phaseLabel: string;
+  wheelDeg: number;
+  boltRetractMm: number;
+  doorAngleDeg: number;
+  angularVelDegPerSec: number;
+  boltRetractPercent: number;
+  isUnlocked: boolean;
+  isDoorOpen: boolean;
+}
+
