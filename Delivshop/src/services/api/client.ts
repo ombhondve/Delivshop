@@ -1,7 +1,9 @@
+import { Platform } from 'react-native';
 import { SecureTokenStorage } from '@/utils/storage';
 import { ApiResponse, ApiErrorResponse } from '@/types/api';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
+const DEFAULT_API_HOST = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_HOST;
 
 export class ApiClientError extends Error {
   public code?: string;

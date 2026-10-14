@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   modeTabTextActive: {
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#16805D',
   },
   errorBox: {
     backgroundColor: '#FEE2E2',
@@ -223,16 +223,20 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 15,
-    color: '#111827',
+    color: '#20342C',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: 8,
   },
   passwordInput: {
@@ -240,20 +244,20 @@ const styles = StyleSheet.create({
     height: 50,
     paddingHorizontal: 16,
     fontSize: 15,
-    color: '#111827',
+    color: '#20342C',
   },
   showPasswordBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   showPasswordText: {
-    color: '#2563EB',
+    color: '#16805D',
     fontSize: 13,
     fontWeight: '600',
   },
   button: {
     height: 50,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#16805D',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -261,7 +265,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 16,
   },
   forgotBtn: {

@@ -21,6 +21,18 @@ export const authApi = {
     return response;
   },
 
+  async register(payload: RegisterPayload): Promise<AuthResponse> {
+    const response = await apiClient<AuthResponse>('auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      requiresAuth: false,
+    });
+    if (response.tokens) {
+      await SecureTokenStorage.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
+    }
+    return response;
+  },
+
   async shopLogin(credentials: { shopId: string; password: string }): Promise<ShopLoginResponse> {
     const response = await apiClient<ShopLoginResponse>('auth/shop/login', {
       method: 'POST',

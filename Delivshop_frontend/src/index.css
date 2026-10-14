@@ -2412,3 +2412,22 @@ select.input-field:focus {
     justify-content: center;
   }
 }
+
+/* Field validation styles */
+.input-field-error {
+  border-color: #EF4444 !important;
+  background-color: #FEF2F2 !important;
+}
+
+.input-field-error:focus {
+  border-color: #DC2626 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.field-error-text {
+  display: block;
+  font-size: 11.5px;
+  color: #DC2626;
+  margin-top: 4px;
+  font-weight: 500;
+}
