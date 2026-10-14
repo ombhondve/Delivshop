@@ -9,9 +9,10 @@ import apiRouter from './routes/index.js';
 export const createApp = (): Application => {
   const app = express();
 
-  // 1. Security Headers
+  // 1. Security Headers (interop safe across CJS/ESM and TypeScript 5.8/5.9+ NodeNext)
+  const helmetMiddleware: any = (helmet as any)?.default || helmet;
   app.use(
-    helmet({
+    helmetMiddleware({
       contentSecurityPolicy: ENV.NODE_ENV === 'production',
       crossOriginEmbedderPolicy: false,
     })
