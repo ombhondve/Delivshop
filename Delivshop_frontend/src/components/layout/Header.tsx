@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigation } from '../../context/NavigationContext';
 import { ActiveTab } from './Sidebar';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }) => {
   const { user, logout } = useAuth();
+  const { shopId } = useNavigation();
 
   const tabTitles: Record<ActiveTab, { title: string; category: string }> = {
     dashboard: { title: 'Operational Dashboard', category: 'Overview' },
@@ -25,10 +27,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }
     settings: { title: 'System Settings', category: 'Configuration' },
   };
 
-  const currentTabInfo = tabTitles[activeTab] || {
-    title: 'Operations Portal',
-    category: 'Dashboard',
-  };
+  const currentTabInfo = shopId
+    ? { title: 'Shop Details', category: 'Distribution Network' }
+    : tabTitles[activeTab] || {
+        title: 'Operations Portal',
+        category: 'Dashboard',
+      };
 
   return (
     <header className="app-header">

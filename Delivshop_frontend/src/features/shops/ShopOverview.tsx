@@ -18,11 +18,12 @@ import { Shop, PaginatedResult } from '../../types';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { useNavigation } from '../../context/NavigationContext';
 import { AddShopModal } from './AddShopModal';
-import { ShopDetailModal } from './ShopDetailModal';
 import { EditShopModal } from './EditShopModal';
 
 export const ShopOverview: React.FC = () => {
+  const { navigate } = useNavigation();
   const [data, setData] = useState<PaginatedResult<Shop>>({
     items: [],
     total: 0,
@@ -44,8 +45,6 @@ export const ShopOverview: React.FC = () => {
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [shopToEdit, setShopToEdit] = useState<Shop | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -313,10 +312,7 @@ export const ShopOverview: React.FC = () => {
                         {/* Details Button */}
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedShopId(shop.id);
-                            setIsDetailModalOpen(true);
-                          }}
+                          onClick={() => navigate(`/shops/${shop.id}`)}
                           className="btn btn-secondary btn-table-action"
                           title="View Complete Profile & Invoices"
                           aria-label={`View details for ${shop.name}`}
@@ -395,15 +391,6 @@ export const ShopOverview: React.FC = () => {
         onShopCreated={fetchShops}
       />
 
-      <ShopDetailModal
-        shopId={selectedShopId}
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedShopId(null);
-        }}
-        onStatusChanged={fetchShops}
-      />
 
       <EditShopModal
         shop={shopToEdit}

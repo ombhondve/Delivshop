@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
+import { NavigationProvider, useNavigation } from '../context/NavigationContext';
 import { Layout } from '../components/layout/Layout';
-import { ActiveTab } from '../components/layout/Sidebar';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ShopOverview } from '../features/shops/ShopOverview';
+import { ShopDetailPage } from '../features/shops/ShopDetailPage';
 import { ProductCatalog } from '../features/products/ProductCatalog';
 import { OrdersList } from '../features/orders/OrdersList';
 import { DeliveriesTracking } from '../features/deliveries/DeliveriesTracking';
@@ -14,10 +15,15 @@ import { SettingsPage } from '../features/settings/SettingsPage';
 import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 
 const MainContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const { activeTab, selectTab, shopId } = useNavigation();
   const { user, loading } = useAuth();
 
   const renderTabContent = () => {
+    // Dedicated Shop Details page when route is /shops/:shopId
+    if (activeTab === 'shops' && shopId) {
+      return <ShopDetailPage shopId={shopId} />;
+    }
+
     switch (activeTab) {
       case 'dashboard':
         return <DashboardPage />;
@@ -64,7 +70,7 @@ const MainContent: React.FC = () => {
   // Authenticated application: smooth entrance transition into dashboard
   return (
     <div className="dashboard-entrance-wrapper">
-      <Layout activeTab={activeTab} onSelectTab={setActiveTab}>
+      <Layout activeTab={activeTab} onSelectTab={selectTab}>
         {renderTabContent()}
       </Layout>
     </div>
@@ -74,7 +80,9 @@ const MainContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <MainContent />
+      <NavigationProvider>
+        <MainContent />
+      </NavigationProvider>
     </AuthProvider>
   );
 };
