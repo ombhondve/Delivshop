@@ -20,24 +20,21 @@ export const createApp = (): Application => {
 
   // 2. Comprehensive & Safe CORS Configuration
   const isAllowedOrigin = (origin: string): boolean => {
-    // Development or test mode permits all origins
-    if (ENV.NODE_ENV === 'development' || ENV.NODE_ENV === 'test') {
+    const normalizedOrigin = origin.trim().replace(/\/+$/, '');
+
+    // 1. Exact match in configured ALLOWED_ORIGIN_LIST or wildcard
+    if (ALLOWED_ORIGIN_LIST.includes('*') || ALLOWED_ORIGIN_LIST.includes(normalizedOrigin)) {
       return true;
     }
 
-    // Wildcard configuration
-    if (ALLOWED_ORIGIN_LIST.includes('*')) {
+    // 2. Explicitly allow production frontend origin
+    if (normalizedOrigin === 'https://delivshop.vercel.app') {
       return true;
     }
 
-    // Exact match in configured ALLOWED_ORIGIN_LIST
-    if (ALLOWED_ORIGIN_LIST.includes(origin)) {
-      return true;
-    }
-
-    // Domain & subdomain pattern matching
+    // 3. Domain & subdomain pattern matching
     try {
-      const parsedUrl = new URL(origin);
+      const parsedUrl = new URL(normalizedOrigin);
       const hostname = parsedUrl.hostname;
 
       // Allow local development origins (web / mobile emulator)
@@ -46,7 +43,7 @@ export const createApp = (): Application => {
       }
 
       // Allow Vercel preview and production deployments for Delivshop
-      if (hostname.endsWith('.vercel.app')) {
+      if (hostname === 'delivshop.vercel.app' || hostname.endsWith('.vercel.app')) {
         return true;
       }
 

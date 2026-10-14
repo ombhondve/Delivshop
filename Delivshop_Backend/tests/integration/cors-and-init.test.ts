@@ -78,6 +78,49 @@ describe('Vercel Initialization & CORS Preflight Tests', () => {
     expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:5173');
   });
 
+  it('should block disallowed origins without returning Access-Control-Allow-Origin header and without throwing 500', async () => {
+    const res = await fetch(`${baseUrl}/shops`, {
+      method: 'OPTIONS',
+      headers: {
+        'Origin': 'https://malicious-unauthorized-site.com',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Content-Type, Authorization',
+      },
+    });
+
+    // Origin is not allowed: header must NOT be present, and server must not crash with 500
+    expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    expect(res.status).not.toBe(500);
+  });
+
+  it('should enforce authentication on GET /shops endpoint (existing security maintained)', async () => {
+    const res = await fetch(`${baseUrl}/shops`, {
+      method: 'GET',
+      headers: {
+        'Origin': 'https://delivshop.vercel.app',
+      },
+    });
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+  });
+
+  it('should enforce authentication on POST /shops endpoint (existing security maintained)', async () => {
+    const res = await fetch(`${baseUrl}/shops`, {
+      method: 'POST',
+      headers: {
+        'Origin': 'https://delivshop.vercel.app',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Unauthorized Shop' }),
+    });
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+  });
+
   it('should respond with HTTP 200 on root endpoint for deployment health probes', async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(200);
