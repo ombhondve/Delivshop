@@ -4,15 +4,21 @@ import { sendError } from '../utils/response.js';
 import { AuthUser, UserRole } from '../types/user.types.js';
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
+  let token: string | undefined;
+
+  // 1. Check Bearer Authorization header
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    sendError(res, 'Authentication required: missing or invalid authorization header', 401);
-    return;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim();
   }
 
-  const token = authHeader.substring(7).trim();
+  // 2. Check HttpOnly session cookie
+  if (!token && (req as any).cookies?.delivshop_session_token) {
+    token = (req as any).cookies.delivshop_session_token;
+  }
+
   if (!token) {
-    sendError(res, 'Authentication required: empty token provided', 401);
+    sendError(res, 'Authentication required: missing or invalid authorization credentials', 401);
     return;
   }
 

@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { ALLOWED_ORIGIN_LIST, ENV } from './config/env.js';
 import { generalRateLimiter } from './middleware/rateLimiter.middleware.js';
 import { errorHandler } from './middleware/errorHandler.middleware.js';
@@ -8,6 +9,9 @@ import apiRouter from './routes/index.js';
 
 export const createApp = (): Application => {
   const app = express();
+
+  // Trust first proxy hop (e.g. Vercel edge/gateway) for accurate client IP in rate limiting
+  app.set('trust proxy', 1);
 
   // 1. Security Headers (interop safe across CJS/ESM and TypeScript 5.8/5.9+ NodeNext)
   const helmetMiddleware: any = (helmet as any)?.default || helmet;
@@ -86,9 +90,10 @@ export const createApp = (): Application => {
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
 
-  // 3. Body Parsing with Strict Size Limit (DoS protection)
+  // 3. Body & Cookie Parsing with Strict Size Limit (DoS protection)
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+  app.use(cookieParser());
 
   // Root health endpoint for deployment probes
   app.get('/', (_req: Request, res: Response) => {

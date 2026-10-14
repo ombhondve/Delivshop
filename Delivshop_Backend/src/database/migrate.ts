@@ -50,15 +50,17 @@ export async function runMigrations(): Promise<void> {
   }
 }
 
-// Auto-run if executed directly via CLI: node dist/database/migrate.js or tsx
-if (process.argv[1] && process.argv[1].endsWith('migrate.ts')) {
+// Auto-run if executed directly via CLI: tsx src/database/migrate.ts or node dist/database/migrate.js
+if (process.argv[1] && (process.argv[1].endsWith('migrate.ts') || process.argv[1].endsWith('migrate.js'))) {
   runMigrations()
-    .then(() => {
-      console.log('Migrations completed successfully.');
+    .then(async () => {
+      console.log('✅ Migrations completed successfully.');
+      await dbPool.end();
       process.exit(0);
     })
-    .catch((err) => {
-      console.error('Migration failed:', err);
+    .catch(async (err) => {
+      console.error('❌ Migration failed:', err);
+      await dbPool.end();
       process.exit(1);
     });
 }

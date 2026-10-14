@@ -4,8 +4,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const TOKEN_KEY = 'delivshop_web_token';
 
+let inMemoryToken: string | null = null;
+
 export const tokenStore = {
   get: (): string | null => {
+    if (inMemoryToken) return inMemoryToken;
     try {
       return sessionStorage.getItem(TOKEN_KEY);
     } catch {
@@ -13,6 +16,7 @@ export const tokenStore = {
     }
   },
   set: (token: string): void => {
+    inMemoryToken = token;
     try {
       sessionStorage.setItem(TOKEN_KEY, token);
     } catch {
@@ -20,6 +24,7 @@ export const tokenStore = {
     }
   },
   clear: (): void => {
+    inMemoryToken = null;
     try {
       sessionStorage.removeItem(TOKEN_KEY);
     } catch {
@@ -64,7 +69,11 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
 
   let response: Response;
   try {
-    response = await fetch(url, { headers, ...restOptions });
+    response = await fetch(url, {
+      credentials: 'include',
+      headers,
+      ...restOptions,
+    });
   } catch {
     throw new ApiError('Unable to connect to Delivshop backend API. Please ensure the server is online.', 0);
   }

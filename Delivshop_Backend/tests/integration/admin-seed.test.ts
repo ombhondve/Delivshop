@@ -135,9 +135,46 @@ describe('Default Admin Account Seeding & Authentication', () => {
       expect(json.data.user.email).toBe('admin@gmail.com');
       expect(json.data.user.role).toBe('ADMIN');
       expect(json.data.tokens.accessToken).toBeDefined();
+
+      // Verify Set-Cookie header is issued
+      const cookieHeader = response.headers.get('set-cookie');
+      expect(cookieHeader).toBeDefined();
+      expect(cookieHeader).toContain('delivshop_session_token');
+
+      // Verify session verification using only the cookie on GET /api/auth/me
+      const cookieValue = cookieHeader!.split(';')[0];
+      const meResponse = await fetch(`${baseUrl}/api/auth/me`, {
+        headers: { Cookie: cookieValue },
+      });
+      expect(meResponse.status).toBe(200);
+      const meJson = await meResponse.json();
+      expect(meJson.data.email).toBe('admin@gmail.com');
+      expect(meJson.data.role).toBe('ADMIN');
+
+      // Verify logout clears the session cookie
+      const logoutResponse = await fetch(`${baseUrl}/api/auth/logout`, {
+        method: 'POST',
+        headers: { Cookie: cookieValue },
+      });
+      expect(logoutResponse.status).toBe(200);
+      const logoutCookie = logoutResponse.headers.get('set-cookie');
+      expect(logoutCookie).toContain('delivshop_session_token=;');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+
+  it('should reject login if admin account is deactivated', async () => {
+    await seedDatabase();
+    const admin = fakeDatabase.get('admin@gmail.com');
+    admin.is_active = false;
+
+    await expect(
+      authService.login({
+        email: 'admin@gmail.com',
+        password: 'admin123',
+      })
+    ).rejects.toThrow(/deactivated/i);
   });
 
   it('should block seeding predictable credentials in production without explicit override', async () => {

@@ -15,6 +15,10 @@ if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
     const dbHealth = await checkDatabaseHealth();
     if (dbHealth.healthy) {
       logger.info(`✅ PostgreSQL Database connected successfully (${dbHealth.latencyMs}ms)`);
+      if (!dbHealth.schemaInitialized) {
+        logger.warn(`⚠️ PostgreSQL connected, but table "users" was not found.`);
+        logger.warn(`   Run database migrations to initialize schema: "npm run migrate"`);
+      }
     } else {
       logger.warn(`⚠️ PostgreSQL connection not yet established: ${dbHealth.error}`);
       logger.warn(`   Ensure DATABASE_URL is configured and database server is running.`);
@@ -37,5 +41,4 @@ if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
 }
 
 export default app;
-export { app };
 

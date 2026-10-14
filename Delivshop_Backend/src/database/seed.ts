@@ -83,13 +83,16 @@ export async function seedDatabase(): Promise<SeedResult> {
 
 // Auto-run if executed directly via CLI: npx tsx src/database/seed.ts
 if (process.argv[1] && (process.argv[1].endsWith('seed.ts') || process.argv[1].endsWith('seed.js'))) {
+  const { dbPool } = await import('../config/database.js');
   seedDatabase()
-    .then((result) => {
+    .then(async (result) => {
       console.log(`✅ [Database Seed] ${result.message} (Email: ${result.email}, Role: ${result.role})`);
+      await dbPool.end();
       process.exit(0);
     })
-    .catch((err) => {
+    .catch(async (err) => {
       console.error(`❌ [Database Seed] Error:`, err.message);
+      await dbPool.end();
       process.exit(1);
     });
 }

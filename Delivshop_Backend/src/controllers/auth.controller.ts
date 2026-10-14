@@ -19,6 +19,17 @@ export const authController = {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.login(req.body, req.ip);
+
+      // Set secure session cookie
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('delivshop_session_token', result.tokens.accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      });
+
       sendSuccess(res, result, 'Authentication successful', 200);
     } catch (err: any) {
       if (err.message.includes('Invalid email') || err.message.includes('deactivated')) {
@@ -43,7 +54,13 @@ export const authController = {
   },
 
   async logout(_req: Request, res: Response): Promise<void> {
-    // Statistically stateless JWT token invalidated on client; server returns confirmation
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.clearCookie('delivshop_session_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/',
+    });
     sendSuccess(res, { loggedOut: true }, 'Signed out successfully');
   },
 };

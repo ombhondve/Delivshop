@@ -41,12 +41,31 @@ export async function query<T extends pg.QueryResultRow = any>(sql: string, para
 /**
  * Check database connection status for health checks.
  */
-export async function checkDatabaseHealth(): Promise<{ healthy: boolean; latencyMs?: number; error?: string }> {
+/**
+ * Check database connection status and verify expected schema tables.
+ */
+export async function checkDatabaseHealth(): Promise<{
+  healthy: boolean;
+  schemaInitialized: boolean;
+  latencyMs?: number;
+  error?: string;
+}> {
   const start = Date.now();
   try {
-    await dbPool.query('SELECT 1');
-    return { healthy: true, latencyMs: Date.now() - start };
+    const res = await dbPool.query(
+      "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') as has_users"
+    );
+    const hasUsersTable = res.rows[0]?.has_users === true || res.rows[0]?.has_users === 't';
+    return {
+      healthy: true,
+      schemaInitialized: hasUsersTable,
+      latencyMs: Date.now() - start,
+    };
   } catch (err: any) {
-    return { healthy: false, error: 'Database connection unreachable' };
+    return {
+      healthy: false,
+      schemaInitialized: false,
+      error: 'Database connection unreachable',
+    };
   }
 }

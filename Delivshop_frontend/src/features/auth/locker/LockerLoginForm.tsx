@@ -42,8 +42,15 @@ export const LockerLoginForm: React.FC<LockerLoginFormProps> = ({
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail) {
       setClientError('Please enter your authorization email.');
+      emailInputRef.current?.focus();
+      return;
+    }
+    if (!emailRegex.test(trimmedEmail)) {
+      setClientError('Please enter a valid authorization email address.');
       emailInputRef.current?.focus();
       return;
     }
@@ -56,7 +63,7 @@ export const LockerLoginForm: React.FC<LockerLoginFormProps> = ({
     setClientError(null);
     if (onClearError) onClearError();
 
-    await onSubmit({ email: email.trim(), password });
+    await onSubmit({ email: trimmedEmail, password });
   };
 
   const isFormVisible = lockerState === 'login-close-up' || lockerState === 'camera-return';
@@ -113,7 +120,7 @@ export const LockerLoginForm: React.FC<LockerLoginFormProps> = ({
                   if (onClearError) onClearError();
                 }}
                 disabled={isSubmitting}
-                placeholder="operator@delivshop.com"
+                placeholder="admin@gmail.com"
                 autoComplete="email"
                 required
                 className="locker-input"

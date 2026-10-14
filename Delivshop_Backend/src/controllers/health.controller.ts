@@ -16,6 +16,7 @@ export const healthController = {
       components: {
         api: 'UP',
         database: dbHealth.healthy ? 'UP' : 'DOWN',
+        schemaInitialized: dbHealth.schemaInitialized,
         latencyMs: dbHealth.latencyMs,
       },
     });

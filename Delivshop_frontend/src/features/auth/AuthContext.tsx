@@ -25,11 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     async function loadUser() {
-      const token = tokenStore.get();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
       try {
         const profile = await api.auth.getMe();
         setUser(profile);

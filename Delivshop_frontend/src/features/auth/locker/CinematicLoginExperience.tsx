@@ -67,7 +67,12 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
       const res = await api.auth.login(credentials);
       authedUserRef.current = res.user;
     } catch (err: any) {
-      loginError = err?.message || 'Access Denied: Invalid credentials or authorization token.';
+      const rawMsg = err?.message || '';
+      if (rawMsg.includes('relation') || rawMsg.includes('SQL') || rawMsg.includes('database') || rawMsg.includes('connect') || rawMsg.includes('syntax')) {
+        loginError = 'Security service temporarily unavailable. Please try again shortly.';
+      } else {
+        loginError = rawMsg || 'Invalid email or password.';
+      }
     }
 
     // Ensure camera pullback finishes smoothly before next state
