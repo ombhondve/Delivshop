@@ -104,9 +104,11 @@ export const createApp = (): Application => {
 
   // 4. Rate Limiting
   app.use('/api', generalRateLimiter);
+  app.use(generalRateLimiter);
 
-  // 5. Mount API Routes
+  // 5. Mount API Routes (mount at /api and root to seamlessly handle both /api/shops and /shops)
   app.use('/api', apiRouter);
+  app.use('/', apiRouter);
 
   // 6. 404 Route Handler
   app.use((req: Request, res: Response) => {

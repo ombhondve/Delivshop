@@ -30,11 +30,28 @@ describe('Vercel Initialization & CORS Preflight Tests', () => {
     expect(typeof (serverApp as any).use).toBe('function');
   });
 
+  it('should handle OPTIONS preflight requests to /shops directly from https://delivshop.vercel.app with HTTP 204 and CORS headers', async () => {
+    const res = await fetch(`${baseUrl}/shops`, {
+      method: 'OPTIONS',
+      headers: {
+        'Origin': 'https://delivshop.vercel.app',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Content-Type, Authorization',
+      },
+    });
+
+    // Must return HTTP 204 without 500 error and without touching database
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://delivshop.vercel.app');
+    expect(res.headers.get('access-control-allow-methods')).toContain('POST');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+  });
+
   it('should handle OPTIONS preflight requests from Vercel deployed frontend with HTTP 204 and correct CORS headers', async () => {
     const res = await fetch(`${baseUrl}/api/shops`, {
       method: 'OPTIONS',
       headers: {
-        'Origin': 'https://delivshop-frontend-ombhondve.vercel.app',
+        'Origin': 'https://delivshop.vercel.app',
         'Access-Control-Request-Method': 'POST',
         'Access-Control-Request-Headers': 'Content-Type, Authorization',
       },
@@ -42,7 +59,7 @@ describe('Vercel Initialization & CORS Preflight Tests', () => {
 
     // CRITICAL: Must not return HTTP 500 error on preflight
     expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('https://delivshop-frontend-ombhondve.vercel.app');
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://delivshop.vercel.app');
     expect(res.headers.get('access-control-allow-methods')).toContain('POST');
     expect(res.headers.get('access-control-allow-credentials')).toBe('true');
   });
@@ -70,3 +87,4 @@ describe('Vercel Initialization & CORS Preflight Tests', () => {
     expect(body.service).toContain('Delivshop');
   });
 });
+
