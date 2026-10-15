@@ -219,3 +219,113 @@ export interface PaginatedResult<T> {
   limit: number;
   totalPages: number;
 }
+
+export type CompanyType =
+  | 'DAIRY_PRODUCER'
+  | 'DISTRIBUTOR'
+  | 'PROCESSOR'
+  | 'LOGISTICS_PARTNER'
+  | 'OTHER'
+  | 'Dairy Processor'
+  | 'Milk Producer Cooperative'
+  | 'Wholesale Dairy Supplier'
+  | 'Packaging & Feed Supplier'
+  | 'Logistics Partner'
+  | 'Other'
+  | (string & {});
+
+export type CompanyStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface Company {
+  id: string;
+  companyCode: string;
+  name: string;
+  companyType: CompanyType;
+  description?: string | null;
+  logoUrl?: string | null;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  altPhone?: string | null;
+  alternatePhone?: string | null;
+  gstin?: string | null;
+  pan?: string | null;
+  registrationNumber?: string | null;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  status: CompanyStatus;
+  notes?: string | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  productsCount?: number;
+}
+
+export interface CompanySummaryStats {
+  totalCompanies: number;
+  activeCompanies: number;
+  inactiveCompanies: number;
+  recentCompanies: number;
+}
+
+export interface CreateCompanyPayload {
+  name: string;
+  companyCode?: string;
+  companyType?: CompanyType;
+  description?: string;
+  logoUrl?: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  altPhone?: string;
+  alternatePhone?: string;
+  gstin?: string;
+  pan?: string;
+  registrationNumber?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode: string;
+  country?: string;
+  notes?: string;
+  status?: CompanyStatus;
+}
+
+export interface UpdateCompanyPayload {
+  name?: string;
+  companyType?: CompanyType;
+  description?: string | null;
+  logoUrl?: string | null;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  altPhone?: string | null;
+  alternatePhone?: string | null;
+  gstin?: string | null;
+  pan?: string | null;
+  registrationNumber?: string | null;
+  addressLine1?: string;
+  addressLine2?: string | null;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  notes?: string | null;
+  status?: CompanyStatus;
+}
+
+export interface CompanyFilterQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  companyType?: string;
+  city?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}

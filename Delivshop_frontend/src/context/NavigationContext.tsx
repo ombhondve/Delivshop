@@ -5,12 +5,14 @@ export interface RouteState {
   path: string;
   activeTab: ActiveTab;
   shopId: string | null;
+  companyId: string | null;
 }
 
 interface NavigationContextValue {
   path: string;
   activeTab: ActiveTab;
   shopId: string | null;
+  companyId: string | null;
   navigate: (to: string) => void;
   selectTab: (tab: ActiveTab) => void;
   goBack: () => void;
@@ -18,9 +20,19 @@ interface NavigationContextValue {
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
-function parsePath(pathname: string): { activeTab: ActiveTab; shopId: string | null } {
+function parsePath(pathname: string): { activeTab: ActiveTab; shopId: string | null; companyId: string | null } {
   // Normalize path
   const cleanPath = pathname.replace(/\/+$/, '') || '/';
+
+  // Check /companies/:companyId
+  const companyMatch = cleanPath.match(/^\/companies\/([^\/]+)$/);
+  if (companyMatch) {
+    return {
+      activeTab: 'companies',
+      shopId: null,
+      companyId: decodeURIComponent(companyMatch[1]),
+    };
+  }
 
   // Check /shops/:shopId
   const shopMatch = cleanPath.match(/^\/shops\/([^\/]+)$/);
@@ -28,22 +40,24 @@ function parsePath(pathname: string): { activeTab: ActiveTab; shopId: string | n
     return {
       activeTab: 'shops',
       shopId: decodeURIComponent(shopMatch[1]),
+      companyId: null,
     };
   }
 
   // Check standard tab routes
-  if (cleanPath === '/shops') return { activeTab: 'shops', shopId: null };
-  if (cleanPath === '/products') return { activeTab: 'products', shopId: null };
-  if (cleanPath === '/orders') return { activeTab: 'orders', shopId: null };
-  if (cleanPath === '/deliveries') return { activeTab: 'deliveries', shopId: null };
-  if (cleanPath === '/drivers') return { activeTab: 'drivers', shopId: null };
-  if (cleanPath === '/collections') return { activeTab: 'collections', shopId: null };
-  if (cleanPath === '/reports') return { activeTab: 'reports', shopId: null };
-  if (cleanPath === '/settings') return { activeTab: 'settings', shopId: null };
-  if (cleanPath === '/' || cleanPath === '/dashboard') return { activeTab: 'dashboard', shopId: null };
+  if (cleanPath === '/companies') return { activeTab: 'companies', shopId: null, companyId: null };
+  if (cleanPath === '/shops') return { activeTab: 'shops', shopId: null, companyId: null };
+  if (cleanPath === '/products') return { activeTab: 'products', shopId: null, companyId: null };
+  if (cleanPath === '/orders') return { activeTab: 'orders', shopId: null, companyId: null };
+  if (cleanPath === '/deliveries') return { activeTab: 'deliveries', shopId: null, companyId: null };
+  if (cleanPath === '/drivers') return { activeTab: 'drivers', shopId: null, companyId: null };
+  if (cleanPath === '/collections') return { activeTab: 'collections', shopId: null, companyId: null };
+  if (cleanPath === '/reports') return { activeTab: 'reports', shopId: null, companyId: null };
+  if (cleanPath === '/settings') return { activeTab: 'settings', shopId: null, companyId: null };
+  if (cleanPath === '/' || cleanPath === '/dashboard') return { activeTab: 'dashboard', shopId: null, companyId: null };
 
   // Default fallback
-  return { activeTab: 'dashboard', shopId: null };
+  return { activeTab: 'dashboard', shopId: null, companyId: null };
 }
 
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -58,7 +72,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const { activeTab, shopId } = useMemo(() => parsePath(currentPath), [currentPath]);
+  const { activeTab, shopId, companyId } = useMemo(() => parsePath(currentPath), [currentPath]);
 
   const navigate = (to: string) => {
     if (to !== window.location.pathname) {
@@ -77,7 +91,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (window.history.length > 1) {
       window.history.back();
     } else {
-      navigate('/shops');
+      navigate('/companies');
     }
   };
 
@@ -85,6 +99,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     path: currentPath,
     activeTab,
     shopId,
+    companyId,
     navigate,
     selectTab,
     goBack,

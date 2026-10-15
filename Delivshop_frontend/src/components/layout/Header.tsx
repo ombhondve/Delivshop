@@ -17,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }
 
   const tabTitles: Record<ActiveTab, { title: string; category: string }> = {
     dashboard: { title: 'Operational Dashboard', category: 'Overview' },
+    companies: { title: 'Company Management', category: 'Core Operations' },
     shops: { title: 'Shop Management', category: 'Distribution Network' },
     products: { title: 'Products & Inventory', category: 'Catalog Management' },
     orders: { title: 'Orders Dispatch', category: 'Order Fulfillment' },

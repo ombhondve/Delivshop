@@ -12,6 +12,12 @@ import {
   DriverUser,
   PaginatedResult,
   AuthTokens,
+  Company,
+  CompanySummaryStats,
+  CreateCompanyPayload,
+  UpdateCompanyPayload,
+  CompanyFilterQuery,
+  CompanyStatus,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -26,6 +32,51 @@ export interface ShopFilterQuery {
 }
 
 export const api = {
+  companies: {
+    async list(params: CompanyFilterQuery = {}): Promise<PaginatedResult<Company>> {
+      const query = new URLSearchParams();
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+      if (params.search) query.set('search', params.search);
+      if (params.companyType) query.set('companyType', params.companyType);
+      if (params.status) query.set('status', params.status);
+      if (params.city) query.set('city', params.city);
+      if (params.sortBy) query.set('sortBy', params.sortBy);
+      if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+
+      const qs = query.toString();
+      return apiClient<PaginatedResult<Company>>(`companies${qs ? `?${qs}` : ''}`);
+    },
+
+    async getStats(): Promise<CompanySummaryStats> {
+      return apiClient<CompanySummaryStats>('companies/stats');
+    },
+
+    async get(id: string): Promise<Company> {
+      return apiClient<Company>(`companies/${id}`);
+    },
+
+    async create(payload: CreateCompanyPayload): Promise<Company> {
+      return apiClient<Company>('companies', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async update(id: string, payload: UpdateCompanyPayload): Promise<Company> {
+      return apiClient<Company>(`companies/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async updateStatus(id: string, status: CompanyStatus, reason?: string): Promise<Company> {
+      return apiClient<Company>(`companies/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, reason }),
+      });
+    },
+  },
   auth: {
     async login(credentials: { email: string; password: string }): Promise<{ user: User; tokens: AuthTokens }> {
       const data = await apiClient<{ user: User; tokens: AuthTokens }>('auth/login', {

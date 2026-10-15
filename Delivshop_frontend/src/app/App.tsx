@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { NavigationProvider, useNavigation } from '../context/NavigationContext';
 import { Layout } from '../components/layout/Layout';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { CompanyOverview } from '../features/companies/CompanyOverview';
 import { ShopOverview } from '../features/shops/ShopOverview';
 import { ShopDetailPage } from '../features/shops/ShopDetailPage';
 import { ProductCatalog } from '../features/products/ProductCatalog';
@@ -27,6 +28,8 @@ const MainContent: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardPage />;
+      case 'companies':
+        return <CompanyOverview />;
       case 'shops':
         return <ShopOverview />;
       case 'products':

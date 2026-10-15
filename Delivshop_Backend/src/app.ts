@@ -135,6 +135,8 @@ export const createApp = (): Application => {
 
     app.use('/auth', configErrorHandler);
     app.use('/api/auth', configErrorHandler);
+    app.use('/companies', configErrorHandler);
+    app.use('/api/companies', configErrorHandler);
     app.use('/shops', configErrorHandler);
     app.use('/api/shops', configErrorHandler);
     app.use('/orders', configErrorHandler);

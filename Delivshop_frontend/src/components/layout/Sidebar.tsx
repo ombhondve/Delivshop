@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Building2,
   Store,
   Package,
   ClipboardList,
@@ -19,6 +20,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 export type ActiveTab =
   | 'dashboard'
+  | 'companies'
   | 'shops'
   | 'products'
   | 'orders'
@@ -49,6 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={19} /> },
+    { id: 'companies', label: 'Company Management', icon: <Building2 size={19} /> },
     { id: 'shops', label: 'Shops Management', icon: <Store size={19} /> },
     { id: 'products', label: 'Products & Inventory', icon: <Package size={19} /> },
     { id: 'orders', label: 'Orders Dispatch', icon: <ClipboardList size={19} /> },
