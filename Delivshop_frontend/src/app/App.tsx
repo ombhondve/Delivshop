@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { NavigationProvider, useNavigation } from '../context/NavigationContext';
 import { Layout } from '../components/layout/Layout';
@@ -13,14 +13,57 @@ import { ReportsSummary } from '../features/reports/ReportsSummary';
 import { DriversRoster } from '../features/drivers/DriversRoster';
 import { CollectionsLedger } from '../features/collections/CollectionsLedger';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 
 const MainContent: React.FC = () => {
-  const { activeTab, selectTab, shopId } = useNavigation();
+  const { path, activeTab, selectTab, shopId, isNotFound, isLogin, navigate } = useNavigation();
   const { user, loading } = useAuth();
 
+  // If unauthenticated and on a protected route, safely redirect to /login?redirect=...
+  useEffect(() => {
+    if (!loading && !user && !isLogin) {
+      const destination = path + window.location.search;
+      const safeDestination =
+        destination.startsWith('/') && !destination.startsWith('//') && !destination.includes('://')
+          ? destination
+          : '/admin/dashboard';
+      navigate(`/login?redirect=${encodeURIComponent(safeDestination)}`);
+    }
+  }, [loading, user, isLogin, path, navigate]);
+
+  // If already authenticated and visiting /login directly, redirect to /admin/dashboard
+  useEffect(() => {
+    if (!loading && user && isLogin) {
+      navigate('/admin/dashboard');
+    }
+  }, [loading, user, isLogin, navigate]);
+
+  // While checking existing session token with backend:
+  if (loading) {
+    return (
+      <div className="login-screen-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#64748B' }}>
+          <div className="status-dot-idle" style={{ margin: '0 auto 16px auto', width: '12px', height: '12px' }} />
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#20342C' }}>
+            Connecting to Delivshop Facility...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Authentication gate: unauthenticated users enter via Palette 9 login screen
+  if (!user) {
+    return <CinematicLoginExperience />;
+  }
+
   const renderTabContent = () => {
-    // Dedicated Shop Details page when route is /shops/:shopId
+    if (isNotFound) {
+      return <NotFoundPage />;
+    }
+
+    // Dedicated Shop Details page when route is /shops/:shopId or /admin/shops/:shopId
     if (activeTab === 'shops' && shopId) {
       return <ShopDetailPage shopId={shopId} />;
     }
@@ -47,28 +90,9 @@ const MainContent: React.FC = () => {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <DashboardPage />;
+        return <NotFoundPage />;
     }
   };
-
-  // While checking existing session token with backend:
-  if (loading) {
-    return (
-      <div className="login-screen-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#64748B' }}>
-          <div className="status-dot-idle" style={{ margin: '0 auto 16px auto', width: '12px', height: '12px' }} />
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#20342C' }}>
-            Connecting to Delivshop Facility...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Authentication gate: unauthenticated users enter via Palette 9 login screen
-  if (!user) {
-    return <CinematicLoginExperience />;
-  }
 
   // Authenticated application: smooth entrance transition into dashboard
   return (

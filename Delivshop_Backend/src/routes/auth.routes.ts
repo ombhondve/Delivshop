@@ -12,6 +12,7 @@ const router = Router();
 // General User Auth
 router.post('/register', authRateLimiter, validateRequest(registerSchema), authController.register);
 router.post('/login', authRateLimiter, validateRequest(loginSchema), authController.login);
+router.post('/refresh', authRateLimiter, authController.refresh);
 router.get('/me', authenticate, authController.getProfile);
 router.post('/logout', authenticate, authController.logout);
 

@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }) => {
   const { user, logout } = useAuth();
-  const { shopId } = useNavigation();
+  const { shopId, isNotFound } = useNavigation();
 
   const tabTitles: Record<ActiveTab, { title: string; category: string }> = {
     dashboard: { title: 'Operational Dashboard', category: 'Overview' },
@@ -28,7 +28,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }
     settings: { title: 'System Settings', category: 'Configuration' },
   };
 
-  const currentTabInfo = shopId
+  const currentTabInfo = isNotFound
+    ? { title: 'Page Not Found', category: '404 Error' }
+    : shopId
     ? { title: 'Shop Details', category: 'Distribution Network' }
     : tabTitles[activeTab] || {
         title: 'Operations Portal',

@@ -3,16 +3,22 @@ import { ActiveTab } from '../components/layout/Sidebar';
 
 export interface RouteState {
   path: string;
+  search: string;
   activeTab: ActiveTab;
   shopId: string | null;
   companyId: string | null;
+  isNotFound: boolean;
+  isLogin: boolean;
 }
 
 interface NavigationContextValue {
   path: string;
+  search: string;
   activeTab: ActiveTab;
   shopId: string | null;
   companyId: string | null;
+  isNotFound: boolean;
+  isLogin: boolean;
   navigate: (to: string) => void;
   selectTab: (tab: ActiveTab) => void;
   goBack: () => void;
@@ -20,70 +26,129 @@ interface NavigationContextValue {
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
-function parsePath(pathname: string): { activeTab: ActiveTab; shopId: string | null; companyId: string | null } {
-  // Normalize path
+export function parsePath(pathname: string): {
+  activeTab: ActiveTab;
+  shopId: string | null;
+  companyId: string | null;
+  isNotFound: boolean;
+  isLogin: boolean;
+} {
+  // Normalize path by removing trailing slash, keeping leading slash
   const cleanPath = pathname.replace(/\/+$/, '') || '/';
 
-  // Check /companies/:companyId
-  const companyMatch = cleanPath.match(/^\/companies\/([^\/]+)$/);
+  // 1. Check Login route
+  if (cleanPath === '/login') {
+    return {
+      activeTab: 'dashboard',
+      shopId: null,
+      companyId: null,
+      isNotFound: false,
+      isLogin: true,
+    };
+  }
+
+  // 2. Check /companies/:companyId and /admin/companies/:companyId
+  const companyMatch = cleanPath.match(/^(?:\/admin)?\/companies\/([^\/]+)$/);
   if (companyMatch) {
     return {
       activeTab: 'companies',
       shopId: null,
       companyId: decodeURIComponent(companyMatch[1]),
+      isNotFound: false,
+      isLogin: false,
     };
   }
 
-  // Check /shops/:shopId
-  const shopMatch = cleanPath.match(/^\/shops\/([^\/]+)$/);
+  // 3. Check /shops/:shopId and /admin/shops/:shopId
+  const shopMatch = cleanPath.match(/^(?:\/admin)?\/shops\/([^\/]+)$/);
   if (shopMatch) {
     return {
       activeTab: 'shops',
       shopId: decodeURIComponent(shopMatch[1]),
       companyId: null,
+      isNotFound: false,
+      isLogin: false,
     };
   }
 
-  // Check standard tab routes
-  if (cleanPath === '/companies') return { activeTab: 'companies', shopId: null, companyId: null };
-  if (cleanPath === '/shops') return { activeTab: 'shops', shopId: null, companyId: null };
-  if (cleanPath === '/products') return { activeTab: 'products', shopId: null, companyId: null };
-  if (cleanPath === '/orders') return { activeTab: 'orders', shopId: null, companyId: null };
-  if (cleanPath === '/deliveries') return { activeTab: 'deliveries', shopId: null, companyId: null };
-  if (cleanPath === '/drivers') return { activeTab: 'drivers', shopId: null, companyId: null };
-  if (cleanPath === '/collections') return { activeTab: 'collections', shopId: null, companyId: null };
-  if (cleanPath === '/reports') return { activeTab: 'reports', shopId: null, companyId: null };
-  if (cleanPath === '/settings') return { activeTab: 'settings', shopId: null, companyId: null };
-  if (cleanPath === '/' || cleanPath === '/dashboard') return { activeTab: 'dashboard', shopId: null, companyId: null };
+  // 4. Check standard section routes (supports both /<section> and /admin/<section>)
+  const routeMap: Record<string, ActiveTab> = {
+    '/': 'dashboard',
+    '/dashboard': 'dashboard',
+    '/admin': 'dashboard',
+    '/admin/dashboard': 'dashboard',
+    '/companies': 'companies',
+    '/admin/companies': 'companies',
+    '/shops': 'shops',
+    '/admin/shops': 'shops',
+    '/products': 'products',
+    '/admin/products': 'products',
+    '/orders': 'orders',
+    '/admin/orders': 'orders',
+    '/deliveries': 'deliveries',
+    '/admin/deliveries': 'deliveries',
+    '/drivers': 'drivers',
+    '/admin/drivers': 'drivers',
+    '/collections': 'collections',
+    '/admin/collections': 'collections',
+    '/reports': 'reports',
+    '/admin/reports': 'reports',
+    '/settings': 'settings',
+    '/admin/settings': 'settings',
+  };
 
-  // Default fallback
-  return { activeTab: 'dashboard', shopId: null, companyId: null };
+  if (routeMap[cleanPath]) {
+    return {
+      activeTab: routeMap[cleanPath],
+      shopId: null,
+      companyId: null,
+      isNotFound: false,
+      isLogin: false,
+    };
+  }
+
+  // 5. Unknown route -> Not Found
+  return {
+    activeTab: 'dashboard',
+    shopId: null,
+    companyId: null,
+    isNotFound: true,
+    isLogin: false,
+  };
 }
 
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || '/');
+  const [currentSearch, setCurrentSearch] = useState<string>(() => window.location.search || '');
 
   useEffect(() => {
     const handlePopState = () => {
       setCurrentPath(window.location.pathname || '/');
+      setCurrentSearch(window.location.search || '');
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const { activeTab, shopId, companyId } = useMemo(() => parsePath(currentPath), [currentPath]);
+  const routeDetails = useMemo(() => parsePath(currentPath), [currentPath]);
 
   const navigate = (to: string) => {
-    if (to !== window.location.pathname) {
+    const targetUrl = new URL(to, window.location.origin);
+    const targetPath = targetUrl.pathname || '/';
+    const targetSearch = targetUrl.search || '';
+
+    if (targetPath !== window.location.pathname || targetSearch !== window.location.search) {
       window.history.pushState(null, '', to);
-      setCurrentPath(to);
+      setCurrentPath(targetPath);
+      setCurrentSearch(targetSearch);
       window.scrollTo(0, 0);
     }
   };
 
   const selectTab = (tab: ActiveTab) => {
-    const targetPath = tab === 'dashboard' ? '/' : `/${tab}`;
+    // Navigate using the standard /admin/:tab route convention
+    const targetPath = tab === 'dashboard' ? '/admin/dashboard' : `/admin/${tab}`;
     navigate(targetPath);
   };
 
@@ -91,15 +156,18 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (window.history.length > 1) {
       window.history.back();
     } else {
-      navigate('/companies');
+      navigate('/admin/dashboard');
     }
   };
 
-  const value = {
+  const value: NavigationContextValue = {
     path: currentPath,
-    activeTab,
-    shopId,
-    companyId,
+    search: currentSearch,
+    activeTab: routeDetails.activeTab,
+    shopId: routeDetails.shopId,
+    companyId: routeDetails.companyId,
+    isNotFound: routeDetails.isNotFound,
+    isLogin: routeDetails.isLogin,
     navigate,
     selectTab,
     goBack,

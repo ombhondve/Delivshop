@@ -175,7 +175,7 @@ export const api = {
         requiresAuth: false,
       });
       if (data.tokens?.accessToken) {
-        tokenStore.set(data.tokens.accessToken);
+        tokenStore.setTokens(data.tokens.accessToken, data.tokens.refreshToken);
       }
       return data;
     },
@@ -193,9 +193,16 @@ export const api = {
         requiresAuth: false,
       });
       if (data.tokens?.accessToken) {
-        tokenStore.set(data.tokens.accessToken);
+        tokenStore.setTokens(data.tokens.accessToken, data.tokens.refreshToken);
       }
       return data;
+    },
+
+    async refresh(): Promise<{ user: User; tokens: AuthTokens }> {
+      return apiClient<{ user: User; tokens: AuthTokens }>('auth/refresh', {
+        method: 'POST',
+        requiresAuth: false,
+      });
     },
 
     async getMe(): Promise<User> {

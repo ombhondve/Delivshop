@@ -1,6 +1,6 @@
 import { userRepository } from '../repositories/user.repository.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/tokens.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/tokens.js';
 import { auditService } from './audit.service.js';
 import { UserRole } from '../types/user.types.js';
 
@@ -123,6 +123,50 @@ export const authService = {
       role: user.role,
       phone: user.phone,
       createdAt: user.created_at,
+    };
+  },
+
+  async refreshToken(token: string) {
+    if (!token) {
+      throw new Error('Refresh token is required');
+    }
+    let payload;
+    try {
+      payload = verifyRefreshToken(token);
+    } catch {
+      throw new Error('Invalid or expired refresh token');
+    }
+
+    const user = await userRepository.findById(payload.userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    if (!user.is_active) {
+      throw new Error('Account has been deactivated');
+    }
+
+    const authUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const tokens = {
+      accessToken: generateAccessToken(authUser),
+      refreshToken: generateRefreshToken(authUser),
+      expiresIn: 900,
+    };
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        createdAt: user.created_at,
+      },
+      tokens,
     };
   },
 };

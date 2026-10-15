@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../../types';
 import { api } from '../../services/api/endpoints';
-import { tokenStore } from '../../services/api/client';
+import { tokenStore, onSessionExpired } from '../../services/api/client';
 
 interface AuthContextType {
   user: User | null;
@@ -38,10 +38,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, []);
 
+  // Listen to session expiration events from the API client (e.g. expired refresh token or rejected 401)
+  useEffect(() => {
+    const unsubscribe = onSessionExpired(() => {
+      setUser(null);
+      const currentPath = window.location.pathname;
+      const currentSearch = window.location.search;
+
+      if (!currentPath.startsWith('/login')) {
+        const destination = currentPath + currentSearch;
+        const safeDestination =
+          destination.startsWith('/') && !destination.startsWith('//') && !destination.includes('://')
+            ? destination
+            : '/admin/dashboard';
+
+        const loginUrl = `/login?redirect=${encodeURIComponent(safeDestination)}`;
+        window.history.pushState(null, '', loginUrl);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
   const login = async (credentials: { email: string; password: string }): Promise<User> => {
     setLoading(true);
     try {
       const res = await api.auth.login(credentials);
+      setUser(res.user);
       return res.user;
     } finally {
       setLoading(false);
@@ -57,8 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await api.auth.logout();
     } finally {
+      tokenStore.clear();
       setUser(null);
       setLoading(false);
+      window.history.pushState(null, '', '/login');
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
   };
 

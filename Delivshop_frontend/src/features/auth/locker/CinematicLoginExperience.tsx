@@ -61,10 +61,35 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
       // 2. Trigger brief emerald success confirmation
       setAuthStatus('success');
 
-      // 3. Smooth transition to dashboard after brief visual feedback (380ms)
+      // 3. Smooth transition to dashboard or requested destination after brief visual feedback (380ms)
       setTimeout(() => {
         setAuthenticatedUser(res.user);
         onAuthenticated?.();
+
+        // Safe destination restoration (e.g. user was on /admin/products when token expired)
+        const params = new URLSearchParams(window.location.search);
+        const redirectParam = params.get('redirect');
+        let destination = '/admin/dashboard';
+
+        if (redirectParam) {
+          try {
+            const decoded = decodeURIComponent(redirectParam);
+            // Open-redirect protection: must start with single slash, not '//', no protocol, no javascript:
+            if (
+              decoded.startsWith('/') &&
+              !decoded.startsWith('//') &&
+              !decoded.includes('://') &&
+              !decoded.toLowerCase().startsWith('javascript:')
+            ) {
+              destination = decoded;
+            }
+          } catch {
+            destination = '/admin/dashboard';
+          }
+        }
+
+        window.history.pushState(null, '', destination);
+        window.dispatchEvent(new PopStateEvent('popstate'));
       }, 380);
     } catch (err: any) {
       const rawMsg = err?.message || '';
