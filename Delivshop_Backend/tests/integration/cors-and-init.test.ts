@@ -121,6 +121,51 @@ describe('Vercel Initialization & CORS Preflight Tests', () => {
     expect(body.success).toBe(false);
   });
 
+  it('should handle OPTIONS preflight requests to /auth/me from https://delivshop.vercel.app with HTTP 204 and CORS headers', async () => {
+    const res = await fetch(`${baseUrl}/auth/me`, {
+      method: 'OPTIONS',
+      headers: {
+        'Origin': 'https://delivshop.vercel.app',
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'Content-Type, Authorization',
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://delivshop.vercel.app');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+  });
+
+  it('should return HTTP 401 with CORS headers on GET /auth/me when unauthenticated', async () => {
+    const res = await fetch(`${baseUrl}/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Origin': 'https://delivshop.vercel.app',
+      },
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://delivshop.vercel.app');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+    const body = await res.json();
+    expect(body.success).toBe(false);
+  });
+
+  it('should handle OPTIONS preflight requests to /auth/login from https://delivshop.vercel.app with HTTP 204 and CORS headers', async () => {
+    const res = await fetch(`${baseUrl}/auth/login`, {
+      method: 'OPTIONS',
+      headers: {
+        'Origin': 'https://delivshop.vercel.app',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Content-Type',
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://delivshop.vercel.app');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+  });
+
   it('should respond with HTTP 200 on root endpoint for deployment health probes', async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(200);

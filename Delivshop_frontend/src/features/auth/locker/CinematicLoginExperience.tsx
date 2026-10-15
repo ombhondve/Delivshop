@@ -68,15 +68,20 @@ export const CinematicLoginExperience: React.FC<CinematicLoginExperienceProps> =
       }, 380);
     } catch (err: any) {
       const rawMsg = err?.message || '';
-      if (
+      if (err?.status === 0 || rawMsg.includes('Unable to connect') || rawMsg.includes('Failed to fetch')) {
+        setErrorMessage('Unable to reach Delivshop API. Please ensure the backend server is online.');
+      } else if (
         rawMsg.includes('relation') ||
         rawMsg.includes('SQL') ||
-        rawMsg.includes('database') ||
-        rawMsg.includes('connect')
+        rawMsg.includes('database')
       ) {
         setErrorMessage('Security database service temporarily unreachable.');
+      } else if (err?.status === 503) {
+        setErrorMessage(rawMsg || 'Backend service is currently initializing or undergoing maintenance.');
+      } else if (err?.status === 401 || rawMsg.includes('Invalid') || rawMsg.includes('credentials')) {
+        setErrorMessage('Invalid operator credentials or unauthorized access.');
       } else {
-        setErrorMessage(rawMsg || 'Invalid operator credentials or unauthorized access.');
+        setErrorMessage(rawMsg || 'Authentication failed. Please verify your credentials and try again.');
       }
       setAuthStatus('idle');
       setPassword('');

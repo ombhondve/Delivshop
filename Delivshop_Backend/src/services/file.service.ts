@@ -4,12 +4,26 @@ import { query } from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import { auditService } from './audit.service.js';
 
-// Safe private storage directory outside web root
-const STORAGE_DIR = path.join(process.cwd(), 'storage', 'private_documents');
+import os from 'os';
 
-if (!fs.existsSync(STORAGE_DIR)) {
-  fs.mkdirSync(STORAGE_DIR, { recursive: true });
-}
+// Safe private storage directory: uses writable /tmp on serverless (Vercel) or local storage directory in standard environments
+export const getStorageDir = (): string => {
+  const targetDir =
+    process.env.STORAGE_DIR ||
+    (process.env.VERCEL === '1'
+      ? path.join(os.tmpdir(), 'delivshop', 'storage', 'private_documents')
+      : path.join(process.cwd(), 'storage', 'private_documents'));
+
+  try {
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+  } catch (err: any) {
+    console.warn(`[FileService] Storage directory creation deferred or read-only: ${err.message}`);
+  }
+
+  return targetDir;
+};
 
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
@@ -100,7 +114,8 @@ export const fileService = {
     // Server-side random UUID storage name — completely discard client-supplied path
     const extension = mimeType === 'application/pdf' ? '.pdf' : mimeType === 'image/jpeg' ? '.jpg' : mimeType === 'image/png' ? '.png' : '.webp';
     const storageFilename = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}${extension}`;
-    const storagePath = path.join(STORAGE_DIR, storageFilename);
+    const storageDir = getStorageDir();
+    const storagePath = path.join(storageDir, storageFilename);
 
     // Save to private disk
     await fs.promises.writeFile(storagePath, buffer);
