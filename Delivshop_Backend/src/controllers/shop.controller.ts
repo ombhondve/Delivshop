@@ -135,4 +135,19 @@ export const shopController = {
       next(err);
     }
   },
+
+  async deleteShop(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const reason = req.body?.reason || (req.query.reason as string) || undefined;
+      const result = await shopService.deleteShop(
+        req.params.shopId,
+        req.user?.id,
+        req.ip,
+        reason
+      );
+      sendSuccess(res, result, result.message);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

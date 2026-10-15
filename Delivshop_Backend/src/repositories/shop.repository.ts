@@ -124,8 +124,8 @@ export const shopRepository = {
   async findByIdOrShopId(identifier: string): Promise<ShopRecord | null> {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
     const sql = isUuid
-      ? 'SELECT * FROM shops WHERE id = $1 LIMIT 1'
-      : 'SELECT * FROM shops WHERE shop_id = $1 LIMIT 1';
+      ? 'SELECT * FROM shops WHERE id = $1 AND deleted_at IS NULL LIMIT 1'
+      : 'SELECT * FROM shops WHERE shop_id = $1 AND deleted_at IS NULL LIMIT 1';
 
     const res = await query<ShopRecord>(sql, [identifier]);
     return res.rows[0] || null;
@@ -153,7 +153,7 @@ export const shopRepository = {
     const limit = Math.max(1, Math.min(100, params.limit || 10));
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = [];
+    const conditions: string[] = ['deleted_at IS NULL'];
     const values: any[] = [];
     let idx = 1;
 
@@ -515,5 +515,60 @@ export const shopRepository = {
       [shop.id]
     );
     return res.rows;
+  },
+
+  async checkDependencies(shopId: string): Promise<{
+    openOrdersCount: number;
+    historicalOrdersCount: number;
+    hasOutstandingBalance: boolean;
+    outstandingBalance: number;
+  }> {
+    const shop = await this.findByIdOrShopId(shopId);
+    if (!shop) {
+      return { openOrdersCount: 0, historicalOrdersCount: 0, hasOutstandingBalance: false, outstandingBalance: 0 };
+    }
+
+    const openOrdersRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM orders
+       WHERE shop_id = $1 AND status IN ('PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'IN_TRANSIT')`,
+      [shop.id]
+    );
+    const histOrdersRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM orders WHERE shop_id = $1`,
+      [shop.id]
+    );
+
+    const balance = Number(shop.outstanding_balance || 0);
+
+    return {
+      openOrdersCount: parseInt(openOrdersRes.rows[0]?.count || '0', 10),
+      historicalOrdersCount: parseInt(histOrdersRes.rows[0]?.count || '0', 10),
+      hasOutstandingBalance: balance > 0,
+      outstandingBalance: balance,
+    };
+  },
+
+  async deleteShop(shopId: string, actorId?: string, reason?: string): Promise<{ softDeleted: boolean }> {
+    const shop = await this.findByIdOrShopId(shopId);
+    if (!shop) return { softDeleted: false };
+
+    const deps = await this.checkDependencies(shop.id);
+    if (deps.historicalOrdersCount === 0) {
+      await query('DELETE FROM shop_accounts WHERE shop_id = $1', [shop.id]);
+      await query('DELETE FROM shops WHERE id = $1', [shop.id]);
+      return { softDeleted: false };
+    } else {
+      await query(
+        `UPDATE shops
+         SET deleted_at = NOW(),
+             deleted_by = $2,
+             deletion_reason = $3,
+             status = 'INACTIVE',
+             is_open = false
+         WHERE id = $1`,
+        [shop.id, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
+      );
+      return { softDeleted: true };
+    }
   },
 };

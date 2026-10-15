@@ -62,4 +62,43 @@ export const deliveryController = {
       next(err);
     }
   },
+
+  async listAllDrivers(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const drivers = await deliveryService.listAllDrivers();
+      sendSuccess(res, drivers);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateDriverStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { isActive } = req.body;
+      const updated = await deliveryService.updateDriverStatus(
+        req.params.id,
+        Boolean(isActive),
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, updated, `Driver successfully ${isActive ? 'activated' : 'deactivated'}`);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const reason = req.body?.reason || (req.query.reason as string) || undefined;
+      const result = await deliveryService.deleteDriver(
+        req.params.id,
+        req.user?.id,
+        req.ip,
+        reason
+      );
+      sendSuccess(res, result, result.message);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

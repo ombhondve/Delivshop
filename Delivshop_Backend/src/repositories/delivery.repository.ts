@@ -86,9 +86,75 @@ export const deliveryRepository = {
   async listAvailableDrivers(): Promise<any[]> {
     const res = await query(
       `SELECT id, name, email, phone, role, is_active FROM users 
-       WHERE role = 'DRIVER' AND is_active = TRUE 
+       WHERE role = 'DRIVER' AND is_active = TRUE AND deleted_at IS NULL 
        ORDER BY name ASC`
     );
     return res.rows;
+  },
+
+  async listAllDrivers(): Promise<any[]> {
+    const res = await query(
+      `SELECT u.id, u.name, u.email, u.phone, u.role, u.is_active, u.created_at,
+              (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED')) as active_deliveries,
+              (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED') as completed_deliveries
+       FROM users u 
+       WHERE u.role = 'DRIVER' AND u.deleted_at IS NULL 
+       ORDER BY u.name ASC`
+    );
+    return res.rows;
+  },
+
+  async findDriverById(driverId: string): Promise<any | null> {
+    const res = await query(
+      `SELECT * FROM users WHERE id = $1 AND role = 'DRIVER' AND deleted_at IS NULL LIMIT 1`,
+      [driverId]
+    );
+    return res.rows[0] || null;
+  },
+
+  async updateDriverStatus(driverId: string, isActive: boolean): Promise<any> {
+    const res = await query(
+      `UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2 AND role = 'DRIVER' AND deleted_at IS NULL RETURNING id, name, email, phone, is_active`,
+      [isActive, driverId]
+    );
+    return res.rows[0] || null;
+  },
+
+  async checkDriverDependencies(driverId: string): Promise<{
+    activeDeliveriesCount: number;
+    historicalDeliveriesCount: number;
+  }> {
+    const activeRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1 AND status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED')`,
+      [driverId]
+    );
+    const histRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1`,
+      [driverId]
+    );
+
+    return {
+      activeDeliveriesCount: parseInt(activeRes.rows[0]?.count || '0', 10),
+      historicalDeliveriesCount: parseInt(histRes.rows[0]?.count || '0', 10),
+    };
+  },
+
+  async deleteDriver(driverId: string, actorId?: string, reason?: string): Promise<{ softDeleted: boolean }> {
+    const deps = await this.checkDriverDependencies(driverId);
+    if (deps.historicalDeliveriesCount === 0) {
+      await query(`DELETE FROM users WHERE id = $1 AND role = 'DRIVER'`, [driverId]);
+      return { softDeleted: false };
+    } else {
+      await query(
+        `UPDATE users
+         SET deleted_at = NOW(),
+             deleted_by = $2,
+             deletion_reason = $3,
+             is_active = false
+         WHERE id = $1 AND role = 'DRIVER'`,
+        [driverId, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
+      );
+      return { softDeleted: true };
+    }
   },
 };

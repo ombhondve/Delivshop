@@ -177,4 +177,64 @@ export const companyService = {
   async getSummaryStats(): Promise<CompanySummaryStats> {
     return companyRepository.getSummaryStats();
   },
+
+  async deleteCompany(
+    id: string,
+    actorId?: string,
+    ipAddress?: string,
+    reason?: string
+  ): Promise<{ message: string; softDeleted: boolean; company: { id: string; name: string; code: string } }> {
+    const existing = await companyRepository.findById(id);
+    if (!existing) {
+      throw new AppError(`Company with ID "${id}" was not found`, 404);
+    }
+
+    // CORE BUSINESS RULE: Company MUST be deactivated before deletion is permitted!
+    if (existing.status === 'ACTIVE') {
+      throw new AppError(
+        'Company must be deactivated before it can be deleted. Please deactivate this company first.',
+        400
+      );
+    }
+
+    // Dependency check: Cannot delete company with active products
+    const deps = await companyRepository.checkDependencies(id);
+    if (deps.activeProductsCount > 0) {
+      throw new AppError(
+        `Cannot delete company because it is associated with ${deps.activeProductsCount} active product(s). Please deactivate or reassign those products before deleting this company.`,
+        400
+      );
+    }
+
+    // Perform deletion / archival
+    const { softDeleted } = await companyRepository.deleteCompany(id, actorId, reason);
+
+    await auditService.log({
+      actorId,
+      action: 'COMPANY_DELETED',
+      entityType: 'company',
+      entityId: id,
+      details: {
+        companyCode: existing.company_code,
+        name: existing.name,
+        softDeleted,
+        reason: reason || 'Administrative deactivation-first deletion',
+        totalProductsPreserved: deps.totalProductsCount,
+        batchesPreserved: deps.batchesCount,
+      },
+      ipAddress,
+    });
+
+    return {
+      message: softDeleted
+        ? 'Company successfully archived. Historical product associations and batches have been preserved.'
+        : 'Company permanently deleted.',
+      softDeleted,
+      company: {
+        id: existing.id,
+        name: existing.name,
+        code: existing.company_code,
+      },
+    };
+  },
 };

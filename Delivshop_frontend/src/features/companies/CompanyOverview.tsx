@@ -23,6 +23,7 @@ import {
   X,
   FileText,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Company, CompanySummaryStats, PaginatedResult } from '../../types';
@@ -34,6 +35,7 @@ import { AddCompanyModal } from './AddCompanyModal';
 import { EditCompanyModal } from './EditCompanyModal';
 import { CompanyDetailModal } from './CompanyDetailModal';
 import { CompanyStatusDialog } from './CompanyStatusDialog';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export const CompanyOverview: React.FC = () => {
   const { companyId, navigate } = useNavigation();
@@ -70,6 +72,8 @@ export const CompanyOverview: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedForStatus, setSelectedForStatus] = useState<Company | null>(null);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [selectedForDelete, setSelectedForDelete] = useState<Company | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Copy GSTIN state
   const [copiedGstin, setCopiedGstin] = useState<string | null>(null);
@@ -976,9 +980,61 @@ export const CompanyOverview: React.FC = () => {
                               justifyContent: 'center',
                             }}
                             title={isActive ? 'Deactivate Company' : 'Activate Company'}
+                            aria-label={isActive ? 'Deactivate Company' : 'Activate Company'}
                           >
                             <Power size={13} />
                           </button>
+
+                          {/* Delete Action (Strict Rule 1 & Rule 2 Enforcement) */}
+                          {isActive ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedForStatus(company);
+                                setIsStatusOpen(true);
+                              }}
+                              style={{
+                                padding: '6px',
+                                borderRadius: '6px',
+                                border: '1px solid #E2E8F0',
+                                backgroundColor: '#F8FAFC',
+                                color: '#94A3B8',
+                                cursor: 'not-allowed',
+                                opacity: 0.6,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              title="Deactivate this company before deleting it."
+                              aria-label="Deactivate this company before deleting it"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedForDelete(company);
+                                setIsDeleteOpen(true);
+                              }}
+                              style={{
+                                padding: '6px',
+                                borderRadius: '6px',
+                                border: '1px solid #FECACA',
+                                backgroundColor: '#FEF2F2',
+                                color: '#DC2626',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              title="Delete Inactive Company"
+                              aria-label="Delete Inactive Company"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1152,6 +1208,33 @@ export const CompanyOverview: React.FC = () => {
         onStatusChanged={() => {
           fetchStats();
           fetchCompanies();
+        }}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteOpen}
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setSelectedForDelete(null);
+        }}
+        title="Delete Company"
+        entityType="Company"
+        entityName={selectedForDelete?.name || ''}
+        entityIdentifier={selectedForDelete?.companyCode}
+        isActive={selectedForDelete?.status === 'ACTIVE'}
+        onDeactivateRequested={() => {
+          if (selectedForDelete) {
+            setSelectedForStatus(selectedForDelete);
+            setIsStatusOpen(true);
+          }
+        }}
+        customWarning="Companies with active catalog products cannot be deleted. If this company is linked to past orders or inventory movements, historical records will be safely retained."
+        onConfirm={async (reason) => {
+          if (selectedForDelete) {
+            await api.companies.delete(selectedForDelete.id, reason);
+            fetchStats();
+            fetchCompanies();
+          }
         }}
       />
     </div>

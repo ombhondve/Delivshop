@@ -80,4 +80,19 @@ export const companyController = {
       next(err);
     }
   },
+
+  async deleteCompany(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const reason = req.body?.reason || (req.query.reason as string) || undefined;
+      const result = await companyService.deleteCompany(
+        req.params.id,
+        req.user?.id,
+        req.ip,
+        reason
+      );
+      sendSuccess(res, result, result.message);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

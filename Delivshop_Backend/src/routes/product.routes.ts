@@ -59,4 +59,11 @@ router.patch(
   productController.updateProductStatus
 );
 
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  productController.deleteProduct
+);
+
 export default router;

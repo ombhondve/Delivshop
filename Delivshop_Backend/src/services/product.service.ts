@@ -266,4 +266,85 @@ export const productService = {
   async getSummaryStats(): Promise<ProductSummaryStats> {
     return productRepository.getProductSummaryStats();
   },
+
+  async deleteProduct(
+    id: string,
+    actorId?: string,
+    ipAddress?: string,
+    reason?: string
+  ): Promise<{ message: string; softDeleted: boolean; product: { id: string; name: string; sku: string } }> {
+    const existing = await productRepository.getProductById(id);
+    if (!existing) {
+      throw new AppError(`Product with ID "${id}" not found`, 404);
+    }
+
+    // CORE BUSINESS RULE: Product MUST be deactivated before deletion is permitted!
+    if (existing.isActive) {
+      throw new AppError(
+        'Product must be deactivated before it can be deleted. Please deactivate this product first.',
+        400
+      );
+    }
+
+    // Dependency check: Cannot delete product with remaining inventory stock
+    if (existing.stockQuantity > 0) {
+      throw new AppError(
+        `Cannot delete product with remaining stock balance (${existing.stockQuantity} ${existing.baseUnit}). Please adjust inventory stock to 0 before attempting deletion.`,
+        400
+      );
+    }
+
+    // Dependency check: Cannot delete product with active / open orders
+    const deps = await productRepository.checkDependencies(id);
+    if (deps.openOrdersCount > 0) {
+      throw new AppError(
+        `Cannot delete product because it is currently included in ${deps.openOrdersCount} active/open order(s). Please fulfill or cancel those orders before deleting.`,
+        400
+      );
+    }
+
+    // Perform deletion / archival
+    const { softDeleted } = await productRepository.deleteProduct(id, actorId, reason);
+
+    // Write audit log
+    try {
+      let safeActorId = actorId;
+      if (safeActorId) {
+        const userCheck = await dbPool.query('SELECT id FROM users WHERE id = $1', [safeActorId]);
+        if (userCheck.rows.length === 0) safeActorId = undefined;
+      }
+
+      await dbPool.query(
+        `INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, details, ip_address, created_at)
+         VALUES ($1, 'PRODUCT_DELETED', 'PRODUCT', $2, $3, $4, NOW());`,
+        [
+          safeActorId || null,
+          id,
+          JSON.stringify({
+            sku: existing.sku,
+            name: existing.name,
+            softDeleted,
+            reason: reason || 'Administrative deactivation-first deletion',
+            historicalOrdersPreserved: deps.historicalOrdersCount,
+            inventoryMovementsPreserved: deps.movementsCount,
+          }),
+          ipAddress || null,
+        ]
+      );
+    } catch (auditErr: any) {
+      logger.warn(`Failed to write product deletion audit log: ${auditErr.message}`);
+    }
+
+    return {
+      message: softDeleted
+        ? 'Product successfully archived. Historical orders, batches, and inventory ledger movements have been preserved.'
+        : 'Product permanently deleted.',
+      softDeleted,
+      product: {
+        id: existing.id,
+        name: existing.name,
+        sku: existing.sku,
+      },
+    };
+  },
 };

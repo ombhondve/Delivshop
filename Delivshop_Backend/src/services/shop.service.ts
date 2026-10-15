@@ -11,6 +11,7 @@ import {
 import { generateTemporaryPassword, hashPassword } from '../utils/password.js';
 import { auditService } from './audit.service.js';
 import { resolveGoogleMapsUrl } from './map-resolver.service.js';
+import { AppError } from '../utils/errors.js';
 
 export const shopService = {
   /**
@@ -243,6 +244,70 @@ export const shopService = {
       creditLimit: Number(shop.credit_limit || 0),
       paymentTerms: shop.payment_terms,
       status: shop.status,
+    };
+  },
+
+  async deleteShop(
+    identifier: string,
+    actorId?: string,
+    ipAddress?: string,
+    reason?: string
+  ): Promise<{ message: string; softDeleted: boolean; shop: { id: string; name: string; shopId: string } }> {
+    const shop = await this.getShop(identifier);
+
+    // CORE BUSINESS RULE: Shop MUST be deactivated before deletion is permitted!
+    if (shop.status === 'ACTIVE') {
+      throw new AppError(
+        'Shop must be deactivated before it can be deleted. Please deactivate this shop first.',
+        400
+      );
+    }
+
+    // Dependency check: Cannot delete shop with open orders
+    const deps = await shopRepository.checkDependencies(shop.id);
+    if (deps.openOrdersCount > 0) {
+      throw new AppError(
+        `Cannot delete shop because it has ${deps.openOrdersCount} active/open order(s). Please fulfill or cancel these orders before deleting.`,
+        400
+      );
+    }
+
+    // Dependency check: Cannot delete shop with outstanding balance
+    if (deps.hasOutstandingBalance) {
+      throw new AppError(
+        `Cannot delete shop with an outstanding financial balance of ₹${deps.outstandingBalance.toFixed(2)}. Please settle the account balance before deleting.`,
+        400
+      );
+    }
+
+    // Perform deletion / archival
+    const { softDeleted } = await shopRepository.deleteShop(shop.id, actorId, reason);
+
+    await auditService.log({
+      actorId,
+      action: 'SHOP_DELETED',
+      entityType: 'shop',
+      entityId: shop.id,
+      details: {
+        shopId: shop.shop_id,
+        name: shop.name,
+        softDeleted,
+        reason: reason || 'Administrative deactivation-first deletion',
+        historicalOrdersPreserved: deps.historicalOrdersCount,
+      },
+      ipAddress,
+    });
+
+    return {
+      message: softDeleted
+        ? 'Shop successfully archived. Historical order records and invoices have been preserved.'
+        : 'Shop permanently deleted.',
+      softDeleted,
+      shop: {
+        id: shop.id,
+        name: shop.name,
+        shopId: shop.shop_id,
+      },
     };
   },
 };

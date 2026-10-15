@@ -402,7 +402,7 @@ export interface ProductFilterQuery {
   companyId?: string;
   category?: string;
   status?: 'ACTIVE' | 'INACTIVE';
-  stockStatus?: 'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
+  stockStatus?: 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
   sortBy?: 'name' | 'sku' | 'price' | 'stock_quantity' | 'created_at' | 'updated_at';
   sortOrder?: 'ASC' | 'DESC';
 }

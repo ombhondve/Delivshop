@@ -22,6 +22,7 @@ import {
   X,
   PackagePlus,
   Milk,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import {
@@ -40,6 +41,8 @@ import { ProductDetailModal } from './ProductDetailModal';
 import { StockReceiptModal } from './StockReceiptModal';
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { InventoryLedgerModal } from './InventoryLedgerModal';
+import { ProductStatusDialog } from './ProductStatusDialog';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 const DAIRY_CATEGORIES = [
   'Milk',
@@ -54,7 +57,7 @@ const DAIRY_CATEGORIES = [
   'Other Dairy Products',
 ];
 
-type StockTab = 'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
+type StockTab = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
 
 export const ProductCatalog: React.FC = () => {
   const { navigate } = useNavigation();
@@ -93,6 +96,9 @@ export const ProductCatalog: React.FC = () => {
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [productForDeletion, setProductForDeletion] = useState<Product | null>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -550,6 +556,7 @@ export const ProductCatalog: React.FC = () => {
           [
             { id: 'ALL', label: 'All Products' },
             { id: 'ACTIVE', label: 'Active Products' },
+            { id: 'INACTIVE', label: 'Inactive Products' },
             { id: 'LOW_STOCK', label: 'Low Stock' },
             { id: 'OUT_OF_STOCK', label: 'Out of Stock' },
             { id: 'EXPIRING_SOON', label: 'Expiring Soon (< 7 Days)' },
@@ -1151,10 +1158,13 @@ export const ProductCatalog: React.FC = () => {
                             <Pencil size={13} />
                           </button>
 
-                          {/* Power Toggle */}
+                          {/* Status Toggle (Deactivate / Reactivate) */}
                           <button
                             type="button"
-                            onClick={() => handleQuickStatusToggle(prod)}
+                            onClick={() => {
+                              setSelectedProduct(prod);
+                              setIsStatusDialogOpen(true);
+                            }}
                             style={{
                               padding: '6px',
                               borderRadius: '6px',
@@ -1164,10 +1174,56 @@ export const ProductCatalog: React.FC = () => {
                               color: prod.isActive ? '#D97706' : '#168264',
                               cursor: 'pointer',
                             }}
-                            title={prod.isActive ? 'Deactivate Product' : 'Activate Product'}
+                            title={prod.isActive ? 'Deactivate Product' : 'Reactivate Product'}
+                            aria-label={prod.isActive ? 'Deactivate Product' : 'Reactivate Product'}
                           >
                             <Power size={13} />
                           </button>
+
+                          {/* Delete Action (Strict Rule 1 & Rule 2 Enforcement) */}
+                          {prod.isActive ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedProduct(prod);
+                                setIsStatusDialogOpen(true);
+                              }}
+                              style={{
+                                padding: '6px',
+                                borderRadius: '6px',
+                                border: '1px solid #E2E8F0',
+                                backgroundColor: '#F8FAFC',
+                                color: '#94A3B8',
+                                cursor: 'not-allowed',
+                                opacity: 0.6,
+                              }}
+                              title="Deactivate this product before deleting it."
+                              aria-label="Deactivate this product before deleting it"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductForDeletion(prod);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              style={{
+                                padding: '6px',
+                                borderRadius: '6px',
+                                border: '1px solid #FECACA',
+                                backgroundColor: '#FEF2F2',
+                                color: '#DC2626',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                              }}
+                              title="Delete Inactive Product"
+                              aria-label="Delete Inactive Product"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1364,6 +1420,51 @@ export const ProductCatalog: React.FC = () => {
         onClose={() => {
           setIsLedgerOpen(false);
           setSelectedProduct(null);
+        }}
+      />
+
+      {/* Product Deactivation / Reactivation Confirmation Dialog */}
+      <ProductStatusDialog
+        product={selectedProduct}
+        isOpen={isStatusDialogOpen}
+        onClose={() => {
+          setIsStatusDialogOpen(false);
+          setSelectedProduct(null);
+        }}
+        onStatusChanged={() => {
+          fetchStats();
+          fetchProducts();
+        }}
+      />
+
+      {/* Deactivation-First Delete Confirmation Dialog */}
+      <DeleteConfirmModal
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setProductForDeletion(null);
+        }}
+        title="Delete Product"
+        entityType="Product"
+        entityName={productForDeletion?.name || ''}
+        entityIdentifier={productForDeletion?.sku}
+        isActive={Boolean(productForDeletion?.isActive)}
+        onDeactivateRequested={() => {
+          if (productForDeletion) {
+            setSelectedProduct(productForDeletion);
+            setIsStatusDialogOpen(true);
+          }
+        }}
+        customWarning={
+          productForDeletion && (productForDeletion.stockQuantity ?? 0) > 0
+            ? `Cannot permanently delete this product because it currently has ${productForDeletion.stockQuantity} ${productForDeletion.baseUnit || 'unit'}s in stock. The system requires inventory to be adjusted to 0 before physical removal.`
+            : undefined
+        }
+        onConfirm={async (reason) => {
+          if (productForDeletion) {
+            await api.products.delete(productForDeletion.id, reason);
+            handleRefreshAll();
+          }
         }}
       />
     </div>

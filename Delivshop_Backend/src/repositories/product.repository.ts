@@ -87,7 +87,7 @@ export const productRepository = {
     const limit = Math.min(100, Math.max(1, params.limit || 10));
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = [];
+    const conditions: string[] = ['p.deleted_at IS NULL'];
     const values: any[] = [];
     let paramIdx = 1;
 
@@ -125,6 +125,8 @@ export const productRepository = {
     if (params.stockStatus) {
       if (params.stockStatus === 'ACTIVE') {
         conditions.push(`p.is_active = true`);
+      } else if (params.stockStatus === 'INACTIVE') {
+        conditions.push(`p.is_active = false`);
       } else if (params.stockStatus === 'LOW_STOCK') {
         conditions.push(`(p.stock_quantity <= p.min_stock_threshold AND p.stock_quantity > 0)`);
       } else if (params.stockStatus === 'OUT_OF_STOCK') {
@@ -208,7 +210,7 @@ export const productRepository = {
         (SELECT MIN(b.expiry_date)::text FROM inventory_batches b WHERE b.product_id = p.id AND b.status = 'ACTIVE' AND b.quantity_remaining > 0 AND b.expiry_date >= CURRENT_DATE) AS nearest_expiry
       FROM products p
       LEFT JOIN companies c ON p.company_id = c.id
-      WHERE ${isUuid ? 'p.id = $1' : 'p.sku = $1'}
+      WHERE ${isUuid ? 'p.id = $1' : 'p.sku = $1'} AND p.deleted_at IS NULL
       LIMIT 1;
     `;
 
@@ -227,7 +229,7 @@ export const productRepository = {
         c.status AS company_status
       FROM products p
       LEFT JOIN companies c ON p.company_id = c.id
-      WHERE LOWER(p.sku) = LOWER($1)
+      WHERE LOWER(p.sku) = LOWER($1) AND p.deleted_at IS NULL
       LIMIT 1;
     `;
     const res = await queryRunner.query<ProductRecord>(sql, [sku]);
@@ -486,7 +488,8 @@ export const productRepository = {
               AND b.expiry_date <= (CURRENT_DATE + INTERVAL '7 days')
           )
         )::text AS expiring_soon_items
-      FROM products p;
+      FROM products p
+      WHERE p.deleted_at IS NULL;
     `;
 
     const res = await dbPool.query(sql);
@@ -499,5 +502,81 @@ export const productRepository = {
       outOfStockItems: parseInt(row.out_of_stock_items || '0', 10),
       expiringSoonItems: parseInt(row.expiring_soon_items || '0', 10),
     };
+  },
+
+  async checkDependencies(id: string): Promise<{
+    hasStock: boolean;
+    stockQuantity: number;
+    openOrdersCount: number;
+    historicalOrdersCount: number;
+    movementsCount: number;
+    batchesCount: number;
+    canPhysicalDelete: boolean;
+  }> {
+    const stockRes = await dbPool.query('SELECT stock_quantity FROM products WHERE id = $1', [id]);
+    const stockQuantity = Number(stockRes.rows[0]?.stock_quantity || 0);
+
+    // Open/active orders check
+    const openOrdersRes = await dbPool.query(
+      `SELECT COUNT(*)::text as count
+       FROM order_items oi
+       JOIN orders o ON oi.order_id = o.id
+       WHERE oi.product_id = $1 AND o.status IN ('PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'IN_TRANSIT')`,
+      [id]
+    );
+    const openOrdersCount = parseInt(openOrdersRes.rows[0]?.count || '0', 10);
+
+    // Historical orders check
+    const histOrdersRes = await dbPool.query(
+      `SELECT COUNT(*)::text as count FROM order_items WHERE product_id = $1`,
+      [id]
+    );
+    const historicalOrdersCount = parseInt(histOrdersRes.rows[0]?.count || '0', 10);
+
+    // Movements check
+    const movementsRes = await dbPool.query(
+      `SELECT COUNT(*)::text as count FROM inventory_movements WHERE product_id = $1`,
+      [id]
+    );
+    const movementsCount = parseInt(movementsRes.rows[0]?.count || '0', 10);
+
+    // Batches check
+    const batchesRes = await dbPool.query(
+      `SELECT COUNT(*)::text as count FROM inventory_batches WHERE product_id = $1`,
+      [id]
+    );
+    const batchesCount = parseInt(batchesRes.rows[0]?.count || '0', 10);
+
+    // Safe physical deletion only when 0 historical references exist
+    const canPhysicalDelete = historicalOrdersCount === 0 && movementsCount === 0 && batchesCount === 0;
+
+    return {
+      hasStock: stockQuantity > 0,
+      stockQuantity,
+      openOrdersCount,
+      historicalOrdersCount,
+      movementsCount,
+      batchesCount,
+      canPhysicalDelete,
+    };
+  },
+
+  async deleteProduct(id: string, actorId?: string, reason?: string): Promise<{ softDeleted: boolean }> {
+    const deps = await this.checkDependencies(id);
+    if (deps.canPhysicalDelete) {
+      await dbPool.query('DELETE FROM products WHERE id = $1', [id]);
+      return { softDeleted: false };
+    } else {
+      await dbPool.query(
+        `UPDATE products
+         SET deleted_at = NOW(),
+             deleted_by = $2,
+             deletion_reason = $3,
+             is_active = false
+         WHERE id = $1`,
+        [id, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
+      );
+      return { softDeleted: true };
+    }
   },
 };

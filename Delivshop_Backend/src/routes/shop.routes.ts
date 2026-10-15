@@ -62,6 +62,13 @@ router.patch(
   shopController.updateStatus
 );
 
+router.delete(
+  '/:shopId',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  shopController.deleteShop
+);
+
 router.post(
   '/:shopId/reissue-credentials',
   authenticate,

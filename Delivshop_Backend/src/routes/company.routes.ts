@@ -59,4 +59,11 @@ router.patch(
   companyController.updateCompanyStatus
 );
 
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  companyController.deleteCompany
+);
+
 export default router;

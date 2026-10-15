@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Building2,
   ArrowUpDown,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Shop, PaginatedResult } from '../../types';
@@ -21,6 +22,7 @@ import { Button } from '../../components/common/Button';
 import { useNavigation } from '../../context/NavigationContext';
 import { AddShopModal } from './AddShopModal';
 import { EditShopModal } from './EditShopModal';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export const ShopOverview: React.FC = () => {
   const { navigate } = useNavigation();
@@ -47,6 +49,8 @@ export const ShopOverview: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [shopToEdit, setShopToEdit] = useState<Shop | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedShopForDelete, setSelectedShopForDelete] = useState<Shop | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const fetchShops = async () => {
     setLoading(true);
@@ -345,6 +349,34 @@ export const ShopOverview: React.FC = () => {
                         >
                           <Power size={15} />
                         </button>
+
+                        {/* Delete Action (Strict Rule 1 & Rule 2 Enforcement) */}
+                        {shop.status === 'ACTIVE' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleQuickStatusToggle(shop)}
+                            className="btn-icon-square"
+                            style={{ opacity: 0.5, cursor: 'not-allowed', color: '#94A3B8' }}
+                            title="Deactivate this shop before deleting it."
+                            aria-label={`Deactivate ${shop.name} before deleting`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedShopForDelete(shop);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className="btn-icon-square"
+                            style={{ color: '#DC2626', backgroundColor: '#FEF2F2', borderColor: '#FECACA' }}
+                            title="Delete Inactive Shop"
+                            aria-label={`Delete ${shop.name}`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -400,6 +432,35 @@ export const ShopOverview: React.FC = () => {
           setShopToEdit(null);
         }}
         onUpdated={fetchShops}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedShopForDelete(null);
+        }}
+        title="Delete Shop"
+        entityType="Shop"
+        entityName={selectedShopForDelete?.name || ''}
+        entityIdentifier={selectedShopForDelete?.shop_id}
+        isActive={selectedShopForDelete?.status === 'ACTIVE'}
+        onDeactivateRequested={() => {
+          if (selectedShopForDelete) {
+            handleQuickStatusToggle(selectedShopForDelete);
+          }
+        }}
+        customWarning={
+          selectedShopForDelete && Number(selectedShopForDelete.outstanding_balance) > 0
+            ? `Cannot delete shop with an outstanding credit balance of ₹${Number(selectedShopForDelete.outstanding_balance).toLocaleString('en-IN')}. Please settle all outstanding balances first.`
+            : 'Shops with historical orders, invoices, or delivery logs will be safely archived to preserve complete ledger history.'
+        }
+        onConfirm={async (reason) => {
+          if (selectedShopForDelete) {
+            await api.shops.delete(selectedShopForDelete.id, reason);
+            fetchShops();
+          }
+        }}
       />
     </div>
   );

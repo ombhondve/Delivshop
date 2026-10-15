@@ -24,6 +24,27 @@ router.get(
   deliveryController.listDrivers
 );
 
+router.get(
+  '/drivers/all',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN'),
+  deliveryController.listAllDrivers
+);
+
+router.patch(
+  '/drivers/:id/status',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.updateDriverStatus
+);
+
+router.delete(
+  '/drivers/:id',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.deleteDriver
+);
+
 router.post(
   '/assign',
   authenticate,

@@ -93,13 +93,13 @@ export const companyRepository = {
   },
 
   async findById(id: string): Promise<CompanyRecord | null> {
-    const res = await query<CompanyRecord>('SELECT * FROM companies WHERE id = $1', [id]);
+    const res = await query<CompanyRecord>('SELECT * FROM companies WHERE id = $1 AND deleted_at IS NULL', [id]);
     return res.rows[0] || null;
   },
 
   async findByCompanyCode(companyCode: string): Promise<CompanyRecord | null> {
     const res = await query<CompanyRecord>(
-      'SELECT * FROM companies WHERE UPPER(company_code) = UPPER($1)',
+      'SELECT * FROM companies WHERE UPPER(company_code) = UPPER($1) AND deleted_at IS NULL',
       [companyCode.trim()]
     );
     return res.rows[0] || null;
@@ -125,7 +125,7 @@ export const companyRepository = {
 
   async getAssociatedProductsCount(companyId: string): Promise<number> {
     const res = await query<{ count: string }>(
-      'SELECT COUNT(*)::text as count FROM products WHERE company_id = $1',
+      'SELECT COUNT(*)::text as count FROM products WHERE company_id = $1 AND deleted_at IS NULL',
       [companyId]
     );
     return parseInt(res.rows[0]?.count || '0', 10);
@@ -142,7 +142,7 @@ export const companyRepository = {
     const limit = Math.min(100, Math.max(1, params.limit || 10));
     const offset = (page - 1) * limit;
 
-    const whereClauses: string[] = [];
+    const whereClauses: string[] = ['deleted_at IS NULL'];
     const values: any[] = [];
     let paramIndex = 1;
 
@@ -226,6 +226,7 @@ export const companyRepository = {
         COUNT(*) FILTER (WHERE status = 'INACTIVE')::text AS inactive_companies,
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::text AS recent_companies
       FROM companies
+      WHERE deleted_at IS NULL
     `);
 
     const row = res.rows[0];
@@ -292,10 +293,54 @@ export const companyRepository = {
     const res = await query<CompanyRecord>(
       `UPDATE companies
        SET status = $1, updated_at = NOW()
-       WHERE id = $2
+       WHERE id = $2 AND deleted_at IS NULL
        RETURNING *`,
       [status, id]
     );
     return res.rows[0] || null;
+  },
+
+  async checkDependencies(id: string): Promise<{
+    activeProductsCount: number;
+    totalProductsCount: number;
+    batchesCount: number;
+  }> {
+    const activeProductsRes = await query<{ count: string }>(
+      'SELECT COUNT(*)::text as count FROM products WHERE company_id = $1 AND deleted_at IS NULL AND is_active = true',
+      [id]
+    );
+    const totalProductsRes = await query<{ count: string }>(
+      'SELECT COUNT(*)::text as count FROM products WHERE company_id = $1 AND deleted_at IS NULL',
+      [id]
+    );
+    const batchesRes = await query<{ count: string }>(
+      'SELECT COUNT(*)::text as count FROM inventory_batches WHERE company_id = $1',
+      [id]
+    );
+
+    return {
+      activeProductsCount: parseInt(activeProductsRes.rows[0]?.count || '0', 10),
+      totalProductsCount: parseInt(totalProductsRes.rows[0]?.count || '0', 10),
+      batchesCount: parseInt(batchesRes.rows[0]?.count || '0', 10),
+    };
+  },
+
+  async deleteCompany(id: string, actorId?: string, reason?: string): Promise<{ softDeleted: boolean }> {
+    const deps = await this.checkDependencies(id);
+    if (deps.totalProductsCount === 0 && deps.batchesCount === 0) {
+      await query('DELETE FROM companies WHERE id = $1', [id]);
+      return { softDeleted: false };
+    } else {
+      await query(
+        `UPDATE companies
+         SET deleted_at = NOW(),
+             deleted_by = $2,
+             deletion_reason = $3,
+             status = 'INACTIVE'
+         WHERE id = $1`,
+        [id, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
+      );
+      return { softDeleted: true };
+    }
   },
 };

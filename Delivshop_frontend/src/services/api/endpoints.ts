@@ -85,6 +85,13 @@ export const api = {
         body: JSON.stringify({ status, reason }),
       });
     },
+
+    async delete(id: string, reason?: string): Promise<{ success: boolean; message: string; softDeleted?: boolean }> {
+      return apiClient<{ success: boolean; message: string; softDeleted?: boolean }>(`companies/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
+    },
   },
 
   products: {
@@ -130,6 +137,13 @@ export const api = {
       return apiClient<Product>(`products/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ isActive, reason }),
+      });
+    },
+
+    async delete(id: string, reason?: string): Promise<{ success: boolean; message: string; softDeleted?: boolean }> {
+      return apiClient<{ success: boolean; message: string; softDeleted?: boolean }>(`products/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
       });
     },
   },
@@ -265,6 +279,13 @@ export const api = {
       });
     },
 
+    async delete(shopId: string, reason?: string): Promise<{ success: boolean; message: string; softDeleted?: boolean }> {
+      return apiClient<{ success: boolean; message: string; softDeleted?: boolean }>(`shops/${shopId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
+    },
+
     async reissueCredentials(shopId: string): Promise<{
       shopId: string;
       temporaryPassword: string;
@@ -323,6 +344,24 @@ export const api = {
 
     async getDrivers(): Promise<DriverUser[]> {
       return apiClient<DriverUser[]>('deliveries/drivers');
+    },
+
+    async listAllDrivers(): Promise<DriverUser[]> {
+      return apiClient<DriverUser[]>('deliveries/drivers/all');
+    },
+
+    async updateDriverStatus(driverId: string, isActive: boolean, reason?: string): Promise<{ success: boolean; message: string; is_active: boolean }> {
+      return apiClient<{ success: boolean; message: string; is_active: boolean }>(`deliveries/drivers/${driverId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive, reason }),
+      });
+    },
+
+    async deleteDriver(driverId: string, reason?: string): Promise<{ success: boolean; message: string; softDeleted?: boolean }> {
+      return apiClient<{ success: boolean; message: string; softDeleted?: boolean }>(`deliveries/drivers/${driverId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
     },
 
     async assignDriver(orderId: string, driverId: string): Promise<Delivery> {

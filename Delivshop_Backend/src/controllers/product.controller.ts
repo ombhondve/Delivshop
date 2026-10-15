@@ -85,4 +85,19 @@ export const productController = {
       next(err);
     }
   },
+
+  async deleteProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const reason = req.body?.reason || (req.query.reason as string) || undefined;
+      const result = await productService.deleteProduct(
+        req.params.id,
+        req.user?.id,
+        req.ip,
+        reason
+      );
+      sendSuccess(res, result, result.message);
+    } catch (err) {
+      next(err);
+    }
+  },
 };
