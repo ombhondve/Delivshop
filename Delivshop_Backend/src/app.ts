@@ -137,6 +137,10 @@ export const createApp = (): Application => {
     app.use('/api/auth', configErrorHandler);
     app.use('/companies', configErrorHandler);
     app.use('/api/companies', configErrorHandler);
+    app.use('/products', configErrorHandler);
+    app.use('/api/products', configErrorHandler);
+    app.use('/inventory', configErrorHandler);
+    app.use('/api/inventory', configErrorHandler);
     app.use('/shops', configErrorHandler);
     app.use('/api/shops', configErrorHandler);
     app.use('/orders', configErrorHandler);

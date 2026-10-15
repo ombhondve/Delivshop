@@ -18,6 +18,15 @@ import {
   UpdateCompanyPayload,
   CompanyFilterQuery,
   CompanyStatus,
+  ProductSummaryStats,
+  ProductFilterQuery,
+  CreateProductPayload,
+  UpdateProductPayload,
+  InventoryBatch,
+  InventoryMovement,
+  StockReceiptPayload,
+  StockAdjustmentPayload,
+  InventoryFilterQuery,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -74,6 +83,87 @@ export const api = {
       return apiClient<Company>(`companies/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status, reason }),
+      });
+    },
+  },
+
+  products: {
+    async list(params: ProductFilterQuery = {}): Promise<PaginatedResult<Product>> {
+      const query = new URLSearchParams();
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+      if (params.search) query.set('search', params.search);
+      if (params.companyId) query.set('companyId', params.companyId);
+      if (params.category) query.set('category', params.category);
+      if (params.status) query.set('status', params.status);
+      if (params.stockStatus) query.set('stockStatus', params.stockStatus);
+      if (params.sortBy) query.set('sortBy', params.sortBy);
+      if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+
+      const qs = query.toString();
+      return apiClient<PaginatedResult<Product>>(`products${qs ? `?${qs}` : ''}`);
+    },
+
+    async getStats(): Promise<ProductSummaryStats> {
+      return apiClient<ProductSummaryStats>('products/stats');
+    },
+
+    async get(id: string): Promise<Product & { batches: InventoryBatch[] }> {
+      return apiClient<Product & { batches: InventoryBatch[] }>(`products/${id}`);
+    },
+
+    async create(payload: CreateProductPayload): Promise<Product> {
+      return apiClient<Product>('products', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async update(id: string, payload: UpdateProductPayload): Promise<Product> {
+      return apiClient<Product>(`products/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async updateStatus(id: string, isActive: boolean, reason?: string): Promise<Product> {
+      return apiClient<Product>(`products/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive, reason }),
+      });
+    },
+  },
+
+  inventory: {
+    async getMovements(params: InventoryFilterQuery = {}): Promise<PaginatedResult<InventoryMovement>> {
+      const query = new URLSearchParams();
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+      if (params.productId) query.set('productId', params.productId);
+      if (params.movementType) query.set('movementType', params.movementType);
+      if (params.startDate) query.set('startDate', params.startDate);
+      if (params.endDate) query.set('endDate', params.endDate);
+      if (params.search) query.set('search', params.search);
+
+      const qs = query.toString();
+      return apiClient<PaginatedResult<InventoryMovement>>(`inventory/movements${qs ? `?${qs}` : ''}`);
+    },
+
+    async getProductBatches(productId: string): Promise<InventoryBatch[]> {
+      return apiClient<InventoryBatch[]>(`inventory/products/${productId}/batches`);
+    },
+
+    async receiveStock(payload: StockReceiptPayload): Promise<{ product: Product; batch: InventoryBatch; movement: InventoryMovement }> {
+      return apiClient<{ product: Product; batch: InventoryBatch; movement: InventoryMovement }>('inventory/receipts', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async adjustStock(payload: StockAdjustmentPayload): Promise<{ product: Product; movement: InventoryMovement }> {
+      return apiClient<{ product: Product; movement: InventoryMovement }>('inventory/adjustments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
       });
     },
   },

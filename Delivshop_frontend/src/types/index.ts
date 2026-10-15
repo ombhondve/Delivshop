@@ -92,16 +92,73 @@ export interface ProvisionedShopResponse {
 
 export interface Product {
   id: string;
-  shop_id?: string;
-  shopId?: string;
+  shop_id?: string | null;
+  shopId?: string | null;
+  company_id?: string | null;
+  companyId?: string | null;
   name: string;
   sku: string;
   price: number;
   stock_quantity?: number;
-  stockQuantity?: number;
+  stockQuantity: number;
   category: string;
   is_active?: boolean;
-  isActive?: boolean;
+  isActive: boolean;
+  brand?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  base_unit?: string;
+  baseUnit?: string;
+  pack_size?: string;
+  packSize?: string;
+  units_per_pack?: number;
+  unitsPerPack?: number;
+  purchase_unit?: string | null;
+  purchaseUnit?: string | null;
+  selling_unit?: string | null;
+  sellingUnit?: string | null;
+  purchase_cost?: number;
+  purchaseCost?: number;
+  min_stock_threshold?: number;
+  minStockThreshold?: number;
+  reorder_quantity?: number;
+  reorderQuantity?: number;
+  tax_rate?: number;
+  taxRate?: number;
+  is_tax_inclusive?: boolean;
+  isTaxInclusive?: boolean;
+  min_selling_price?: number | null;
+  minSellingPrice?: number | null;
+  track_inventory?: boolean;
+  trackInventory?: boolean;
+  track_batches?: boolean;
+  trackBatches?: boolean;
+  storage_temperature?: string | null;
+  storageTemperature?: string | null;
+  shelf_life_days?: number | null;
+  shelfLifeDays?: number | null;
+  fat_percentage?: number | null;
+  fatPercentage?: number | null;
+  snf_percentage?: number | null;
+  snfPercentage?: number | null;
+  fssai_license?: string | null;
+  fssaiLicense?: string | null;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  company?: {
+    id: string;
+    name: string;
+    code: string;
+    status: string;
+  } | null;
+  stockStatus?: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  batchesCount?: number;
+  nearestExpiry?: string | null;
+  isExpiringSoon?: boolean;
+  batches?: InventoryBatch[];
 }
 
 export type OrderStatus =
@@ -329,3 +386,156 @@ export interface CompanyFilterQuery {
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
 }
+
+export interface ProductSummaryStats {
+  totalProducts: number;
+  activeProducts: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  expiringSoonItems: number;
+}
+
+export interface ProductFilterQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  companyId?: string;
+  category?: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+  stockStatus?: 'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
+  sortBy?: 'name' | 'sku' | 'price' | 'stock_quantity' | 'created_at' | 'updated_at';
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface CreateProductPayload {
+  companyId: string;
+  name: string;
+  sku?: string;
+  category: string;
+  description?: string;
+  brand?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+  baseUnit: string;
+  packSize: string;
+  unitsPerPack?: number;
+  purchaseUnit?: string;
+  sellingUnit?: string;
+  purchaseCost?: number;
+  price: number;
+  minStockThreshold?: number;
+  reorderQuantity?: number;
+  taxRate?: number;
+  isTaxInclusive?: boolean;
+  minSellingPrice?: number;
+  trackInventory?: boolean;
+  trackBatches?: boolean;
+  storageTemperature?: string;
+  shelfLifeDays?: number;
+  fatPercentage?: number;
+  snfPercentage?: number;
+  fssaiLicense?: string;
+  initialStock?: number;
+  initialBatchNumber?: string;
+  initialExpiryDate?: string;
+  initialManufacturingDate?: string;
+}
+
+export interface UpdateProductPayload {
+  name?: string;
+  companyId?: string;
+  category?: string;
+  description?: string | null;
+  brand?: string | null;
+  imageUrl?: string | null;
+  isActive?: boolean;
+  baseUnit?: string;
+  packSize?: string;
+  unitsPerPack?: number;
+  purchaseUnit?: string | null;
+  sellingUnit?: string | null;
+  purchaseCost?: number;
+  price?: number;
+  minStockThreshold?: number;
+  reorderQuantity?: number;
+  taxRate?: number;
+  isTaxInclusive?: boolean;
+  minSellingPrice?: number | null;
+  trackInventory?: boolean;
+  trackBatches?: boolean;
+  storageTemperature?: string | null;
+  shelfLifeDays?: number | null;
+  fatPercentage?: number | null;
+  snfPercentage?: number | null;
+  fssaiLicense?: string | null;
+}
+
+export interface InventoryBatch {
+  id: string;
+  productId: string;
+  companyId?: string | null;
+  batchNumber: string;
+  manufacturingDate?: string | null;
+  expiryDate: string;
+  quantityReceived: number;
+  quantityRemaining: number;
+  purchaseCost: number;
+  status: 'ACTIVE' | 'EXPIRED' | 'DEPLETED';
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventoryMovement {
+  id: string;
+  movementNumber: string;
+  productId: string;
+  productName?: string;
+  productSku?: string;
+  batchId?: string | null;
+  batchNumber?: string | null;
+  movementType: string;
+  quantityChange: number;
+  previousStock: number;
+  newStock: number;
+  unitCost: number;
+  referenceType: string;
+  referenceId?: string | null;
+  reason?: string | null;
+  actorId?: string | null;
+  actorName?: string | null;
+  createdAt: string;
+}
+
+export interface StockReceiptPayload {
+  productId: string;
+  companyId: string;
+  quantity: number;
+  unitCost?: number;
+  batchNumber?: string;
+  manufacturingDate?: string;
+  expiryDate: string;
+  referenceId?: string;
+  notes?: string;
+}
+
+export interface StockAdjustmentPayload {
+  productId: string;
+  batchId?: string;
+  adjustmentType: 'INCREASE' | 'DECREASE' | 'CORRECTION' | 'DAMAGE' | 'EXPIRY';
+  quantityChange: number;
+  reason: string;
+  referenceId?: string;
+  notes?: string;
+}
+
+export interface InventoryFilterQuery {
+  page?: number;
+  limit?: number;
+  productId?: string;
+  movementType?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
