@@ -1,27 +1,34 @@
-import { hash, verify, Algorithm } from '@node-rs/argon2';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-/**
- * Production Argon2id options conforming to OWASP recommendations:
- * - memoryCost: 19456 KiB (19 MiB)
- * - timeCost: 2 iterations
- * - parallelism: 1 lane
- * - algorithm: Argon2id
- */
+// Safe load of native Argon2 module with automatic fallback to pure-JS bcrypt
+let argon2Module: any = null;
+try {
+  argon2Module = await import('@node-rs/argon2');
+} catch {
+  // Native binding not available in this serverless architecture, will use bcrypt
+}
+
 const ARGON2_OPTIONS = {
   memoryCost: 19456,
   timeCost: 2,
   outputLen: 32,
   parallelism: 1,
-  algorithm: Algorithm.Argon2id,
+  algorithm: argon2Module?.Algorithm?.Argon2id ?? 2,
 };
 
 /**
- * Hash a plain password using Argon2id.
+ * Hash a plain password using Argon2id (or bcryptjs fallback).
  */
 export async function hashPassword(plainText: string): Promise<string> {
-  return hash(plainText, ARGON2_OPTIONS);
+  if (argon2Module?.hash) {
+    try {
+      return await argon2Module.hash(plainText, ARGON2_OPTIONS);
+    } catch {
+      // Fallback if native call fails
+    }
+  }
+  return bcrypt.hash(plainText, 12);
 }
 
 /**
@@ -32,11 +39,14 @@ export async function comparePassword(plainText: string, hashed: string): Promis
 
   // Check if hash is Argon2 format ($argon2id$ or $argon2i$)
   if (hashed.startsWith('$argon2')) {
-    try {
-      return await verify(hashed, plainText);
-    } catch {
-      return false;
+    if (argon2Module?.verify) {
+      try {
+        return await argon2Module.verify(hashed, plainText);
+      } catch {
+        return false;
+      }
     }
+    return false;
   }
 
   // Fallback for existing bcrypt hashes

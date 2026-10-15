@@ -2,7 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { ALLOWED_ORIGIN_LIST, ENV } from './config/env.js';
+import { ALLOWED_ORIGIN_LIST, ENV, ENV_CONFIG_ERRORS } from './config/env.js';
 import { generalRateLimiter } from './middleware/rateLimiter.middleware.js';
 import { errorHandler } from './middleware/errorHandler.middleware.js';
 import apiRouter from './routes/index.js';
@@ -100,6 +100,17 @@ export const createApp = (): Application => {
 
   // Root health endpoint for deployment probes
   app.get('/', (_req: Request, res: Response) => {
+    if (ENV_CONFIG_ERRORS.length > 0) {
+      res.status(200).json({
+        status: 'CONFIGURATION_REQUIRED',
+        service: 'Delivshop Backend API',
+        message: 'Backend server is running, but required production environment variables are not yet configured in Vercel.',
+        missingVariables: ENV_CONFIG_ERRORS.map((e) => e.key),
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
     res.json({
       status: 'UP',
       service: 'Delivshop Backend API',
@@ -111,7 +122,26 @@ export const createApp = (): Application => {
   app.use('/api', generalRateLimiter);
   app.use(generalRateLimiter);
 
-  // 5. Mount API Routes (mount at /api and root to seamlessly handle both /api/shops and /shops)
+  // 5. Incomplete Environment Configuration Guard (prevents silent 500 FUNCTION_INVOCATION_FAILED and provides clear feedback)
+  if (ENV_CONFIG_ERRORS.length > 0) {
+    const configErrorHandler = (_req: Request, res: Response) => {
+      res.status(503).json({
+        success: false,
+        message: `Backend service configuration incomplete: Missing environment variables on Vercel (${ENV_CONFIG_ERRORS.map((e) => e.key).join(', ')}).`,
+        missingVariables: ENV_CONFIG_ERRORS.map((e) => e.key),
+        actionRequired: 'Please configure these environment variables in your Vercel Project Settings under Settings -> Environment Variables, then redeploy.',
+      });
+    };
+
+    app.use('/auth', configErrorHandler);
+    app.use('/api/auth', configErrorHandler);
+    app.use('/shops', configErrorHandler);
+    app.use('/api/shops', configErrorHandler);
+    app.use('/orders', configErrorHandler);
+    app.use('/api/orders', configErrorHandler);
+  }
+
+  // 6. Mount API Routes (mount at /api and root to seamlessly handle both /api/shops and /shops)
   app.use('/api', apiRouter);
   app.use('/', apiRouter);
 
