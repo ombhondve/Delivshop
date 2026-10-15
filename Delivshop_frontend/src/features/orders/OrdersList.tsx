@@ -186,7 +186,7 @@ export const OrdersList: React.FC = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Delivered Orders</span>
@@ -197,7 +197,7 @@ export const OrdersList: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#E0F2FE', color: '#0369A1' }}>
-            <Truck size={22} />
+            <Truck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active In Transit</span>
@@ -208,7 +208,7 @@ export const OrdersList: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}>
-            <AlertCircle size={22} />
+            <AlertCircle size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Disputed / Shortage</span>

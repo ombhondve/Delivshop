@@ -214,7 +214,7 @@ export const DriversRoster: React.FC = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
-            <Users size={22} />
+            <Users size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Registered Fleet Drivers</span>
@@ -225,7 +225,7 @@ export const DriversRoster: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
-            <UserCheck size={22} />
+            <UserCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active on Route</span>
@@ -238,7 +238,7 @@ export const DriversRoster: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
-            <ShieldCheck size={22} />
+            <ShieldCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Inactive / Deactivated</span>

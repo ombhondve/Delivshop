@@ -20,7 +20,7 @@ export const Card: React.FC<CardProps> = ({
   noPadding = false,
 }) => {
   return (
-    <div className={`business-card ${className}`}>
+    <div className={`business-card ${noPadding ? 'no-padding' : ''} ${className}`}>
       {(title || action || icon) && (
         <div className="card-header">
           <div className="card-header-left">

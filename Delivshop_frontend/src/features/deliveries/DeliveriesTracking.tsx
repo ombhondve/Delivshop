@@ -128,7 +128,7 @@ export const DeliveriesTracking: React.FC = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
-            <Truck size={22} />
+            <Truck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active Vehicles on Road</span>
@@ -139,7 +139,7 @@ export const DeliveriesTracking: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#E0F2FE', color: '#0369A1' }}>
-            <ThermometerSnowflake size={22} />
+            <ThermometerSnowflake size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Cold Chain Avg Temp</span>
@@ -150,7 +150,7 @@ export const DeliveriesTracking: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Completed Drops</span>
@@ -161,7 +161,7 @@ export const DeliveriesTracking: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
-            <Clock size={22} />
+            <Clock size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Traffic Exception</span>

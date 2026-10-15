@@ -210,10 +210,10 @@ export const CompanyOverview: React.FC = () => {
   const isFilterActive = Boolean(searchInput || statusFilter || typeFilter || sortBy !== 'createdAt' || sortOrder !== 'DESC');
 
   return (
-    <div className="page-container" style={{ paddingBottom: '40px' }}>
+    <div className="page-container" style={{ paddingBottom: '16px' }}>
       {/* 1. Page Header & Breadcrumbs */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#64748B', marginBottom: '8px' }}>
+      <div style={{ marginBottom: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
           <span style={{ cursor: 'pointer', color: '#168264' }} onClick={() => navigate('/')}>
             Dashboard
           </span>
@@ -223,36 +223,37 @@ export const CompanyOverview: React.FC = () => {
 
         <div className="page-header" style={{ marginBottom: 0 }}>
           <div>
-            <h1 className="page-title" style={{ fontSize: '24px', fontWeight: 800, color: '#123D32', margin: 0 }}>
+            <h1 className="page-title" style={{ fontSize: '19px', fontWeight: 700, color: '#123D32', margin: 0 }}>
               Company Management
             </h1>
-            <p className="page-desc" style={{ marginTop: '4px', color: '#64748B', fontSize: '14px' }}>
+            <p className="page-desc" style={{ marginTop: '2px', color: '#64748B', fontSize: '12.5px' }}>
               Manage registered dairy producers, processing hubs, supplier details, and corporate information
             </p>
           </div>
 
-          <div className="page-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="page-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
-                fontSize: '12px',
+                fontSize: '11.5px',
                 color: '#94A3B8',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
-                marginRight: '6px',
+                gap: '4px',
+                marginRight: '4px',
               }}
               title={lastRefreshed.toLocaleTimeString()}
             >
-              <Clock size={13} />
+              <Clock size={12} />
               Synced {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
 
             <Button
               type="button"
               variant="secondary"
+              size="sm"
               onClick={handleRefreshAll}
               disabled={tableLoading || statsLoading}
-              icon={<RefreshCw size={15} className={tableLoading || statsLoading ? 'spin-icon' : ''} />}
+              icon={<RefreshCw size={14} className={tableLoading || statsLoading ? 'spin-icon' : ''} />}
             >
               {tableLoading || statsLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
@@ -260,8 +261,9 @@ export const CompanyOverview: React.FC = () => {
             <Button
               type="button"
               variant="primary"
+              size="sm"
               onClick={() => setIsAddOpen(true)}
-              icon={<Plus size={16} />}
+              icon={<Plus size={14} />}
             >
               Add Company
             </Button>
@@ -273,9 +275,9 @@ export const CompanyOverview: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '10px',
+          marginBottom: '10px',
         }}
       >
         {/* Card 1: Total Companies */}
@@ -283,30 +285,30 @@ export const CompanyOverview: React.FC = () => {
           style={{
             backgroundColor: '#FFFFFF',
             border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '18px 20px',
+            borderRadius: '8px',
+            padding: '8px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
         >
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Companies
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#123D32', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#123D32', marginTop: '1px', lineHeight: 1.2 }}>
               {statsLoading ? '...' : stats?.totalCompanies ?? data.total}
             </div>
-            <div style={{ fontSize: '11.5px', color: '#94A3B8', marginTop: '2px' }}>
+            <div style={{ fontSize: '10px', color: '#94A3B8' }}>
               Registered suppliers & hubs
             </div>
           </div>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
               backgroundColor: 'rgba(18, 61, 50, 0.08)',
               display: 'flex',
               alignItems: 'center',
@@ -314,7 +316,7 @@ export const CompanyOverview: React.FC = () => {
               color: '#123D32',
             }}
           >
-            <Building2 size={22} />
+            <Building2 size={16} />
           </div>
         </div>
 
@@ -323,30 +325,30 @@ export const CompanyOverview: React.FC = () => {
           style={{
             backgroundColor: '#FFFFFF',
             border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '18px 20px',
+            borderRadius: '8px',
+            padding: '8px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
         >
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Active Companies
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#168264', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#168264', marginTop: '1px', lineHeight: 1.2 }}>
               {statsLoading ? '...' : stats?.activeCompanies ?? '—'}
             </div>
-            <div style={{ fontSize: '11.5px', color: '#166534', marginTop: '2px' }}>
+            <div style={{ fontSize: '10px', color: '#166534' }}>
               Ready for supply dispatch
             </div>
           </div>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
               backgroundColor: 'rgba(22, 130, 100, 0.1)',
               display: 'flex',
               alignItems: 'center',
@@ -354,7 +356,7 @@ export const CompanyOverview: React.FC = () => {
               color: '#168264',
             }}
           >
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={16} />
           </div>
         </div>
 
@@ -363,30 +365,30 @@ export const CompanyOverview: React.FC = () => {
           style={{
             backgroundColor: '#FFFFFF',
             border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '18px 20px',
+            borderRadius: '8px',
+            padding: '8px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
         >
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Inactive Companies
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#D97706', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#D97706', marginTop: '1px', lineHeight: 1.2 }}>
               {statsLoading ? '...' : stats?.inactiveCompanies ?? '—'}
             </div>
-            <div style={{ fontSize: '11.5px', color: '#B45309', marginTop: '2px' }}>
-              Temporarily paused / review
+            <div style={{ fontSize: '10px', color: '#B45309' }}>
+              Paused / review
             </div>
           </div>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
               backgroundColor: 'rgba(217, 119, 6, 0.1)',
               display: 'flex',
               alignItems: 'center',
@@ -394,7 +396,7 @@ export const CompanyOverview: React.FC = () => {
               color: '#D97706',
             }}
           >
-            <AlertTriangle size={22} />
+            <AlertTriangle size={16} />
           </div>
         </div>
 
@@ -403,30 +405,30 @@ export const CompanyOverview: React.FC = () => {
           style={{
             backgroundColor: '#FFFFFF',
             border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '18px 20px',
+            borderRadius: '8px',
+            padding: '8px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
         >
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Recently Added
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#2563EB', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563EB', marginTop: '1px', lineHeight: 1.2 }}>
               {statsLoading ? '...' : stats?.recentCompanies ?? '—'}
             </div>
-            <div style={{ fontSize: '11.5px', color: '#1E40AF', marginTop: '2px' }}>
+            <div style={{ fontSize: '10px', color: '#1E40AF' }}>
               Enrolled in last 30 days
             </div>
           </div>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
               backgroundColor: 'rgba(37, 99, 235, 0.1)',
               display: 'flex',
               alignItems: 'center',
@@ -434,7 +436,7 @@ export const CompanyOverview: React.FC = () => {
               color: '#2563EB',
             }}
           >
-            <Sparkles size={22} />
+            <Sparkles size={16} />
           </div>
         </div>
       </div>
@@ -445,20 +447,20 @@ export const CompanyOverview: React.FC = () => {
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '8px',
           alignItems: 'center',
           justifyContent: 'space-between',
           backgroundColor: '#FFFFFF',
-          padding: '14px 18px',
-          borderRadius: '12px',
+          padding: '8px 14px',
+          borderRadius: '8px',
           border: '1px solid #E2E8F0',
-          marginBottom: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          marginBottom: '10px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
         }}
       >
         {/* Search Input */}
-        <div style={{ flex: '1 1 320px', position: 'relative' }}>
-          <Search size={17} style={{ position: 'absolute', left: '12px', top: '13px', color: '#94A3B8' }} />
+        <div style={{ flex: '1 1 280px', position: 'relative' }}>
+          <Search size={15} style={{ position: 'absolute', left: '10px', top: '9px', color: '#94A3B8' }} />
           <input
             type="text"
             value={searchInput}
@@ -466,10 +468,11 @@ export const CompanyOverview: React.FC = () => {
             placeholder="Search by company name, code, contact person, phone, email, or city..."
             style={{
               width: '100%',
-              padding: '10px 14px 10px 38px',
-              borderRadius: '8px',
+              height: '32px',
+              padding: '0 10px 0 32px',
+              borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              fontSize: '13.5px',
+              fontSize: '12.5px',
               outline: 'none',
               boxSizing: 'border-box',
               backgroundColor: '#FAFAF9',
@@ -481,8 +484,8 @@ export const CompanyOverview: React.FC = () => {
               onClick={() => setSearchInput('')}
               style={{
                 position: 'absolute',
-                right: '10px',
-                top: '11px',
+                right: '8px',
+                top: '7px',
                 border: 'none',
                 background: 'transparent',
                 cursor: 'pointer',
@@ -490,13 +493,13 @@ export const CompanyOverview: React.FC = () => {
                 padding: '2px',
               }}
             >
-              <X size={15} />
+              <X size={14} />
             </button>
           )}
         </div>
 
         {/* Filter Dropdowns */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           {/* Status Filter */}
           <select
             value={statusFilter}
@@ -505,10 +508,11 @@ export const CompanyOverview: React.FC = () => {
               setCurrentPage(1);
             }}
             style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
+              height: '32px',
+              padding: '0 10px',
+              borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              fontSize: '13.5px',
+              fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
               fontWeight: 500,
@@ -529,10 +533,11 @@ export const CompanyOverview: React.FC = () => {
               setCurrentPage(1);
             }}
             style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
+              height: '32px',
+              padding: '0 10px',
+              borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              fontSize: '13.5px',
+              fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
               fontWeight: 500,
@@ -556,10 +561,11 @@ export const CompanyOverview: React.FC = () => {
               setCurrentPage(1);
             }}
             style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
+              height: '32px',
+              padding: '0 10px',
+              borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              fontSize: '13.5px',
+              fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
               fontWeight: 500,
@@ -580,19 +586,20 @@ export const CompanyOverview: React.FC = () => {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '10px 12px',
-              borderRadius: '8px',
+              gap: '4px',
+              height: '32px',
+              padding: '0 10px',
+              borderRadius: '6px',
               border: '1px solid #CBD5E1',
               backgroundColor: '#FAFAF9',
               color: '#334155',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
             }}
             title={sortOrder === 'ASC' ? 'Ascending (click for Descending)' : 'Descending (click for Ascending)'}
           >
-            <ArrowUpDown size={14} />
+            <ArrowUpDown size={13} />
             <span>{sortOrder === 'ASC' ? 'Asc' : 'Desc'}</span>
           </button>
 
@@ -604,18 +611,19 @@ export const CompanyOverview: React.FC = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
-                padding: '10px 14px',
-                borderRadius: '8px',
+                gap: '4px',
+                height: '32px',
+                padding: '0 10px',
+                borderRadius: '6px',
                 border: '1px solid #FCA5A5',
                 backgroundColor: '#FEF2F2',
                 color: '#991B1B',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
             >
-              <X size={14} />
+              <X size={13} />
               Clear Filters
             </button>
           )}
@@ -694,16 +702,16 @@ export const CompanyOverview: React.FC = () => {
           <div className="business-table-container" style={{ overflowX: 'auto' }}>
             <table className="business-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  <th style={{ padding: '12px 16px', minWidth: '220px' }}>Company</th>
-                  <th style={{ padding: '12px 14px', width: '130px' }}>Code</th>
-                  <th style={{ padding: '12px 14px' }}>Contact Person</th>
-                  <th style={{ padding: '12px 14px' }}>Phone & Email</th>
-                  <th style={{ padding: '12px 14px' }}>City</th>
-                  <th style={{ padding: '12px 14px' }}>GSTIN</th>
-                  <th style={{ padding: '12px 14px', width: '100px' }}>Status</th>
-                  <th style={{ padding: '12px 14px', width: '110px' }}>Created</th>
-                  <th style={{ padding: '12px 16px', width: '150px', textAlign: 'right' }}>Actions</th>
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <th style={{ padding: '7px 10px', minWidth: '200px' }}>Company</th>
+                  <th style={{ padding: '7px 8px', width: '120px' }}>Code</th>
+                  <th style={{ padding: '7px 8px' }}>Contact Person</th>
+                  <th style={{ padding: '7px 8px' }}>Phone & Email</th>
+                  <th style={{ padding: '7px 8px' }}>City</th>
+                  <th style={{ padding: '7px 8px' }}>GSTIN</th>
+                  <th style={{ padding: '7px 8px', width: '90px' }}>Status</th>
+                  <th style={{ padding: '7px 8px', width: '100px' }}>Created</th>
+                  <th style={{ padding: '7px 10px', width: '140px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -721,20 +729,20 @@ export const CompanyOverview: React.FC = () => {
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       {/* Column 1: Company Name & Type */}
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <td style={{ padding: '6px 10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div
                             style={{
-                              width: '38px',
-                              height: '38px',
-                              borderRadius: '8px',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
                               backgroundColor: isActive ? 'rgba(18, 61, 50, 0.08)' : 'rgba(217, 119, 6, 0.1)',
                               color: isActive ? '#123D32' : '#D97706',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontWeight: 700,
-                              fontSize: '14px',
+                              fontSize: '12px',
                               flexShrink: 0,
                               overflow: 'hidden',
                             }}
@@ -760,17 +768,18 @@ export const CompanyOverview: React.FC = () => {
                                 setIsDetailsOpen(true);
                               }}
                               style={{
-                                fontSize: '14px',
+                                fontSize: '13px',
                                 fontWeight: 700,
                                 color: '#123D32',
                                 cursor: 'pointer',
+                                lineHeight: 1.25,
                               }}
                               onMouseEnter={(e) => ((e.target as HTMLElement).style.color = '#168264')}
                               onMouseLeave={(e) => ((e.target as HTMLElement).style.color = '#123D32')}
                             >
                               {company.name}
                             </div>
-                            <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '1px' }}>
+                            <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.2 }}>
                               {formatCompanyType(company.companyType)}
                             </div>
                           </div>
@@ -778,14 +787,14 @@ export const CompanyOverview: React.FC = () => {
                       </td>
 
                       {/* Column 2: Company Code */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '6px 8px' }}>
                         <code
                           style={{
                             fontFamily: 'monospace',
-                            fontSize: '12px',
+                            fontSize: '11px',
                             fontWeight: 700,
-                            padding: '3px 7px',
-                            borderRadius: '5px',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
                             backgroundColor: '#F1F5F9',
                             color: '#334155',
                             border: '1px solid #E2E8F0',
@@ -796,30 +805,30 @@ export const CompanyOverview: React.FC = () => {
                       </td>
 
                       {/* Column 3: Contact Person */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '6px 8px' }}>
                         {company.contactPerson ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>
-                            <User size={13} color="#94A3B8" />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#1F2937', fontWeight: 500 }}>
+                            <User size={12} color="#94A3B8" />
                             <span>{company.contactPerson}</span>
                           </div>
                         ) : (
-                          <span style={{ color: '#94A3B8', fontSize: '13px' }}>—</span>
+                          <span style={{ color: '#94A3B8', fontSize: '12px' }}>—</span>
                         )}
                       </td>
 
                       {/* Column 4: Phone & Email */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                      <td style={{ padding: '6px 8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '11.5px' }}>
                           {company.phone ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#334155' }}>
-                              <Phone size={12} color="#168264" />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155' }}>
+                              <Phone size={11} color="#168264" />
                               <span>{company.phone}</span>
                             </div>
                           ) : null}
                           {company.email ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748B' }}>
-                              <Mail size={12} color="#94A3B8" />
-                              <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B' }}>
+                              <Mail size={11} color="#94A3B8" />
+                              <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {company.email}
                               </span>
                             </div>
@@ -829,19 +838,19 @@ export const CompanyOverview: React.FC = () => {
                       </td>
 
                       {/* Column 5: City */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '6px 8px' }}>
                         {company.city ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#334155' }}>
-                            <MapPin size={13} color="#168264" />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
+                            <MapPin size={12} color="#168264" />
                             <span>{company.city}</span>
                           </div>
                         ) : (
-                          <span style={{ color: '#94A3B8', fontSize: '13px' }}>—</span>
+                          <span style={{ color: '#94A3B8', fontSize: '12px' }}>—</span>
                         )}
                       </td>
 
                       {/* Column 6: GSTIN */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '6px 8px' }}>
                         {company.gstin ? (
                           <button
                             type="button"
@@ -850,39 +859,39 @@ export const CompanyOverview: React.FC = () => {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px',
-                              padding: '3px 7px',
+                              gap: '3px',
+                              padding: '2px 5px',
                               borderRadius: '4px',
                               backgroundColor: '#F8FAFC',
                               border: '1px solid #E2E8F0',
                               fontFamily: 'monospace',
-                              fontSize: '11px',
+                              fontSize: '10.5px',
                               color: '#334155',
                               cursor: 'pointer',
                             }}
                           >
                             <span>{company.gstin}</span>
                             {copiedGstin === company.gstin ? (
-                              <Check size={11} color="#168264" />
+                              <Check size={10} color="#168264" />
                             ) : (
-                              <Copy size={11} color="#94A3B8" />
+                              <Copy size={10} color="#94A3B8" />
                             )}
                           </button>
                         ) : (
-                          <span style={{ color: '#94A3B8', fontSize: '13px' }}>—</span>
+                          <span style={{ color: '#94A3B8', fontSize: '12px' }}>—</span>
                         )}
                       </td>
 
                       {/* Column 7: Status */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '6px 8px' }}>
                         <span
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px',
-                            padding: '3px 8px',
-                            borderRadius: '12px',
-                            fontSize: '11.5px',
+                            gap: '4px',
+                            padding: '2px 6px',
+                            borderRadius: '10px',
+                            fontSize: '10.5px',
                             fontWeight: 700,
                             letterSpacing: '0.02em',
                             backgroundColor: isActive ? '#DCFCE7' : '#FEF3C7',
@@ -892,8 +901,8 @@ export const CompanyOverview: React.FC = () => {
                         >
                           <span
                             style={{
-                              width: '6px',
-                              height: '6px',
+                              width: '5px',
+                              height: '5px',
                               borderRadius: '50%',
                               backgroundColor: isActive ? '#16A34A' : '#D97706',
                             }}
@@ -903,13 +912,13 @@ export const CompanyOverview: React.FC = () => {
                       </td>
 
                       {/* Column 8: Created Date */}
-                      <td style={{ padding: '12px 14px', fontSize: '12px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '6px 8px', fontSize: '11.5px', color: '#64748B', whiteSpace: 'nowrap' }}>
                         {formatDate(company.createdAt)}
                       </td>
 
                       {/* Column 9: Actions */}
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           {/* View Details */}
                           <button
                             type="button"
@@ -921,19 +930,20 @@ export const CompanyOverview: React.FC = () => {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px',
-                              padding: '5px 9px',
-                              borderRadius: '6px',
+                              gap: '3px',
+                              padding: '4px 7px',
+                              borderRadius: '5px',
                               border: '1px solid #CBD5E1',
                               backgroundColor: '#FFFFFF',
                               color: '#334155',
-                              fontSize: '12px',
+                              fontSize: '11px',
                               fontWeight: 600,
                               cursor: 'pointer',
+                              height: '26px',
                             }}
                             title="View Complete Profile"
                           >
-                            <Eye size={13} />
+                            <Eye size={12} />
                             <span>Details</span>
                           </button>
 
@@ -945,19 +955,21 @@ export const CompanyOverview: React.FC = () => {
                               setIsEditOpen(true);
                             }}
                             style={{
-                              padding: '6px',
-                              borderRadius: '6px',
+                              padding: '4px',
+                              borderRadius: '5px',
                               border: '1px solid #CBD5E1',
                               backgroundColor: '#FFFFFF',
                               color: '#475569',
                               cursor: 'pointer',
+                              width: '26px',
+                              height: '26px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                             }}
                             title="Edit Company"
                           >
-                            <Pencil size={13} />
+                            <Pencil size={12} />
                           </button>
 
                           {/* Activate / Deactivate Toggle */}
@@ -968,13 +980,15 @@ export const CompanyOverview: React.FC = () => {
                               setIsStatusOpen(true);
                             }}
                             style={{
-                              padding: '6px',
-                              borderRadius: '6px',
+                              padding: '4px',
+                              borderRadius: '5px',
                               border: '1px solid',
                               borderColor: isActive ? '#FDE68A' : '#BBF7D0',
                               backgroundColor: isActive ? '#FFFBEB' : '#F0FDF4',
                               color: isActive ? '#D97706' : '#168264',
                               cursor: 'pointer',
+                              width: '26px',
+                              height: '26px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -982,7 +996,7 @@ export const CompanyOverview: React.FC = () => {
                             title={isActive ? 'Deactivate Company' : 'Activate Company'}
                             aria-label={isActive ? 'Deactivate Company' : 'Activate Company'}
                           >
-                            <Power size={13} />
+                            <Power size={12} />
                           </button>
 
                           {/* Delete Action (Strict Rule 1 & Rule 2 Enforcement) */}
@@ -994,13 +1008,15 @@ export const CompanyOverview: React.FC = () => {
                                 setIsStatusOpen(true);
                               }}
                               style={{
-                                padding: '6px',
-                                borderRadius: '6px',
+                                padding: '4px',
+                                borderRadius: '5px',
                                 border: '1px solid #E2E8F0',
                                 backgroundColor: '#F8FAFC',
                                 color: '#94A3B8',
                                 cursor: 'not-allowed',
                                 opacity: 0.6,
+                                width: '26px',
+                                height: '26px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1008,7 +1024,7 @@ export const CompanyOverview: React.FC = () => {
                               title="Deactivate this company before deleting it."
                               aria-label="Deactivate this company before deleting it"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={12} />
                             </button>
                           ) : (
                             <button
@@ -1018,13 +1034,15 @@ export const CompanyOverview: React.FC = () => {
                                 setIsDeleteOpen(true);
                               }}
                               style={{
-                                padding: '6px',
-                                borderRadius: '6px',
+                                padding: '4px',
+                                borderRadius: '5px',
                                 border: '1px solid #FECACA',
                                 backgroundColor: '#FEF2F2',
                                 color: '#DC2626',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
+                                width: '26px',
+                                height: '26px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1032,7 +1050,7 @@ export const CompanyOverview: React.FC = () => {
                               title="Delete Inactive Company"
                               aria-label="Delete Inactive Company"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={12} />
                             </button>
                           )}
                         </div>
@@ -1049,13 +1067,13 @@ export const CompanyOverview: React.FC = () => {
         {data.total > 0 && (
           <div
             style={{
-              padding: '14px 20px',
+              padding: '8px 14px',
               borderTop: '1px solid #E2E8F0',
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '12px',
+              gap: '8px',
               backgroundColor: '#FAFAF9',
             }}
           >

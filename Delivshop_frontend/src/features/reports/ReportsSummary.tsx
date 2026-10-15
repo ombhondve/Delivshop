@@ -117,7 +117,7 @@ export const ReportsSummary: React.FC = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
-            <Database size={22} />
+            <Database size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Audit Trail Integrity</span>
@@ -128,7 +128,7 @@ export const ReportsSummary: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
-            <ShieldCheck size={22} />
+            <ShieldCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active Admin Sessions</span>
@@ -139,7 +139,7 @@ export const ReportsSummary: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
-            <AlertCircle size={22} />
+            <AlertCircle size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Compliance Exceptions</span>

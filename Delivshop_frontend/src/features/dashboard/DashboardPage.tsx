@@ -183,7 +183,7 @@ export const DashboardPage: React.FC = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
-            <Store size={22} />
+            <Store size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Registered Milk Shops</span>
@@ -196,7 +196,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
-            <Milk size={22} />
+            <Milk size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Orders Requiring Action</span>
@@ -209,7 +209,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#E0F2FE', color: '#0369A1' }}>
-            <Truck size={22} />
+            <Truck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active Routes En Route</span>
@@ -222,7 +222,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Completed Drop-offs</span>
@@ -235,7 +235,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}>
-            <Wallet size={22} />
+            <Wallet size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Outstanding Collections</span>
@@ -248,9 +248,9 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Main Operational Split */}
-      <div className="dashboard-grid" style={{ gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1.2fr)', gap: '20px' }}>
+      <div className="dashboard-grid" style={{ gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1.2fr)', gap: '14px' }}>
         {/* Left Column: Urgent Dispatch Orders & Live Fleet */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Urgent Orders Card */}
           <Card
             title="Morning Dispatch Queue"
@@ -372,7 +372,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Right Column: Architectural Verification & Operational Audit */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Architectural Guardrails */}
           <Card
             title="System Architecture & Integrity"

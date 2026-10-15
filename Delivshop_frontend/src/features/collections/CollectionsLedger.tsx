@@ -178,7 +178,7 @@ export const CollectionsLedger: React.FC = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
-            <CheckCircle2 size={24} />
+            <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Today's Collections (Shift 1)</span>
@@ -191,7 +191,7 @@ export const CollectionsLedger: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}>
-            <AlertCircle size={24} />
+            <AlertCircle size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Outstanding Balance</span>
@@ -204,7 +204,7 @@ export const CollectionsLedger: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
-            <Clock size={24} />
+            <Clock size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Pending Driver Inflow</span>
@@ -217,7 +217,7 @@ export const CollectionsLedger: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
-            <Wallet size={24} />
+            <Wallet size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Reconciliation Rate</span>
