@@ -68,13 +68,28 @@
   padding: 0;
 }
 
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 body {
   font-family: var(--font-family);
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
 }
 
 code {
@@ -93,8 +108,12 @@ code {
 
 .layout-root {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
   background-color: var(--bg-primary);
+  position: relative;
 }
 
 .layout-main-column {
@@ -102,15 +121,28 @@ code {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow-x: hidden;
+  min-height: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background-color: var(--bg-primary);
 }
 
 .layout-content-area {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   padding: 24px 32px;
   overflow-y: auto;
+  overflow-x: hidden;
   background-color: var(--bg-primary);
+}
+
+.layout-content-area.layout-content-products {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 32px 18px 32px;
 }
 
 /* Page Containers */
@@ -289,6 +321,8 @@ code {
 
 .app-sidebar {
   width: var(--sidebar-width);
+  height: 100vh;
+  height: 100dvh;
   background-color: var(--color-sidebar);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
@@ -297,6 +331,7 @@ code {
   position: relative;
   z-index: 50;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .app-sidebar.is-collapsed {
@@ -305,6 +340,7 @@ code {
 
 .sidebar-brand-container {
   height: var(--header-height);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -362,8 +398,10 @@ code {
 
 .sidebar-nav-wrapper {
   flex: 1;
+  min-height: 0;
   padding: 18px 10px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .nav-section-title {
@@ -434,6 +472,7 @@ code {
 }
 
 .sidebar-collapse-container {
+  flex-shrink: 0;
   padding: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -461,6 +500,7 @@ code {
 }
 
 .sidebar-user-footer {
+  flex-shrink: 0;
   padding: 14px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
@@ -1768,9 +1808,12 @@ select.input-field:focus {
    ========================================================================== */
 
 .dashboard-entrance-wrapper {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   animation: dashboardFadeInUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -2430,4 +2473,229 @@ select.input-field:focus {
   color: #DC2626;
   margin-top: 4px;
   font-weight: 500;
+}
+
+/* ==========================================================================
+   Products & Inventory Catalog Layout (Fixed Toolbar, Scrolling Table)
+   Requirements:
+   - Page title, breadcrumb, description, action buttons stay visible
+   - 5 Summary metric cards stay visible
+   - Status tabs, search bar, supplier filter, category filter, sorting stay visible
+   - Only product records table scrolls vertically
+   - Horizontal table scrolling contained strictly inside table container
+   ========================================================================== */
+
+.catalog-page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow: hidden;
+  gap: 12px;
+}
+
+.catalog-toolbar-pinned {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalog-header-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catalog-header-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.catalog-summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.catalog-summary-card {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.catalog-summary-card:hover {
+  transform: translateY(-1px);
+}
+
+.catalog-card-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.catalog-tabs-bar {
+  display: flex;
+  gap: 4px;
+  padding: 3px 4px;
+  background-color: #E2E8F0;
+  border-radius: 8px;
+  width: fit-content;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.catalog-tab-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.catalog-filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #FFFFFF;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.catalog-records-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.catalog-records-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.catalog-records-card > .card-header {
+  flex-shrink: 0;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.catalog-records-card > .card-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.catalog-table-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.catalog-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #F8FAFC;
+  box-shadow: 0 1px 0 #E2E8F0;
+}
+
+.catalog-pagination-footer {
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: #FAFAF9;
+}
+
+@media (max-width: 1200px) {
+  .catalog-summary-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .catalog-summary-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-height: 700px) and (min-width: 769px) {
+  .catalog-summary-card {
+    padding: 8px 10px !important;
+  }
+  .catalog-summary-card .card-metric-val {
+    font-size: 17px !important;
+  }
+  .catalog-toolbar-pinned {
+    gap: 6px;
+  }
+  .catalog-page-container {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .layout-content-area.layout-content-products {
+    overflow-y: auto;
+    height: auto;
+    display: block;
+    padding: 14px;
+  }
+
+  .catalog-page-container {
+    height: auto;
+    overflow: visible;
+  }
+
+  .catalog-records-wrapper {
+    min-height: 480px;
+  }
+
+  .catalog-table-container {
+    max-height: 520px;
+  }
+
+  .catalog-summary-cards-grid {
+    grid-template-columns: 1fr;
+  }
 }

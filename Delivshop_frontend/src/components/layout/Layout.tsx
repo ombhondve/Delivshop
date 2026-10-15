@@ -28,7 +28,10 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, onSelectTab, children
           activeTab={activeTab}
           onOpenMobileSidebar={() => setIsMobileOpen(true)}
         />
-        <main className="layout-content-area" role="main">
+        <main
+          className={`layout-content-area ${activeTab === 'products' ? 'layout-content-products' : ''}`}
+          role="main"
+        >
           {children}
         </main>
       </div>
