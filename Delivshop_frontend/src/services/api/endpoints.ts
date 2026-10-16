@@ -10,6 +10,11 @@ import {
   Invoice,
   Payment,
   DriverUser,
+  DriverRosterSummary,
+  DriverDeliveryRecord,
+  DriverAuditRecord,
+  CreateDriverPayload,
+  UpdateDriverPayload,
   PaginatedResult,
   AuthTokens,
   Company,
@@ -346,8 +351,73 @@ export const api = {
       return apiClient<DriverUser[]>('deliveries/drivers');
     },
 
-    async listAllDrivers(): Promise<DriverUser[]> {
-      return apiClient<DriverUser[]>('deliveries/drivers/all');
+    async listAllDrivers(params?: {
+      search?: string;
+      status?: string;
+      vehicle?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    }): Promise<DriverUser[]> {
+      const query = new URLSearchParams();
+      if (params?.search) query.set('search', params.search);
+      if (params?.status) query.set('status', params.status);
+      if (params?.vehicle) query.set('vehicle', params.vehicle);
+      if (params?.sortBy) query.set('sortBy', params.sortBy);
+      if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+
+      const qs = query.toString();
+      return apiClient<DriverUser[]>(`deliveries/drivers/all${qs ? `?${qs}` : ''}`);
+    },
+
+    async getRosterSummary(): Promise<DriverRosterSummary> {
+      return apiClient<DriverRosterSummary>('deliveries/drivers/summary');
+    },
+
+    async getDriver(driverId: string): Promise<{
+      driver: DriverUser;
+      deliveries: DriverDeliveryRecord[];
+      auditHistory: DriverAuditRecord[];
+    }> {
+      return apiClient<{
+        driver: DriverUser;
+        deliveries: DriverDeliveryRecord[];
+        auditHistory: DriverAuditRecord[];
+      }>(`deliveries/drivers/${driverId}`);
+    },
+
+    async createDriver(payload: CreateDriverPayload): Promise<DriverUser> {
+      return apiClient<DriverUser>('deliveries/drivers', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async updateDriver(driverId: string, payload: UpdateDriverPayload): Promise<DriverUser> {
+      return apiClient<DriverUser>(`deliveries/drivers/${driverId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async assignVehicle(
+      driverId: string,
+      payload: { vehicleNumber: string; vehicleType?: string; assignedRoute?: string }
+    ): Promise<DriverUser> {
+      return apiClient<DriverUser>(`deliveries/drivers/${driverId}/vehicle`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async resetDriverPassword(driverId: string, password: string): Promise<{ message: string }> {
+      return apiClient<{ message: string }>(`deliveries/drivers/${driverId}/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+    },
+
+    async getDriverDeliveries(driverId: string): Promise<DriverDeliveryRecord[]> {
+      return apiClient<DriverDeliveryRecord[]>(`deliveries/drivers/${driverId}/deliveries`);
     },
 
     async updateDriverStatus(driverId: string, isActive: boolean, reason?: string): Promise<{ success: boolean; message: string; is_active: boolean }> {

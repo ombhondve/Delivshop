@@ -63,7 +63,10 @@ export const authService = {
   },
 
   async login(credentials: { email: string; password: string }, ipAddress?: string) {
-    const user = await userRepository.findByEmail(credentials.email);
+    let user = await userRepository.findByEmail(credentials.email);
+    if (!user) {
+      user = await userRepository.findByEmployeeId(credentials.email);
+    }
     if (!user) {
       // Intentionally uniform error to prevent email enumeration
       throw new Error('Invalid email or password');
@@ -90,6 +93,8 @@ export const authService = {
       id: user.id,
       email: user.email,
       role: user.role,
+      driverId: user.role === 'DRIVER' ? user.id : undefined,
+      employeeId: user.employee_id,
     };
 
     const tokens = {
@@ -105,6 +110,7 @@ export const authService = {
         name: user.name,
         role: user.role,
         phone: user.phone,
+        employeeId: user.employee_id,
         createdAt: user.created_at,
       },
       tokens,

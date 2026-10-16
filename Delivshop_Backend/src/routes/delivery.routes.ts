@@ -4,7 +4,13 @@ import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { requireDriverDeliveryAssignment } from '../middleware/ownership.middleware.js';
 import { validateRequest } from '../middleware/validate.middleware.js';
-import { updateDeliveryStatusSchema } from '../schemas/delivery.schema.js';
+import {
+  updateDeliveryStatusSchema,
+  createDriverSchema,
+  updateDriverSchema,
+  assignVehicleSchema,
+  resetDriverPasswordSchema,
+} from '../schemas/delivery.schema.js';
 
 const router = Router();
 
@@ -31,11 +37,72 @@ router.get(
   deliveryController.listAllDrivers
 );
 
+router.get(
+  '/drivers/summary',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN'),
+  deliveryController.getRosterSummary
+);
+
+router.post(
+  '/drivers',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(createDriverSchema),
+  deliveryController.createDriver
+);
+
+router.get(
+  '/drivers/:id',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN', 'DRIVER'),
+  deliveryController.getDriver
+);
+
+router.put(
+  '/drivers/:id',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(updateDriverSchema),
+  deliveryController.updateDriver
+);
+
+router.patch(
+  '/drivers/:id',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(updateDriverSchema),
+  deliveryController.updateDriver
+);
+
 router.patch(
   '/drivers/:id/status',
   authenticate,
   authorizeRoles('ADMIN'),
   deliveryController.updateDriverStatus
+);
+
+router.patch(
+  '/drivers/:id/vehicle',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(assignVehicleSchema),
+  deliveryController.assignVehicle
+);
+
+router.post(
+  '/drivers/:id/reset-password',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(resetDriverPasswordSchema),
+  deliveryController.resetDriverPassword
+);
+
+router.get(
+  '/drivers/:id/deliveries',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN', 'DRIVER'),
+  deliveryController.getDriverDeliveries
 );
 
 router.delete(

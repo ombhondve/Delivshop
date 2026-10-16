@@ -267,6 +267,97 @@ export interface DriverUser {
   phone?: string;
   role: 'DRIVER';
   is_active: boolean;
+  employee_id?: string;
+  vehicle_number?: string | null;
+  vehicle_type?: string | null;
+  assigned_route?: string | null;
+  license_number?: string | null;
+  license_expiry?: string | null;
+  joining_date?: string | null;
+  emergency_contact?: string | null;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  active_deliveries?: number;
+  completed_deliveries?: number;
+  today_deliveries?: number;
+  current_delivery_status?: string | null;
+  current_order_number?: string | null;
+  current_shop_name?: string | null;
+  status?: 'AVAILABLE' | 'ON_DELIVERY' | 'OFF_DUTY' | 'INACTIVE';
+  rating?: number;
+}
+
+export interface DriverRosterSummary {
+  totalDrivers: number;
+  activeDrivers: number;
+  availableDrivers: number;
+  onDeliveryDrivers: number;
+  inactiveDrivers: number;
+  attentionRequired: number;
+}
+
+export interface DriverDeliveryRecord {
+  id: string;
+  order_id: string;
+  order_number: string;
+  driver_id: string;
+  status: string;
+  total: number;
+  subtotal: number;
+  delivery_fee: number;
+  order_status: string;
+  shop_name: string;
+  shop_address: string;
+  shop_phone: string;
+  delivery_contact_name?: string | null;
+  delivery_contact_phone?: string | null;
+  picked_up_at?: string | null;
+  delivered_at?: string | null;
+  created_at: string;
+}
+
+export interface DriverAuditRecord {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  details?: any;
+  ip_address?: string | null;
+  created_at: string;
+  actor_name?: string | null;
+  actor_role?: string | null;
+}
+
+export interface CreateDriverPayload {
+  name: string;
+  phone: string;
+  email?: string;
+  employeeId?: string;
+  password?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  assignedRoute?: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
+  joiningDate?: string;
+  emergencyContact?: string;
+  notes?: string;
+}
+
+export interface UpdateDriverPayload {
+  name?: string;
+  phone?: string;
+  email?: string;
+  employeeId?: string;
+  vehicleNumber?: string | null;
+  vehicleType?: string | null;
+  assignedRoute?: string | null;
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  joiningDate?: string | null;
+  emergencyContact?: string | null;
+  notes?: string | null;
 }
 
 export interface PaginatedResult<T> {

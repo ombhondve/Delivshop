@@ -63,10 +63,99 @@ export const deliveryController = {
     }
   },
 
-  async listAllDrivers(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async listAllDrivers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const drivers = await deliveryService.listAllDrivers();
+      const { search, status, vehicle, sortBy, sortOrder } = req.query;
+      const drivers = await deliveryService.listAllDrivers({
+        search: typeof search === 'string' ? search : undefined,
+        status: typeof status === 'string' ? status : undefined,
+        vehicle: typeof vehicle === 'string' ? vehicle : undefined,
+        sortBy: typeof sortBy === 'string' ? sortBy : undefined,
+        sortOrder: sortOrder === 'DESC' ? 'DESC' : 'ASC',
+      });
       sendSuccess(res, drivers);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getRosterSummary(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const summary = await deliveryService.getRosterSummary();
+      sendSuccess(res, summary);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driver = await deliveryService.getDriver(req.params.id);
+      sendSuccess(res, driver);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getDriverDeliveries(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const deliveries = await deliveryService.getDriverDeliveries(req.params.id);
+      sendSuccess(res, deliveries);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async createDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driver = await deliveryService.createDriver(
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, driver, 'Driver successfully onboarded to fleet', 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const updated = await deliveryService.updateDriver(
+        req.params.id,
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, updated, 'Driver profile updated successfully');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async assignVehicle(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const updated = await deliveryService.assignVehicle(
+        req.params.id,
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, updated, 'Vehicle allocated to driver successfully');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async resetDriverPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await deliveryService.resetDriverPassword(
+        req.params.id,
+        req.body.password,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, result, 'Driver password reset successfully');
     } catch (err) {
       next(err);
     }
