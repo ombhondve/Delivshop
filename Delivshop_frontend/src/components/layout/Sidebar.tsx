@@ -1,14 +1,16 @@
-import React from 'react';
 import {
   LayoutDashboard,
-  Building2,
+  Users,
+  Truck,
+  MapPin,
+  CalendarCheck,
   Store,
+  FileText,
+  Shield,
+  Building2,
   Package,
   ClipboardList,
-  Truck,
-  Users,
   Wallet,
-  FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -20,15 +22,18 @@ import { useAuth } from '../../hooks/useAuth';
 
 export type ActiveTab =
   | 'dashboard'
-  | 'companies'
+  | 'drivers'
+  | 'vehicles'
+  | 'routes'
+  | 'assignments'
   | 'shops'
+  | 'reports'
+  | 'settings'
+  | 'companies'
   | 'products'
   | 'orders'
   | 'deliveries'
-  | 'drivers'
-  | 'collections'
-  | 'reports'
-  | 'settings';
+  | 'collections';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -49,17 +54,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
-  const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
+  const primaryNavItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={19} /> },
-    { id: 'companies', label: 'Company Management', icon: <Building2 size={19} /> },
-    { id: 'shops', label: 'Shops Management', icon: <Store size={19} /> },
-    { id: 'products', label: 'Products & Inventory', icon: <Package size={19} /> },
-    { id: 'orders', label: 'Orders Dispatch', icon: <ClipboardList size={19} /> },
-    { id: 'deliveries', label: 'Delivery Fleet', icon: <Truck size={19} /> },
-    { id: 'drivers', label: 'Drivers Roster', icon: <Users size={19} /> },
-    { id: 'collections', label: 'Payments & Ledger', icon: <Wallet size={19} /> },
-    { id: 'reports', label: 'Audit & Reports', icon: <FileText size={19} /> },
-    { id: 'settings', label: 'Settings', icon: <Settings size={19} /> },
+    { id: 'drivers', label: 'Drivers', icon: <Users size={19} /> },
+    { id: 'vehicles', label: 'Vehicles', icon: <Truck size={19} /> },
+    { id: 'routes', label: 'Routes', icon: <MapPin size={19} /> },
+    { id: 'assignments', label: 'Assignments', icon: <CalendarCheck size={19} /> },
+    { id: 'shops', label: 'Shops', icon: <Store size={19} /> },
+    { id: 'reports', label: 'Reports', icon: <FileText size={19} /> },
+    { id: 'settings', label: 'Settings & Security', icon: <Shield size={19} /> },
+  ];
+
+  const secondaryNavItems: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'companies', label: 'Companies', icon: <Building2 size={18} /> },
+    { id: 'products', label: 'Products & Stock', icon: <Package size={18} /> },
+    { id: 'orders', label: 'Orders Dispatch', icon: <ClipboardList size={18} /> },
+    { id: 'collections', label: 'Payments & Ledger', icon: <Wallet size={18} /> },
   ];
 
   const handleNavClick = (tabId: ActiveTab) => {
@@ -113,8 +123,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Navigation List */}
         <div className="sidebar-nav-wrapper">
           <nav className="sidebar-nav">
-            {!isCollapsed && <div className="nav-section-title">CORE OPERATIONS</div>}
-            {navItems.map((item) => {
+            {!isCollapsed && <div className="nav-section-title">CORE FLEET & LOGISTICS</div>}
+            {primaryNavItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
@@ -129,6 +139,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {!isCollapsed && item.badge && (
                     <span className="nav-badge-count">{item.badge}</span>
                   )}
+                </button>
+              );
+            })}
+
+            {!isCollapsed && (
+              <div className="nav-section-title" style={{ marginTop: '16px' }}>
+                DAIRY COMMERCE
+              </div>
+            )}
+            {secondaryNavItems.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`nav-item ${isActive ? 'active' : ''}`}
+                  onClick={() => handleNavClick(item.id)}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <span className="nav-icon-container">{item.icon}</span>
+                  {!isCollapsed && <span className="nav-label">{item.label}</span>}
                 </button>
               );
             })}

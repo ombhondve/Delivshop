@@ -434,6 +434,43 @@ export const api = {
       });
     },
 
+    async getFullProfile(driverId: string): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/profile`);
+    },
+
+    async getSalaryConfig(driverId: string): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/salary`);
+    },
+
+    async upsertSalaryConfig(driverId: string, payload: any): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/salary`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async getPayrollRecords(driverId: string): Promise<any[]> {
+      return apiClient<any[]>(`deliveries/drivers/${driverId}/payroll`);
+    },
+
+    async addPayrollRecord(driverId: string, payload: any): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/payroll`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async getDocuments(driverId: string): Promise<any[]> {
+      return apiClient<any[]>(`deliveries/drivers/${driverId}/documents`);
+    },
+
+    async upsertDocument(driverId: string, payload: any): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/documents`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
     async assignDriver(orderId: string, driverId: string): Promise<Delivery> {
       return apiClient<Delivery>('deliveries/assign', {
         method: 'POST',
@@ -445,6 +482,207 @@ export const api = {
       return apiClient<Delivery>(`deliveries/${deliveryId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status, currentLatitude: lat, currentLongitude: lng, notes }),
+      });
+    },
+  },
+
+  vehicles: {
+    async list(params?: {
+      search?: string;
+      status?: string;
+      vehicleType?: string;
+      city?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    }): Promise<any[]> {
+      const query = new URLSearchParams();
+      if (params?.search) query.set('search', params.search);
+      if (params?.status) query.set('status', params.status);
+      if (params?.vehicleType) query.set('vehicleType', params.vehicleType);
+      if (params?.city) query.set('city', params.city);
+      if (params?.sortBy) query.set('sortBy', params.sortBy);
+      if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+
+      const qs = query.toString();
+      return apiClient<any[]>(`vehicles${qs ? `?${qs}` : ''}`);
+    },
+
+    async getSummary(): Promise<any> {
+      return apiClient<any>('vehicles/summary');
+    },
+
+    async get(id: string): Promise<any> {
+      return apiClient<any>(`vehicles/${id}`);
+    },
+
+    async create(payload: any): Promise<any> {
+      return apiClient<any>('vehicles', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async update(id: string, payload: any): Promise<any> {
+      return apiClient<any>(`vehicles/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async updateStatus(id: string, status: string, notes?: string): Promise<any> {
+      return apiClient<any>(`vehicles/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, notes }),
+      });
+    },
+
+    async addDocument(id: string, payload: any): Promise<any> {
+      return apiClient<any>(`vehicles/${id}/documents`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async addMaintenance(id: string, payload: any): Promise<any> {
+      return apiClient<any>(`vehicles/${id}/maintenance`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async delete(id: string, reason?: string): Promise<any> {
+      return apiClient<any>(`vehicles/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
+    },
+  },
+
+  routes: {
+    async list(params?: {
+      search?: string;
+      status?: string;
+      city?: string;
+      depot?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    }): Promise<any[]> {
+      const query = new URLSearchParams();
+      if (params?.search) query.set('search', params.search);
+      if (params?.status) query.set('status', params.status);
+      if (params?.city) query.set('city', params.city);
+      if (params?.depot) query.set('depot', params.depot);
+      if (params?.sortBy) query.set('sortBy', params.sortBy);
+      if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+
+      const qs = query.toString();
+      return apiClient<any[]>(`routes${qs ? `?${qs}` : ''}`);
+    },
+
+    async getSummary(): Promise<any> {
+      return apiClient<any>('routes/summary');
+    },
+
+    async get(id: string): Promise<any> {
+      return apiClient<any>(`routes/${id}`);
+    },
+
+    async create(payload: any): Promise<any> {
+      return apiClient<any>('routes', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async update(id: string, payload: any): Promise<any> {
+      return apiClient<any>(`routes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async updateStops(id: string, stops: any[], changesSummary?: string): Promise<any> {
+      return apiClient<any>(`routes/${id}/stops`, {
+        method: 'PUT',
+        body: JSON.stringify({ stops, changesSummary }),
+      });
+    },
+
+    async delete(id: string, reason?: string): Promise<any> {
+      return apiClient<any>(`routes/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
+    },
+  },
+
+  assignments: {
+    async list(params?: {
+      search?: string;
+      deliveryDate?: string;
+      status?: string;
+      driverId?: string;
+      vehicleId?: string;
+      routeId?: string;
+      city?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    }): Promise<any[]> {
+      const query = new URLSearchParams();
+      if (params?.search) query.set('search', params.search);
+      if (params?.deliveryDate) query.set('deliveryDate', params.deliveryDate);
+      if (params?.status) query.set('status', params.status);
+      if (params?.driverId) query.set('driverId', params.driverId);
+      if (params?.vehicleId) query.set('vehicleId', params.vehicleId);
+      if (params?.routeId) query.set('routeId', params.routeId);
+      if (params?.city) query.set('city', params.city);
+      if (params?.sortBy) query.set('sortBy', params.sortBy);
+      if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+
+      const qs = query.toString();
+      return apiClient<any[]>(`assignments${qs ? `?${qs}` : ''}`);
+    },
+
+    async getSummary(date?: string): Promise<any> {
+      const query = date ? `?date=${encodeURIComponent(date)}` : '';
+      return apiClient<any>(`assignments/summary${query}`);
+    },
+
+    async validate(payload: {
+      driverId: string;
+      vehicleId: string;
+      routeId: string;
+      deliveryDate: string;
+      excludeRunId?: string;
+    }): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
+      return apiClient<{ isValid: boolean; errors: string[]; warnings: string[] }>('assignments/validate', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async get(id: string): Promise<any> {
+      return apiClient<any>(`assignments/${id}`);
+    },
+
+    async create(payload: any): Promise<any> {
+      return apiClient<any>('assignments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async updateStatus(id: string, status: string, notes?: string): Promise<any> {
+      return apiClient<any>(`assignments/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, notes }),
+      });
+    },
+
+    async updateStopStatus(runId: string, sequence: number, payload: any): Promise<any> {
+      return apiClient<any>(`assignments/${runId}/stops/${sequence}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
       });
     },
   },

@@ -16,6 +16,10 @@ import { SettingsPage } from '../features/settings/SettingsPage';
 import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 
+import { VehiclesOverview } from '../features/vehicles/VehiclesOverview';
+import { RoutesOverview } from '../features/routes/RoutesOverview';
+import { AssignmentsOverview } from '../features/assignments/AssignmentsOverview';
+
 const MainContent: React.FC = () => {
   const { path, activeTab, selectTab, shopId, isNotFound, isLogin, navigate } = useNavigation();
   const { user, loading } = useAuth();
@@ -71,6 +75,14 @@ const MainContent: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardPage />;
+      case 'drivers':
+        return <DriversRoster />;
+      case 'vehicles':
+        return <VehiclesOverview />;
+      case 'routes':
+        return <RoutesOverview onDispatchRun={() => selectTab('assignments')} />;
+      case 'assignments':
+        return <AssignmentsOverview />;
       case 'companies':
         return <CompanyOverview />;
       case 'shops':
@@ -81,8 +93,6 @@ const MainContent: React.FC = () => {
         return <OrdersList />;
       case 'deliveries':
         return <DeliveriesTracking />;
-      case 'drivers':
-        return <DriversRoster />;
       case 'collections':
         return <CollectionsLedger />;
       case 'reports':

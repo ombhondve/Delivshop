@@ -59,6 +59,55 @@ router.get(
   deliveryController.getDriver
 );
 
+router.get(
+  '/drivers/:id/profile',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN'),
+  deliveryController.getFullProfile
+);
+
+router.get(
+  '/drivers/:id/salary',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.getSalaryConfig
+);
+
+router.put(
+  '/drivers/:id/salary',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.upsertSalaryConfig
+);
+
+router.get(
+  '/drivers/:id/payroll',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.getPayrollRecords
+);
+
+router.post(
+  '/drivers/:id/payroll',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.addPayrollRecord
+);
+
+router.get(
+  '/drivers/:id/documents',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN'),
+  deliveryController.getDriverDocuments
+);
+
+router.post(
+  '/drivers/:id/documents',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.upsertDriverDocument
+);
+
 router.put(
   '/drivers/:id',
   authenticate,

@@ -17,12 +17,15 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }
 
   const tabTitles: Record<ActiveTab, { title: string; category: string }> = {
     dashboard: { title: 'Operational Dashboard', category: 'Overview' },
+    drivers: { title: 'Drivers Roster', category: 'Fleet Personnel' },
+    vehicles: { title: 'Fleet & Vehicles', category: 'Logistics Asset Management' },
+    routes: { title: 'Sequenced Routes', category: 'Route Optimization' },
+    assignments: { title: 'Assignments & Dispatch', category: 'Daily Delivery Runs' },
     companies: { title: 'Company Management', category: 'Core Operations' },
     shops: { title: 'Shop Management', category: 'Distribution Network' },
     products: { title: 'Products & Inventory', category: 'Catalog Management' },
     orders: { title: 'Orders Dispatch', category: 'Order Fulfillment' },
     deliveries: { title: 'Delivery Fleet', category: 'Logistics Tracking' },
-    drivers: { title: 'Drivers Roster', category: 'Fleet Personnel' },
     collections: { title: 'Payments & Ledger', category: 'Finance & Invoicing' },
     reports: { title: 'Audit & Reports', category: 'System Compliance' },
     settings: { title: 'System Settings', category: 'Configuration' },

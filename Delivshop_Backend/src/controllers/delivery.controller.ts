@@ -190,4 +190,82 @@ export const deliveryController = {
       next(err);
     }
   },
+
+  async getSalaryConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const config = await deliveryService.getSalaryConfig(req.params.id);
+      sendSuccess(res, config);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async upsertSalaryConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const config = await deliveryService.upsertSalaryConfig(
+        req.params.id,
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, config, 'Driver salary configuration updated successfully');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getPayrollRecords(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const records = await deliveryService.getPayrollRecords(req.params.id);
+      sendSuccess(res, records);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async addPayrollRecord(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const record = await deliveryService.addPayrollRecord(
+        req.params.id,
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, record, 'Driver payroll disbursement recorded', 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getDriverDocuments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const docs = await deliveryService.getDriverDocuments(req.params.id);
+      sendSuccess(res, docs);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async upsertDriverDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const doc = await deliveryService.upsertDriverDocument(
+        req.params.id,
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, doc, 'Driver document verified and saved');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getFullProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const profile = await deliveryService.getFullProfile(req.params.id);
+      sendSuccess(res, profile);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

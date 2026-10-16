@@ -334,12 +334,12 @@ export const deliveryService = {
       throw new AppError('Driver not found', 404);
     }
 
-    // Safety rule: Cannot deactivate driver while on active delivery run
+    // Safety rule: Cannot deactivate driver while on active delivery task or assigned to active delivery run
     if (!isActive) {
       const deps = await deliveryRepository.checkDriverDependencies(driverId);
-      if (deps.activeDeliveriesCount > 0) {
+      if (deps.activeDeliveriesCount > 0 || deps.activeRunsCount > 0) {
         throw new AppError(
-          `Cannot deactivate driver while they are assigned to ${deps.activeDeliveriesCount} active delivery task(s). Complete or reassign those deliveries first.`,
+          `Cannot deactivate driver: Assigned to ${deps.activeDeliveriesCount} active delivery task(s) and ${deps.activeRunsCount} active run assignment(s). Please reassign or complete those runs first.`,
           400
         );
       }
@@ -378,11 +378,11 @@ export const deliveryService = {
       );
     }
 
-    // Dependency check: Cannot delete driver assigned to active deliveries
+    // Dependency check: Cannot delete driver assigned to active deliveries or runs
     const deps = await deliveryRepository.checkDriverDependencies(driverId);
-    if (deps.activeDeliveriesCount > 0) {
+    if (deps.activeDeliveriesCount > 0 || deps.activeRunsCount > 0) {
       throw new AppError(
-        `Cannot delete driver because they are currently assigned to ${deps.activeDeliveriesCount} active delivery task(s). Reassign or complete those deliveries first.`,
+        `Cannot delete driver because they are currently assigned to ${deps.activeDeliveriesCount} active delivery task(s) and ${deps.activeRunsCount} active run(s). Reassign or complete those first.`,
         400
       );
     }
@@ -413,6 +413,113 @@ export const deliveryService = {
         id: driver.id,
         name: driver.name,
       },
+    };
+  },
+
+  async getSalaryConfig(driverId: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+    return deliveryRepository.getSalaryConfig(driverId);
+  },
+
+  async upsertSalaryConfig(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    const config = await deliveryRepository.upsertSalaryConfig(driverId, data);
+
+    await auditService.log({
+      actorId,
+      action: 'DRIVER_SALARY_CONFIG_UPDATED',
+      entityType: 'user',
+      entityId: driverId,
+      details: { baseMonthlySalary: data.baseMonthlySalary, effectiveFrom: data.effectiveFrom },
+      ipAddress,
+    });
+
+    return config;
+  },
+
+  async getPayrollRecords(driverId: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+    return deliveryRepository.getPayrollRecords(driverId);
+  },
+
+  async addPayrollRecord(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    const record = await deliveryRepository.addPayrollRecord(driverId, data, actorId);
+
+    await auditService.log({
+      actorId,
+      action: 'DRIVER_PAYROLL_RECORDED',
+      entityType: 'user',
+      entityId: driverId,
+      details: {
+        paymentPeriod: data.paymentPeriod,
+        netAmount: data.netAmount,
+        paymentReference: data.paymentReference,
+      },
+      ipAddress,
+    });
+
+    return record;
+  },
+
+  async getDriverDocuments(driverId: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+    return deliveryRepository.getDriverDocuments(driverId);
+  },
+
+  async upsertDriverDocument(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    const doc = await deliveryRepository.upsertDriverDocument(driverId, data, actorId);
+
+    await auditService.log({
+      actorId,
+      action: 'DRIVER_DOCUMENT_VERIFIED',
+      entityType: 'user',
+      entityId: driverId,
+      details: {
+        documentType: data.documentType,
+        documentNumber: data.documentNumber,
+        verificationStatus: data.verificationStatus,
+      },
+      ipAddress,
+    });
+
+    return doc;
+  },
+
+  async getFullProfile(driverId: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) {
+      throw new AppError('Driver not found', 404);
+    }
+
+    const [deliveries, auditHistory, salaryConfig, payrollRecords, documents, runs] =
+      await Promise.all([
+        deliveryRepository.getDriverDeliveries(driverId),
+        deliveryRepository.getDriverAuditHistory(driverId),
+        deliveryRepository.getSalaryConfig(driverId),
+        deliveryRepository.getPayrollRecords(driverId),
+        deliveryRepository.getDriverDocuments(driverId),
+        deliveryRepository.getDriverRunsHistory(driverId),
+      ]);
+
+    return {
+      driver,
+      deliveries,
+      runs,
+      salaryConfig,
+      payrollRecords,
+      documents,
+      auditHistory,
     };
   },
 };

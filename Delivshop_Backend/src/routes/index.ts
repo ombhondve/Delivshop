@@ -8,6 +8,9 @@ import deliveryRoutes from './delivery.routes.js';
 import companyRoutes from './company.routes.js';
 import productRoutes from './product.routes.js';
 import inventoryRoutes from './inventory.routes.js';
+import vehicleRoutes from './vehicle.routes.js';
+import routeRoutes from './route.routes.js';
+import assignmentRoutes from './assignment.routes.js';
 
 const apiRouter = Router();
 
@@ -20,6 +23,10 @@ apiRouter.use('/shops', shopRoutes);
 apiRouter.use('/shop', shopPortalRoutes);
 apiRouter.use('/orders', orderRoutes);
 apiRouter.use('/deliveries', deliveryRoutes);
+apiRouter.use('/vehicles', vehicleRoutes);
+apiRouter.use('/routes', routeRoutes);
+apiRouter.use('/assignments', assignmentRoutes);
 
 export default apiRouter;
+
 

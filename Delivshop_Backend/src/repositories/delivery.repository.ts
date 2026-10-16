@@ -375,6 +375,7 @@ export const deliveryRepository = {
   async checkDriverDependencies(driverId: string): Promise<{
     activeDeliveriesCount: number;
     historicalDeliveriesCount: number;
+    activeRunsCount: number;
   }> {
     const activeRes = await query<{ count: string }>(
       `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1 AND status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED')`,
@@ -384,10 +385,15 @@ export const deliveryRepository = {
       `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1`,
       [driverId]
     );
+    const runsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_runs WHERE driver_id = $1 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS')`,
+      [driverId]
+    );
 
     return {
       activeDeliveriesCount: parseInt(activeRes.rows[0]?.count || '0', 10),
       historicalDeliveriesCount: parseInt(histRes.rows[0]?.count || '0', 10),
+      activeRunsCount: parseInt(runsRes.rows[0]?.count || '0', 10),
     };
   },
 
@@ -408,5 +414,174 @@ export const deliveryRepository = {
       );
       return { softDeleted: true };
     }
+  },
+
+  async getSalaryConfig(driverId: string): Promise<any | null> {
+    const res = await query(
+      `SELECT * FROM driver_salary_configs WHERE driver_id = $1 AND is_current = TRUE ORDER BY created_at DESC LIMIT 1`,
+      [driverId]
+    );
+    return res.rows[0] || null;
+  },
+
+  async upsertSalaryConfig(driverId: string, data: {
+    baseMonthlySalary: number;
+    dailyAllowance?: number;
+    perDeliveryIncentive?: number;
+    effectiveFrom?: string;
+    notes?: string;
+  }): Promise<any> {
+    // Mark previous configs as not current
+    await query(`UPDATE driver_salary_configs SET is_current = FALSE WHERE driver_id = $1`, [driverId]);
+
+    const res = await query(
+      `INSERT INTO driver_salary_configs (
+        driver_id, base_monthly_salary, daily_allowance, per_delivery_incentive, effective_from, is_current, notes
+       )
+       VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), TRUE, $6)
+       RETURNING *`,
+      [
+        driverId,
+        data.baseMonthlySalary,
+        data.dailyAllowance ?? 150.0,
+        data.perDeliveryIncentive ?? 25.0,
+        data.effectiveFrom || null,
+        data.notes || null,
+      ]
+    );
+    return res.rows[0];
+  },
+
+  async getPayrollRecords(driverId: string): Promise<any[]> {
+    const res = await query(
+      `SELECT pr.*, u.name as processor_name
+       FROM driver_payroll_records pr
+       LEFT JOIN users u ON pr.processed_by = u.id
+       WHERE pr.driver_id = $1
+       ORDER BY pr.payment_period DESC, pr.created_at DESC`,
+      [driverId]
+    );
+    return res.rows;
+  },
+
+  async addPayrollRecord(driverId: string, data: {
+    paymentPeriod: string;
+    baseSalary: number;
+    allowances?: number;
+    incentives?: number;
+    deductions?: number;
+    advances?: number;
+    netAmount: number;
+    status?: string;
+    paymentDate?: string;
+    paymentReference?: string;
+    notes?: string;
+  }, processedBy?: string): Promise<any> {
+    const res = await query(
+      `INSERT INTO driver_payroll_records (
+        driver_id, payment_period, base_salary, allowances, incentives,
+        deductions, advances, net_amount, status, payment_date,
+        payment_reference, processed_by, notes
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       ON CONFLICT (driver_id, payment_period) DO UPDATE
+       SET base_salary = EXCLUDED.base_salary,
+           allowances = EXCLUDED.allowances,
+           incentives = EXCLUDED.incentives,
+           deductions = EXCLUDED.deductions,
+           advances = EXCLUDED.advances,
+           net_amount = EXCLUDED.net_amount,
+           status = EXCLUDED.status,
+           payment_date = EXCLUDED.payment_date,
+           payment_reference = EXCLUDED.payment_reference,
+           processed_by = EXCLUDED.processed_by,
+           notes = EXCLUDED.notes
+       RETURNING *`,
+      [
+        driverId,
+        data.paymentPeriod.trim(),
+        data.baseSalary,
+        data.allowances || 0,
+        data.incentives || 0,
+        data.deductions || 0,
+        data.advances || 0,
+        data.netAmount,
+        data.status || 'PAID',
+        data.paymentDate || null,
+        data.paymentReference || null,
+        processedBy || null,
+        data.notes || null,
+      ]
+    );
+    return res.rows[0];
+  },
+
+  async getDriverDocuments(driverId: string): Promise<any[]> {
+    const res = await query(
+      `SELECT dd.*, u.name as verifier_name
+       FROM driver_documents dd
+       LEFT JOIN users u ON dd.verified_by = u.id
+       WHERE dd.driver_id = $1
+       ORDER BY dd.created_at ASC`,
+      [driverId]
+    );
+    return res.rows;
+  },
+
+  async upsertDriverDocument(driverId: string, data: {
+    documentType: string;
+    documentNumber: string;
+    issueDate?: string;
+    expiryDate?: string;
+    verificationStatus?: string;
+    fileUrl?: string;
+    notes?: string;
+  }, verifiedBy?: string): Promise<any> {
+    const res = await query(
+      `INSERT INTO driver_documents (
+        driver_id, document_type, document_number, issue_date, expiry_date,
+        verification_status, file_url, verified_by, verified_at, notes
+       )
+       VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8::uuid, CASE WHEN $8::uuid IS NOT NULL THEN NOW() ELSE NULL END, $9)
+       ON CONFLICT (driver_id, document_type) DO UPDATE
+       SET document_number = EXCLUDED.document_number,
+           issue_date = EXCLUDED.issue_date,
+           expiry_date = EXCLUDED.expiry_date,
+           verification_status = EXCLUDED.verification_status,
+           file_url = COALESCE(EXCLUDED.file_url, driver_documents.file_url),
+           verified_by = COALESCE(EXCLUDED.verified_by, driver_documents.verified_by),
+           verified_at = CASE WHEN EXCLUDED.verified_by IS NOT NULL THEN NOW() ELSE driver_documents.verified_at END,
+           notes = EXCLUDED.notes,
+           updated_at = NOW()
+       RETURNING *`,
+      [
+        driverId,
+        data.documentType,
+        data.documentNumber.trim(),
+        data.issueDate || null,
+        data.expiryDate || null,
+        data.verificationStatus || 'VALID',
+        data.fileUrl || null,
+        verifiedBy || null,
+        data.notes || null,
+      ]
+    );
+    return res.rows[0];
+  },
+
+  async getDriverRunsHistory(driverId: string): Promise<any[]> {
+    const res = await query(
+      `SELECT dr.*,
+              r.route_code, r.name as route_name, r.city as route_city,
+              v.registration_number as vehicle_registration, v.vehicle_type
+       FROM delivery_runs dr
+       JOIN routes r ON dr.route_id = r.id
+       JOIN vehicles v ON dr.vehicle_id = v.id
+       WHERE dr.driver_id = $1
+       ORDER BY dr.delivery_date DESC, dr.created_at DESC
+       LIMIT 50`,
+      [driverId]
+    );
+    return res.rows;
   },
 };

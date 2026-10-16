@@ -8,6 +8,7 @@ interface CardProps {
   icon?: React.ReactNode;
   className?: string;
   noPadding?: boolean;
+  style?: React.CSSProperties;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -18,9 +19,10 @@ export const Card: React.FC<CardProps> = ({
   icon,
   className = '',
   noPadding = false,
+  style,
 }) => {
   return (
-    <div className={`business-card ${noPadding ? 'no-padding' : ''} ${className}`}>
+    <div style={style} className={`business-card ${noPadding ? 'no-padding' : ''} ${className}`}>
       {(title || action || icon) && (
         <div className="card-header">
           <div className="card-header-left">

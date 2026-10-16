@@ -630,3 +630,366 @@ export interface InventoryFilterQuery {
   search?: string;
 }
 
+// ----------------------------------------------------
+// VEHICLES MANAGEMENT MODULE TYPES
+// ----------------------------------------------------
+export interface Vehicle {
+  id: string;
+  vehicle_code: string;
+  registration_number: string;
+  registrationNumber?: string;
+  make_model?: string | null;
+  makeModel?: string | null;
+  vehicle_type: string;
+  type?: string;
+  capacity_kg: number;
+  capacityKg?: number;
+  capacity_crates: number;
+  capacityCrates?: number;
+  fuel_type: 'DIESEL' | 'ELECTRIC' | 'CNG' | 'PETROL' | string;
+  fuelType?: string;
+  is_refrigerated: boolean;
+  isRefrigerated?: boolean;
+  city?: string;
+  state?: string;
+  depot?: string;
+  depotName?: string | null;
+  status: 'AVAILABLE' | 'ASSIGNED' | 'UNDER_MAINTENANCE' | 'MAINTENANCE' | 'INACTIVE';
+  is_active: boolean;
+  isActive?: boolean;
+  current_odometer_km: number;
+  odometerKm?: number;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  active_run_id?: string | null;
+  active_run_code?: string | null;
+  active_driver_name?: string | null;
+  expiring_documents_count?: number;
+  documents?: VehicleDocument[];
+  maintenance?: VehicleMaintenance[];
+  assignments?: any[];
+}
+
+export interface VehicleDocument {
+  id: string;
+  vehicle_id: string;
+  document_type: 'RC' | 'INSURANCE' | 'PUC' | 'FITNESS' | 'PERMIT' | string;
+  documentType?: string;
+  document_number: string;
+  documentNumber?: string;
+  issue_date?: string | null;
+  issueDate?: string | null;
+  expiry_date?: string | null;
+  expiryDate?: string | null;
+  verification_status: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'PENDING' | 'REJECTED' | 'VERIFIED' | string;
+  verificationStatus?: string;
+  file_url?: string | null;
+  fileUrl?: string | null;
+  verifier_name?: string | null;
+  verified_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface VehicleMaintenance {
+  id: string;
+  vehicle_id: string;
+  service_date: string;
+  serviceDate?: string;
+  service_type: string;
+  serviceType?: string;
+  odometer_km: number;
+  odometerKm?: number;
+  cost: number;
+  service_center?: string | null;
+  serviceCenter?: string | null;
+  description?: string | null;
+  next_service_date?: string | null;
+  nextServiceDate?: string | null;
+  recorder_name?: string | null;
+  created_at: string;
+}
+
+export interface VehicleSummary {
+  totalVehicles: number;
+  activeVehicles: number;
+  availableVehicles: number;
+  assignedVehicles: number;
+  underMaintenanceVehicles: number;
+  inactiveVehicles: number;
+  attentionRequired: number;
+}
+
+// ----------------------------------------------------
+// ROUTES MANAGEMENT MODULE TYPES
+// ----------------------------------------------------
+export interface RouteStop {
+  id: string;
+  route_id?: string;
+  routeId?: string;
+  shop_id: string;
+  shopId?: string;
+  stop_sequence: number;
+  sequenceIndex?: number;
+  planned_arrival_time?: string | null;
+  timeWindowStart?: string | null;
+  timeWindowEnd?: string | null;
+  service_time_minutes: number;
+  serviceTimeMinutes?: number;
+  delivery_instructions?: string | null;
+  shop_name?: string;
+  shopName?: string;
+  shop_address?: string;
+  address?: string;
+  shop_area?: string;
+  shop_city?: string;
+  shop_latitude?: number | null;
+  latitude?: number | null;
+  shop_longitude?: number | null;
+  longitude?: number | null;
+  is_location_verified?: boolean;
+  delivery_contact_name?: string | null;
+  delivery_contact_phone?: string | null;
+}
+
+export interface RouteVersion {
+  id: string;
+  route_id: string;
+  version_number: number;
+  version?: number;
+  stops_snapshot: any[];
+  stopsSnapshot?: any[];
+  changes_summary?: string | null;
+  changeReason?: string | null;
+  created_by_name?: string | null;
+  created_at: string;
+  createdAt?: string;
+  estimatedDistanceKm?: number;
+  estimatedDurationMinutes?: number;
+}
+
+export interface Route {
+  id: string;
+  route_code: string;
+  code?: string;
+  name: string;
+  city: string;
+  state: string;
+  depot: string;
+  depotName?: string;
+  depotAddress?: string;
+  description?: string | null;
+  status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'PUBLISHED' | 'ARCHIVED';
+  total_distance_km: number;
+  estimatedDistanceKm?: number;
+  estimated_duration_minutes: number;
+  estimatedDurationMinutes?: number;
+  version: number;
+  returnToDepot?: boolean;
+  stops_count?: number;
+  stopsCount?: number;
+  active_runs_count?: number;
+  created_at: string;
+  updated_at: string;
+  stops?: RouteStop[];
+  versions?: RouteVersion[];
+  assignments?: any[];
+}
+
+export interface RouteSummary {
+  totalRoutes: number;
+  activeRoutes: number;
+  draftRoutes: number;
+  inactiveRoutes: number;
+  totalStopsConfigured: number;
+}
+
+// ----------------------------------------------------
+// ASSIGNMENTS & DAILY DELIVERY RUNS TYPES
+// ----------------------------------------------------
+export interface DeliveryRunStop {
+  id: string;
+  run_id: string;
+  shop_id: string;
+  shopId?: string;
+  stop_sequence: number;
+  sequenceIndex?: number;
+  status: 'PENDING' | 'ARRIVED' | 'DELIVERED' | 'FAILED' | 'SKIPPED';
+  arrival_time?: string | null;
+  delivery_time?: string | null;
+  recipientName?: string | null;
+  notes?: string | null;
+  proof_of_delivery_url?: string | null;
+  failure_reason?: string | null;
+  failureReason?: string | null;
+  shop_name?: string;
+  shopName?: string;
+  shop_address?: string;
+  address?: string;
+  shop_area?: string;
+  shop_city?: string;
+  shop_latitude?: number | null;
+  shop_longitude?: number | null;
+  delivery_contact_name?: string | null;
+  delivery_contact_phone?: string | null;
+}
+
+export interface DeliveryRun {
+  id: string;
+  run_code: string;
+  runCode?: string;
+  route_id: string;
+  routeId?: string;
+  driver_id: string;
+  driverId?: string;
+  vehicle_id: string;
+  vehicleId?: string;
+  delivery_date: string;
+  deliveryDate?: string;
+  status: 'DRAFT' | 'VALIDATED' | 'ASSIGNED' | 'READY' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  planned_stops_count: number;
+  totalStopsCount?: number;
+  completed_stops_count: number;
+  completedStopsCount?: number;
+  dispatch_time?: string | null;
+  completion_time?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  route_code?: string;
+  routeCode?: string;
+  route_name?: string;
+  routeName?: string;
+  route_city?: string;
+  route_depot?: string;
+  total_distance_km?: number;
+  estimated_duration_minutes?: number;
+  driver_name?: string;
+  driverName?: string;
+  driver_employee_id?: string;
+  driver_phone?: string;
+  driverPhone?: string;
+  driver_license?: string;
+  vehicle_registration?: string;
+  registrationNumber?: string;
+  vehicle_code?: string;
+  vehicle_type?: string;
+  vehicleType?: string;
+  capacity_crates?: number;
+  is_refrigerated?: boolean;
+  stops?: DeliveryRunStop[];
+}
+
+export interface AssignmentSummary {
+  totalAssignments: number;
+  inProgress: number;
+  readyToDispatch: number;
+  completed: number;
+  cancelled: number;
+  todayAssignments: number;
+}
+
+// ----------------------------------------------------
+// EXTENDED DRIVER PROFILE, SALARY & PAYROLL TYPES
+// ----------------------------------------------------
+export interface DriverSalaryConfig {
+  id: string;
+  driver_id: string;
+  base_monthly_salary: number;
+  baseSalary?: number;
+  daily_allowance: number;
+  per_delivery_incentive: number;
+  effective_from: string;
+  effectiveFromDate?: string;
+  paymentCycle?: string;
+  allowances?: { hra?: number; fuel?: number; [key: string]: any };
+  deductions?: { pf?: number; [key: string]: any };
+  effective_to?: string | null;
+  is_current: boolean;
+  notes?: string | null;
+}
+
+export interface DriverPayrollRecord {
+  id: string;
+  driver_id: string;
+  payment_period: string;
+  periodStartDate?: string;
+  periodEndDate?: string;
+  base_salary: number;
+  baseSalary?: number;
+  allowances: number;
+  totalAllowances?: number;
+  incentives: number;
+  deductions: number;
+  totalDeductions?: number;
+  advances: number;
+  advancesDeducted?: number;
+  net_amount: number;
+  netAmount?: number;
+  status: 'DRAFT' | 'APPROVED' | 'PAID' | 'CANCELLED';
+  paymentStatus?: string;
+  payment_date?: string | null;
+  paidAt?: string | null;
+  paymentMethod?: string;
+  payment_reference?: string | null;
+  paymentReference?: string | null;
+  processor_name?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface DriverDocument {
+  id: string;
+  driver_id: string;
+  document_type: 'DRIVING_LICENSE' | 'AADHAAR' | 'PAN' | 'POLICE_VERIFICATION' | 'MEDICAL_FITNESS' | string;
+  documentType?: string;
+  document_number: string;
+  documentNumber?: string;
+  issue_date?: string | null;
+  issueDate?: string | null;
+  expiry_date?: string | null;
+  expiryDate?: string | null;
+  verification_status: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'PENDING' | 'REJECTED' | 'VERIFIED' | string;
+  verificationStatus?: string;
+  file_url?: string | null;
+  fileUrl?: string | null;
+  verifier_name?: string | null;
+  verified_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface DriverFullProfile {
+  driver: DriverUser;
+  employment?: {
+    employeeId?: string;
+    employmentType?: string;
+    joinedDate?: string;
+    city?: string;
+    depot?: string;
+  };
+  salaryConfig?: DriverSalaryConfig | null;
+  payrollRecords?: DriverPayrollRecord[];
+  documents?: DriverDocument[];
+  attendance?: {
+    daysPresentMonth?: number;
+    daysAbsentMonth?: number;
+    currentShift?: string;
+  };
+  deliveryHistory?: any[];
+  deliveries?: DriverDeliveryRecord[];
+  runs?: DeliveryRun[];
+  performance?: {
+    totalRuns?: number;
+    onTimePercentage?: number;
+    completedDrops?: number;
+  };
+  accessStatus?: {
+    isDriverAppActive?: boolean;
+    lastLoginAt?: string | null;
+  };
+  auditHistory?: DriverAuditRecord[];
+}
+
+
