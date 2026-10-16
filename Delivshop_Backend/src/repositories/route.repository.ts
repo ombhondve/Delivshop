@@ -1,4 +1,5 @@
 import { query, dbPool } from '../config/database.js';
+import { generateRouteCode } from '../services/route-code.service.js';
 
 export interface RouteStop {
   id?: string;
@@ -205,9 +206,7 @@ export const routeRepository = {
 
       let rCode = data.routeCode?.trim().toUpperCase();
       if (!rCode) {
-        const countRes = await client.query(`SELECT COUNT(*)::int as c FROM routes`);
-        const nextSeq = String((countRes.rows[0]?.c || 0) + 1).padStart(2, '0');
-        rCode = `RT-PUN-${nextSeq}`;
+        rCode = await generateRouteCode(client);
       }
 
       const insertRouteRes = await client.query(
@@ -439,5 +438,36 @@ export const routeRepository = {
       [routeId, actorId || null, reason || 'Archived via administrative route deactivation']
     );
     return true;
+  },
+
+  async validateShopsEligibility(shopIds: string[]): Promise<{
+    missingIds: string[];
+    inactiveIds: string[];
+  }> {
+    if (!shopIds || shopIds.length === 0) return { missingIds: [], inactiveIds: [] };
+
+    const res = await query(
+      `SELECT id, status, deleted_at FROM shops WHERE id = ANY($1::uuid[])`,
+      [shopIds]
+    );
+
+    const foundMap = new Map<string, { status: string; deleted_at: any }>();
+    for (const r of res.rows) {
+      foundMap.set(r.id, r);
+    }
+
+    const missingIds: string[] = [];
+    const inactiveIds: string[] = [];
+
+    for (const id of shopIds) {
+      const shop = foundMap.get(id);
+      if (!shop) {
+        missingIds.push(id);
+      } else if (shop.status !== 'ACTIVE' || shop.deleted_at !== null) {
+        inactiveIds.push(id);
+      }
+    }
+
+    return { missingIds, inactiveIds };
   },
 };

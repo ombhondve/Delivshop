@@ -182,4 +182,120 @@ describe('Delivery Routes, Shop Sequences, and Versioning Suite', () => {
     expect(json.success).toBe(true);
     expect(json.data.versions.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('should automatically generate a unique route code matching RTE-YYYYMMDD-NNN when none is provided', async () => {
+    const res = await fetch(`${baseUrl}/api/routes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        name: 'Auto Code Generated Route',
+        city: 'Nashik',
+        state: 'Maharashtra',
+        depot: 'Nashik Cold Hub',
+        status: 'DRAFT',
+      }),
+    });
+
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data.route_code).toMatch(/^RTE-\d{8}-\d{3}$/);
+
+    // Clean up
+    await dbPool.query('DELETE FROM routes WHERE id = $1', [json.data.id]);
+  });
+
+  it('should reject route creation with duplicate shop stops', async () => {
+    const res = await fetch(`${baseUrl}/api/routes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        name: 'Duplicate Stops Route',
+        city: 'Pune',
+        state: 'Maharashtra',
+        stops: [
+          { shopId: testShopId1, stopSequence: 1 },
+          { shopId: testShopId1, stopSequence: 2 },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.message).toContain('Duplicate shop detected');
+  });
+
+  it('should reject route creation with non-existent shop ID', async () => {
+    const fakeShopId = '00000000-0000-0000-0000-000000000099';
+    const res = await fetch(`${baseUrl}/api/routes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        name: 'Non Existent Shop Route',
+        city: 'Pune',
+        state: 'Maharashtra',
+        stops: [
+          { shopId: fakeShopId, stopSequence: 1 },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.message).toContain('do not exist');
+  });
+
+  it('should safely soft-delete an unused route and preserve shops data', async () => {
+    // 1. Create a temporary route
+    const createRes = await fetch(`${baseUrl}/api/routes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        name: 'Route To Be Soft Deleted',
+        city: 'Pune',
+        state: 'Maharashtra',
+        stops: [
+          { shopId: testShopId1, stopSequence: 1 },
+        ],
+      }),
+    });
+    expect(createRes.status).toBe(201);
+    const createdRoute = (await createRes.json()).data;
+
+    // 2. Delete the route
+    const deleteRes = await fetch(`${baseUrl}/api/routes/${createdRoute.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ reason: 'Unit test deletion of unused route' }),
+    });
+    expect(deleteRes.status).toBe(200);
+
+    // 3. Verify route is not returned in active list
+    const listRes = await fetch(`${baseUrl}/api/routes`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const listJson = await listRes.json();
+    const foundInList = listJson.data.some((r: any) => r.id === createdRoute.id);
+    expect(foundInList).toBe(false);
+
+    // 4. Verify shop is untouched and still exists in database
+    const shopCheck = await dbPool.query('SELECT id, deleted_at FROM shops WHERE id = $1', [testShopId1]);
+    expect(shopCheck.rows.length).toBe(1);
+    expect(shopCheck.rows[0].deleted_at).toBeNull();
+  });
 });

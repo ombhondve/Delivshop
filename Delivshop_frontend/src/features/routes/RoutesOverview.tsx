@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Plus, Search, Navigation, MapPin, Clock, CheckCircle2, 
   Layers, AlertTriangle, Truck, RefreshCw, Eye, ShieldCheck, 
-  AlertCircle, XCircle, ArrowRight, Route as RouteIcon
+  AlertCircle, XCircle, ArrowRight, Route as RouteIcon, Trash2
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -10,6 +10,7 @@ import { api } from '../../services/api/endpoints';
 import { Route, RouteSummary } from '../../types';
 import { RouteCreationWizard } from './RouteCreationWizard';
 import { RouteDetailsDrawer } from './RouteDetailsDrawer';
+import { DeleteRouteModal } from './DeleteRouteModal';
 
 interface RoutesOverviewProps {
   onDispatchRun?: (route: Route) => void;
@@ -47,6 +48,8 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [routeToDelete, setRouteToDelete] = useState<Route | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Active abort controller for request cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -242,8 +245,9 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             variant="primary"
             onClick={() => setIsWizardOpen(true)}
             icon={<Plus size={16} />}
+            style={{ fontWeight: 600, padding: '9px 18px', background: '#16805D', color: '#FFFFFF' }}
           >
-            New Route Wizard
+            Create Delivery Route
           </Button>
         </div>
       </div>
@@ -553,7 +557,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
 
                       {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
-                        <div className="table-actions-group" style={{ justifyContent: 'flex-end' }}>
+                        <div className="table-actions-group" style={{ justifyContent: 'flex-end', gap: '6px' }}>
                           <Button
                             type="button"
                             variant="secondary"
@@ -575,6 +579,20 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
                               Dispatch
                             </Button>
                           )}
+
+                          <Button
+                            type="button"
+                            variant="danger"
+                            className="btn-table-action"
+                            onClick={() => {
+                              setRouteToDelete(route);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            icon={<Trash2 size={13} />}
+                            title="Delete / Archive Route"
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -591,10 +609,13 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
         <RouteCreationWizard
           isOpen={isWizardOpen}
           onClose={() => setIsWizardOpen(false)}
-          onRouteCreated={() => {
-            setIsWizardOpen(false);
-            showToast('New delivery route created successfully');
+          onRouteCreated={(newRoute) => {
+            showToast(`New delivery route ${newRoute.route_code || ''} created successfully`);
             fetchRoutesData(false);
+          }}
+          onOpenDetails={(routeId) => {
+            setSelectedRouteId(routeId);
+            setIsDetailsOpen(true);
           }}
         />
       )}
@@ -609,6 +630,33 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             setSelectedRouteId(null);
           }}
           onDispatchRun={onDispatchRun}
+          onDelete={(routeId) => {
+            const target = routes.find(r => r.id === routeId);
+            if (target) {
+              setRouteToDelete(target);
+              setIsDeleteModalOpen(true);
+            }
+          }}
+        />
+      )}
+
+      {/* 7. Delete Confirmation Modal */}
+      {isDeleteModalOpen && routeToDelete && (
+        <DeleteRouteModal
+          route={routeToDelete}
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setRouteToDelete(null);
+          }}
+          onDeleted={(deletedId) => {
+            showToast(`Route ${routeToDelete.route_code || ''} was successfully archived.`);
+            if (selectedRouteId === deletedId) {
+              setIsDetailsOpen(false);
+              setSelectedRouteId(null);
+            }
+            fetchRoutesData(false);
+          }}
         />
       )}
 

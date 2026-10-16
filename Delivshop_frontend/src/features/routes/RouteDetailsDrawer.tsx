@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   AlertCircle,
   RotateCw,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Route, DeliveryRun } from '../../types';
@@ -21,6 +22,7 @@ interface RouteDetailsDrawerProps {
   onClose: () => void;
   onEdit?: (route: Route) => void;
   onDispatchRun?: (route: Route) => void;
+  onDelete?: (routeId: string) => void;
 }
 
 export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
@@ -29,6 +31,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
   onClose,
   onEdit: _onEdit,
   onDispatchRun,
+  onDelete,
 }) => {
   const [route, setRoute] = useState<Route | null>(null);
   const [runs, setRuns] = useState<DeliveryRun[]>([]);
@@ -157,6 +160,29 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
               >
                 <Truck size={15} />
                 <span>Create Run</span>
+              </button>
+            )}
+            {route && onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(route.id)}
+                style={{
+                  fontSize: '13px',
+                  padding: '6px 12px',
+                  border: '1px solid #FCA5A5',
+                  background: '#FFF5F5',
+                  color: '#DC2626',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+                title="Delete Route"
+              >
+                <Trash2 size={14} />
+                <span>Delete</span>
               </button>
             )}
             <button

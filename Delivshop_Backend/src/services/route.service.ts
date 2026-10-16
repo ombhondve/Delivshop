@@ -44,6 +44,31 @@ export const routeService = {
       }
     }
 
+    if (data.stops && Array.isArray(data.stops) && data.stops.length > 0) {
+      const shopSet = new Set<string>();
+      for (const s of data.stops) {
+        if (!s.shopId) {
+          throw new AppError('Shop ID is required for each route stop.', 400);
+        }
+        if (shopSet.has(s.shopId)) {
+          throw new AppError('Duplicate shop detected in route stop sequence. Each shop stop must be distinct.', 400);
+        }
+        shopSet.add(s.shopId);
+      }
+
+      const shopIds = Array.from(shopSet);
+      const validation = await routeRepository.validateShopsEligibility(shopIds);
+      if (validation.missingIds.length > 0) {
+        throw new AppError(`One or more selected shops do not exist: ${validation.missingIds.join(', ')}`, 400);
+      }
+      if (validation.inactiveIds.length > 0) {
+        throw new AppError(
+          `Cannot assign inactive or deleted shops to route corridor: ${validation.inactiveIds.join(', ')}`,
+          400
+        );
+      }
+    }
+
     const newRoute = await routeRepository.createWithStops(data, actorId);
 
     await auditService.log({
@@ -69,6 +94,10 @@ export const routeService = {
     if (!existing) {
       throw new AppError('Route not found', 404);
     }
+
+    // Prohibit mutating or regenerating the unique route code
+    delete data.routeCode;
+    delete data.route_code;
 
     // If changing to INACTIVE, ensure no active runs exist
     if (data.status === 'INACTIVE' && existing.status !== 'INACTIVE') {
@@ -157,13 +186,12 @@ export const routeService = {
       throw new AppError('Route not found', 404);
     }
 
-    if (existing.status !== 'INACTIVE') {
-      throw new AppError('Route must be deactivated before it can be deleted. Please set status to Inactive first.', 400);
-    }
-
     const deps = await routeRepository.checkDependencies(routeId);
     if (deps.activeRunsCount > 0) {
-      throw new AppError(`Cannot delete route: Associated with ${deps.activeRunsCount} active delivery run(s).`, 400);
+      throw new AppError(
+        `Cannot delete route: Associated with ${deps.activeRunsCount} active delivery run(s). Please complete, reassign, or cancel active runs before deleting.`,
+        400
+      );
     }
 
     await routeRepository.softDelete(routeId, actorId, reason);
