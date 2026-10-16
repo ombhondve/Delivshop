@@ -566,7 +566,7 @@ export const api = {
       depot?: string;
       sortBy?: string;
       sortOrder?: string;
-    }): Promise<any[]> {
+    }, options?: any): Promise<any[]> {
       const query = new URLSearchParams();
       if (params?.search) query.set('search', params.search);
       if (params?.status) query.set('status', params.status);
@@ -576,11 +576,11 @@ export const api = {
       if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
 
       const qs = query.toString();
-      return apiClient<any[]>(`routes${qs ? `?${qs}` : ''}`);
+      return apiClient<any[]>(`routes${qs ? `?${qs}` : ''}`, options);
     },
 
-    async getSummary(): Promise<any> {
-      return apiClient<any>('routes/summary');
+    async getSummary(options?: any): Promise<any> {
+      return apiClient<any>('routes/summary', options);
     },
 
     async get(id: string): Promise<any> {

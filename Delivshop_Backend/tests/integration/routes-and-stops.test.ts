@@ -57,7 +57,7 @@ describe('Delivery Routes, Shop Sequences, and Versioning Suite', () => {
     });
   });
 
-  it('should fetch routes summary metrics', async () => {
+  it('should fetch routes summary metrics with authoritative dispatch metrics', async () => {
     const res = await fetch(`${baseUrl}/api/routes/summary`, {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -65,7 +65,20 @@ describe('Delivery Routes, Shop Sequences, and Versioning Suite', () => {
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.data).toHaveProperty('totalRoutes');
-    expect(json.data).toHaveProperty('activeRoutes');
+    expect(json.data).toHaveProperty('dispatchableRoutes');
+    expect(json.data).toHaveProperty('publishedRoutes');
+    expect(json.data).toHaveProperty('totalStopsConfigured');
+    expect(json.data).toHaveProperty('avgDistanceKm');
+    expect(json.data).toHaveProperty('readinessPercentage');
+    expect(typeof json.data.readinessPercentage).toBe('number');
+  });
+
+  it('should reject unauthenticated access to routes list and summary', async () => {
+    const res = await fetch(`${baseUrl}/api/routes`);
+    expect(res.status).toBe(401);
+
+    const summaryRes = await fetch(`${baseUrl}/api/routes/summary`);
+    expect(summaryRes.status).toBe(401);
   });
 
   it('should allow ADMIN to create route with sequenced shop stops', async () => {

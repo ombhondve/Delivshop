@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, MapPin, Clock, Navigation, CheckCircle2, AlertTriangle, 
-  History, Calendar, Truck, Layers, ArrowRight, ShieldCheck,
-  ChevronRight, Building2, Phone, AlertCircle
+import {
+  X,
+  MapPin,
+  Clock,
+  Navigation,
+  CheckCircle2,
+  AlertTriangle,
+  Layers,
+  Truck,
+  ShieldCheck,
+  AlertCircle,
+  RotateCw,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Route, DeliveryRun } from '../../types';
@@ -19,8 +27,8 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
   routeId,
   isOpen,
   onClose,
-  onEdit,
-  onDispatchRun
+  onEdit: _onEdit,
+  onDispatchRun,
 }) => {
   const [route, setRoute] = useState<Route | null>(null);
   const [runs, setRuns] = useState<DeliveryRun[]>([]);
@@ -43,12 +51,12 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
       const routeData = res?.data || res;
       setRoute(routeData);
 
-      // Load runs history
+      // Load runs history safely
       try {
         const runsRes: any = await api.assignments.list({ routeId: id });
         const runsList = Array.isArray(runsRes) ? runsRes : runsRes?.data || [];
         setRuns(runsList);
-      } catch (e) {
+      } catch {
         setRuns([]);
       }
     } catch (err: any) {
@@ -75,356 +83,524 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-sm flex justify-end transition-opacity">
-      <div className="w-full max-w-3xl bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300">
-        
+    <div
+      className="drawer-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onClose();
+      }}
+    >
+      <div className="drawer-panel">
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-blue-100 text-blue-700 rounded-xl">
-              <Navigation className="w-6 h-6" />
+        <div className="drawer-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(0, 168, 107, 0.12)',
+                color: 'var(--color-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Navigation size={22} />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded">
-                  {route?.route_code || route?.code || 'Route'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="route-code-badge">
+                  {route?.route_code || route?.code || 'ROUTE'}
                 </span>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                  route?.status === 'PUBLISHED' || route?.status === 'ACTIVE'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : route?.status === 'DRAFT'
-                    ? 'bg-amber-100 text-amber-800'
-                    : 'bg-slate-100 text-slate-700'
-                }`}>
-                  {route?.status || 'STATUS'}
+                {route && (
+                  <span
+                    className={`badge ${
+                      route.status === 'PUBLISHED' || route.status === 'ACTIVE'
+                        ? 'badge-success'
+                        : route.status === 'DRAFT'
+                        ? 'badge-warning'
+                        : 'badge-neutral'
+                    }`}
+                  >
+                    {route.status}
+                  </span>
+                )}
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  v{route?.version || 1}
                 </span>
-                <span className="text-xs text-slate-500 font-medium">v{route?.version || 1}</span>
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mt-1">{route?.name || 'Route Details'}</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0 0 0' }}>
+                {route?.name || 'Route Corridor Profile'}
+              </h2>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {route?.status === 'DRAFT' && (
               <button
+                type="button"
                 onClick={handlePublish}
                 disabled={publishing}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex items-center space-x-1.5 transition-colors shadow-sm disabled:opacity-50"
+                className="btn btn-primary"
+                style={{ fontSize: '13px', padding: '6px 14px' }}
               >
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck size={15} />
                 <span>{publishing ? 'Publishing...' : 'Publish Route'}</span>
               </button>
             )}
             {route && onDispatchRun && (route.status === 'PUBLISHED' || route.status === 'ACTIVE') && (
               <button
+                type="button"
                 onClick={() => onDispatchRun(route)}
-                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center space-x-1.5 transition-colors shadow-sm"
+                className="btn btn-outline-primary"
+                style={{ fontSize: '13px', padding: '6px 14px' }}
               >
-                <Truck className="w-4 h-4" />
+                <Truck size={15} />
                 <span>Create Run</span>
               </button>
             )}
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '6px',
+              }}
             >
-              <X className="w-5 h-5" />
+              <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* Loading / Error state */}
+        {/* Loading / Error States */}
         {loading ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div style={{ padding: '60px', textAlign: 'center', flex: 1 }}>
+            <RotateCw size={28} className="spin-icon" style={{ color: 'var(--color-primary)', margin: '0 auto 12px auto' }} />
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading route corridor data...</p>
           </div>
         ) : error ? (
-          <div className="p-6 bg-red-50 text-red-700 flex items-center space-x-3 m-6 rounded-xl border border-red-200">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Unable to display route</p>
-              <p className="text-sm mt-0.5">{error}</p>
+          <div style={{ margin: '24px', padding: '16px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991B1B' }}>
+              <AlertCircle size={20} />
+              <div>
+                <strong>Unable to load route profile</strong>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px' }}>{error}</p>
+              </div>
             </div>
           </div>
         ) : route ? (
           <>
-            {/* Quick Metrics Bar */}
-            <div className="grid grid-cols-4 gap-4 p-5 bg-white border-b border-slate-200">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">Stops Count</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">{route.stops?.length || route.stops_count || 0} stops</p>
+            {/* 4 Metric Summary Strip */}
+            <div className="drawer-metric-grid">
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Stops Count</div>
+                <div className="drawer-metric-value">
+                  {route.stops?.length || route.stops_count || 0} stops
+                </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">Total Distance</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">
-                  {route.total_distance_km || route.estimatedDistanceKm ? `${route.total_distance_km || route.estimatedDistanceKm} km` : 'Pending'}
-                </p>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">Estimated Time</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">
-                  {route.estimated_duration_minutes || route.estimatedDurationMinutes 
-                    ? `${Math.round(Number(route.estimated_duration_minutes || route.estimatedDurationMinutes))} mins` 
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Total Distance</div>
+                <div className="drawer-metric-value">
+                  {Number(route.total_distance_km || route.estimatedDistanceKm || 0) > 0
+                    ? `${Number(route.total_distance_km || route.estimatedDistanceKm).toFixed(1)} km`
                     : 'Pending'}
-                </p>
+                </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">City / Depot</span>
-                <p className="text-sm font-bold text-slate-900 mt-0.5 truncate">{route.city} • {route.depot || route.depotName || 'Main'}</p>
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Est. Time</div>
+                <div className="drawer-metric-value">
+                  {Number(route.estimated_duration_minutes || route.estimatedDurationMinutes || 0) > 0
+                    ? `${Math.round(Number(route.estimated_duration_minutes || route.estimatedDurationMinutes))} mins`
+                    : 'Pending'}
+                </div>
+              </div>
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Depot / City</div>
+                <div className="drawer-metric-value" title={`${route.depot || 'Main Depot'} • ${route.city}`}>
+                  {route.city} • {route.depot || 'Central'}
+                </div>
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-slate-200 px-6 space-x-6 bg-white">
+            {/* Tab Navigation */}
+            <div className="drawer-tabs-bar">
               <button
+                type="button"
                 onClick={() => setActiveTab('stops')}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center space-x-2 ${
-                  activeTab === 'stops'
-                    ? 'border-blue-600 text-blue-600 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
+                className={`drawer-tab-btn ${activeTab === 'stops' ? 'is-active' : ''}`}
               >
-                <MapPin className="w-4 h-4" />
-                <span>Stops Sequence ({route.stops?.length || 0})</span>
+                <MapPin size={15} />
+                <span>Stops Sequence ({route.stops?.length || route.stops_count || 0})</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('map')}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center space-x-2 ${
-                  activeTab === 'map'
-                    ? 'border-blue-600 text-blue-600 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
+                className={`drawer-tab-btn ${activeTab === 'map' ? 'is-active' : ''}`}
               >
-                <Navigation className="w-4 h-4" />
-                <span>Map Visualizer</span>
+                <Navigation size={15} />
+                <span>Corridor Map</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('versions')}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center space-x-2 ${
-                  activeTab === 'versions'
-                    ? 'border-blue-600 text-blue-600 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
+                className={`drawer-tab-btn ${activeTab === 'versions' ? 'is-active' : ''}`}
               >
-                <Layers className="w-4 h-4" />
+                <Layers size={15} />
                 <span>Versions ({route.versions?.length || 1})</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('runs')}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center space-x-2 ${
-                  activeTab === 'runs'
-                    ? 'border-blue-600 text-blue-600 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
+                className={`drawer-tab-btn ${activeTab === 'runs' ? 'is-active' : ''}`}
               >
-                <Truck className="w-4 h-4" />
+                <Truck size={15} />
                 <span>Dispatch History ({runs.length})</span>
               </button>
             </div>
 
-            {/* Tab Contents */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-              
-              {/* STOPS TAB */}
+            {/* Tab Body */}
+            <div className="drawer-body">
+              {/* TAB 1: STOPS SEQUENCE */}
               {activeTab === 'stops' && (
-                <div className="space-y-4">
+                <div>
                   {/* Origin Depot Card */}
-                  <div className="p-4 bg-white rounded-xl border-2 border-dashed border-blue-200 flex items-start space-x-3">
-                    <div className="p-2 bg-blue-50 text-blue-700 rounded-lg font-bold text-xs mt-0.5">
+                  <div
+                    style={{
+                      padding: '14px 18px',
+                      backgroundColor: '#FFFFFF',
+                      border: '1.5px dashed #00A86B',
+                      borderRadius: '8px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '4px 8px',
+                        background: 'rgba(0, 168, 107, 0.1)',
+                        color: 'var(--color-primary)',
+                        borderRadius: '4px',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                      }}
+                    >
                       START
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-900">{route.depot || route.depotName || 'Depot'}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">{route.depotAddress || `${route.city}, ${route.state}`}</p>
-                      <div className="mt-2 text-xs text-slate-500 flex items-center space-x-3">
-                        <span>City: {route.city}</span>
-                        <span>•</span>
-                        <span>State: {route.state}</span>
+                      <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                        {route.depot || 'Pune Central Cold Storage'}
+                      </strong>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        Origin Distribution Depot • {route.city}, {route.state}
                       </div>
                     </div>
                   </div>
 
-                  {/* Stops List */}
-                  <div className="space-y-3">
-                    {route.stops && route.stops.length > 0 ? (
-                      route.stops.map((stop, idx) => (
-                        <div key={stop.id || idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <div className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
-                              {(stop.stop_sequence !== undefined ? stop.stop_sequence : stop.sequenceIndex !== undefined ? stop.sequenceIndex : idx) + 1}
+                  {/* Stop Rows */}
+                  {route.stops && route.stops.length > 0 ? (
+                    route.stops.map((stop: any, idx: number) => {
+                      const hasGps = (stop.latitude || stop.shop_latitude) && (stop.longitude || stop.shop_longitude);
+                      return (
+                        <div key={stop.id || idx} className="timeline-stop-card">
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <div
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--color-primary-dark)',
+                                color: '#FFFFFF',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                marginTop: '2px',
+                              }}
+                            >
+                              {(stop.stop_sequence !== undefined ? stop.stop_sequence : idx) + 1}
                             </div>
                             <div>
-                              <div className="flex items-center space-x-2">
-                                <h4 className="font-semibold text-slate-900">{stop.shop_name || stop.shopName || `Shop #${(stop.shop_id || stop.shopId || '').slice(0, 8)}`}</h4>
-                                {(stop.latitude || stop.shop_latitude) && (stop.longitude || stop.shop_longitude) ? (
-                                  <span className="inline-flex items-center text-xs text-emerald-600 font-medium">
-                                    <CheckCircle2 className="w-3 h-3 mr-0.5" /> GPS Verified
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                                  {stop.shop_name || stop.shopName || `Shop #${(stop.shop_id || stop.shopId || '').slice(0, 8)}`}
+                                </strong>
+                                {hasGps ? (
+                                  <span style={{ fontSize: '11px', color: '#16A34A', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
+                                    <CheckCircle2 size={12} /> GPS Verified
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center text-xs text-amber-600 font-medium">
-                                    <AlertTriangle className="w-3 h-3 mr-0.5" /> Missing GPS
+                                  <span style={{ fontSize: '11px', color: '#D97706', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
+                                    <AlertTriangle size={12} /> Pending GPS
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-slate-500 mt-1">{stop.address || stop.shop_address || 'Address on file'}</p>
-                              
-                              <div className="flex items-center space-x-4 mt-2 text-xs text-slate-600">
+                              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                {stop.address || stop.shop_address || 'Address on record'}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '6px', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
                                 {stop.planned_arrival_time && (
-                                  <div className="flex items-center space-x-1">
-                                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                    <span>Arrival: {stop.planned_arrival_time}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Clock size={12} />
+                                    <span>Planned ETA: {stop.planned_arrival_time}</span>
                                   </div>
                                 )}
-                                <div className="flex items-center space-x-1">
-                                  <span>Service Time: {stop.service_time_minutes || stop.serviceTimeMinutes || 10} mins</span>
-                                </div>
+                                <div>Service Time: {stop.service_time_minutes || 10} mins</div>
                               </div>
                             </div>
                           </div>
 
-                          <div className="text-right text-xs text-slate-400">
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                             Stop #{idx + 1}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                        <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                        <p className="text-slate-600 font-medium">No stops added yet</p>
-                        <p className="text-xs text-slate-400 mt-1">This route template does not have sequenced stops.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* MAP VISUALIZER TAB */}
-              {activeTab === 'map' && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-start space-x-2">
-                    <Navigation className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold">Route Sequence & Road Geometry</span>
-                      <p className="mt-0.5">
-                        Highways and delivery corridors are mapped using verified GPS lat/long of participating shops.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Schematic Map Representation */}
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[380px] flex flex-col justify-between">
-                    <div className="relative pl-6 border-l-2 border-blue-500 space-y-6 my-4">
-                      {/* Origin */}
-                      <div className="relative">
-                        <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow"></div>
-                        <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Origin Depot</p>
-                        <p className="text-sm font-semibold text-slate-900">{route.depot || route.depotName || 'Pune Logistics Hub'}</p>
-                        <p className="text-xs text-slate-400">{route.depotAddress || route.city}</p>
-                      </div>
-
-                      {/* Stops progression */}
-                      {route.stops?.map((stop, sIdx) => (
-                        <div key={stop.id || sIdx} className="relative">
-                          <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow"></div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-bold text-slate-500">Stop #{sIdx + 1}</p>
-                              <p className="text-sm font-semibold text-slate-900">{stop.shop_name || stop.shopName}</p>
-                              <p className="text-xs text-slate-500">{stop.address || stop.shop_address}</p>
-                            </div>
-                            <span className="text-xs px-2 py-0.5 bg-slate-100 rounded text-slate-600">
-                              {(stop.latitude || stop.shop_latitude) && (stop.longitude || stop.shop_longitude)
-                                ? `${Number(stop.latitude || stop.shop_latitude).toFixed(3)}, ${Number(stop.longitude || stop.shop_longitude).toFixed(3)}` 
-                                : 'Manual Point'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Return to Depot */}
-                      <div className="relative">
-                        <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-emerald-600 border-2 border-white shadow"></div>
-                        <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Return to Depot</p>
-                        <p className="text-sm font-semibold text-slate-900">{route.depot || route.depotName || 'Depot Return'}</p>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs text-slate-600">
-                      <span>Total Planned Stops: <strong>{route.stops?.length || 0}</strong></span>
-                      <span>Total Distance: <strong>{route.total_distance_km || route.estimatedDistanceKm || 0} km</strong></span>
-                      <span>Estimated Tour: <strong>{Math.round(Number(route.estimated_duration_minutes || route.estimatedDurationMinutes || 0))} mins</strong></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* VERSIONS TAB */}
-              {activeTab === 'versions' && (
-                <div className="space-y-3">
-                  {route.versions && route.versions.length > 0 ? (
-                    route.versions.map((ver) => (
-                      <div key={ver.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono text-sm font-bold text-slate-900">Version {ver.version_number || ver.version}</span>
-                            {(ver.version_number || ver.version) === route.version && (
-                              <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-medium">Active</span>
-                            )}
-                          </div>
-                          <span className="text-xs text-slate-400">
-                            {new Date(ver.created_at || ver.createdAt || '').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 mt-2">{ver.changes_summary || ver.changeReason || 'Standard route sequence optimization update.'}</p>
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center space-x-4 text-xs text-slate-500">
-                          <span>Stops: {(ver.stops_snapshot || ver.stopsSnapshot)?.length || 0}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <div className="p-6 bg-white rounded-xl border border-slate-200 text-center text-slate-500 text-sm">
-                      Current active version is v{route.version}.
+                    <div style={{ textAlign: 'center', padding: '40px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <MapPin size={32} style={{ color: 'var(--text-secondary)', opacity: 0.4, margin: '0 auto 8px auto' }} />
+                      <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>No stops sequenced yet</strong>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        This route template is currently in Draft state without assigned shop stops.
+                      </p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* RUNS / DISPATCH HISTORY TAB */}
+              {/* TAB 2: MAP VISUALIZER */}
+              {activeTab === 'map' && (
+                <div>
+                  <div
+                    style={{
+                      padding: '12px 16px',
+                      background: 'rgba(0, 168, 107, 0.08)',
+                      border: '1px solid rgba(0, 168, 107, 0.25)',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      color: 'var(--color-primary-dark)',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <Navigation size={18} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+                    <span>
+                      Sequential road network itinerary calculated from verified shop coordinates across {route.city}.
+                    </span>
+                  </div>
+
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ position: 'relative', paddingLeft: '24px', borderLeft: '2px solid var(--color-primary)' }}>
+                      {/* Start Depot */}
+                      <div style={{ position: 'relative', marginBottom: '24px' }}>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: '-31px',
+                            top: '2px',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--color-primary)',
+                            border: '2px solid #FFFFFF',
+                            boxShadow: '0 0 0 1px var(--color-primary)',
+                          }}
+                        />
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase' }}>
+                          Origin Depot
+                        </div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {route.depot || 'Central Logistics Hub'}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{route.city}, {route.state}</div>
+                      </div>
+
+                      {/* Stops */}
+                      {route.stops?.map((stop: any, sIdx: number) => {
+                        const lat = stop.latitude || stop.shop_latitude;
+                        const lng = stop.longitude || stop.shop_longitude;
+                        return (
+                          <div key={stop.id || sIdx} style={{ position: 'relative', marginBottom: '20px' }}>
+                            <div
+                              style={{
+                                position: 'absolute',
+                                left: '-31px',
+                                top: '2px',
+                                width: '12px',
+                                height: '12px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--color-primary-dark)',
+                                border: '2px solid #FFFFFF',
+                                boxShadow: '0 0 0 1px var(--color-primary-dark)',
+                              }}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                  Stop #{sIdx + 1}
+                                </span>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                  {stop.shop_name || stop.shopName}
+                                </div>
+                                <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                                  {stop.address || stop.shop_address}
+                                </div>
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '2px 6px',
+                                  backgroundColor: '#F1F5F9',
+                                  borderRadius: '4px',
+                                  color: 'var(--text-secondary)',
+                                  fontFamily: 'monospace',
+                                }}
+                              >
+                                {lat && lng ? `${Number(lat).toFixed(3)}, ${Number(lng).toFixed(3)}` : 'Manual GPS'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Return Depot */}
+                      <div style={{ position: 'relative' }}>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: '-31px',
+                            top: '2px',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: '#16A34A',
+                            border: '2px solid #FFFFFF',
+                            boxShadow: '0 0 0 1px #16A34A',
+                          }}
+                        />
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#16A34A', textTransform: 'uppercase' }}>
+                          Depot Return
+                        </div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {route.depot || 'Central Logistics Hub'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: VERSIONS */}
+              {activeTab === 'versions' && (
+                <div>
+                  {route.versions && route.versions.length > 0 ? (
+                    route.versions.map((ver: any) => (
+                      <div
+                        key={ver.id}
+                        style={{
+                          padding: '14px 16px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          marginBottom: '10px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                              Version {ver.version_number || ver.version}
+                            </strong>
+                            {(ver.version_number || ver.version) === route.version && (
+                              <span className="badge badge-success" style={{ fontSize: '10.5px' }}>
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {new Date(ver.created_at || ver.createdAt || '').toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                        <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {ver.changes_summary || 'Standard stop sequencing & validation update.'}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '30px', textAlign: 'center', background: '#FFFFFF', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                      Current active template is v{route.version || 1}.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: DISPATCH RUNS */}
               {activeTab === 'runs' && (
-                <div className="space-y-3">
+                <div>
                   {runs.length > 0 ? (
-                    runs.map((run) => (
-                      <div key={run.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    runs.map((run: any) => (
+                      <div
+                        key={run.id}
+                        style={{
+                          padding: '14px 16px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          marginBottom: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
                         <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono font-semibold text-xs text-blue-600">{run.run_code || run.runCode}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                              run.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                              run.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                              run.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ fontSize: '13px', color: 'var(--color-primary)' }}>
+                              {run.run_code || run.runCode}
+                            </strong>
+                            <span
+                              className={`badge ${
+                                run.status === 'COMPLETED'
+                                  ? 'badge-success'
+                                  : run.status === 'IN_PROGRESS'
+                                  ? 'badge-info'
+                                  : 'badge-neutral'
+                              }`}
+                            >
                               {run.status}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1">
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                             Date: {run.delivery_date || run.deliveryDate} • Driver: {run.driver_name || run.driverName || 'Unassigned'} • Vehicle: {run.vehicle_registration || run.registrationNumber || 'Unassigned'}
-                          </p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-xs font-medium text-slate-900">{run.completed_stops_count ?? run.completedStopsCount ?? 0}/{run.planned_stops_count ?? run.totalStopsCount ?? 0} stops</span>
+                        <div style={{ textAlign: 'right', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {run.completed_stops_count ?? run.completedStopsCount ?? 0}/{run.planned_stops_count ?? run.totalStopsCount ?? 0} stops
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                      <Truck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-600 font-medium">No dispatch runs recorded</p>
-                      <p className="text-xs text-slate-400 mt-1">This route template has not been dispatched to a vehicle yet.</p>
+                    <div style={{ textAlign: 'center', padding: '40px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <Truck size={32} style={{ color: 'var(--text-secondary)', opacity: 0.4, margin: '0 auto 8px auto' }} />
+                      <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>No active or past delivery runs</strong>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        This route template has not been dispatched to a vehicle assignment yet.
+                      </p>
                     </div>
                   )}
                 </div>
               )}
-
             </div>
           </>
         ) : null}

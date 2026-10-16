@@ -174,14 +174,25 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   const url = `${API_BASE_URL.replace(/\/$/, '')}/${cleanEndpoint}`;
 
   let response: Response;
+  const timeoutMs = (options as any).timeoutMs || 10000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const combinedSignal = options.signal || controller.signal;
+
   try {
     response = await fetch(url, {
       credentials: 'include',
       headers,
+      signal: combinedSignal,
       ...restOptions,
     });
-  } catch {
+  } catch (err: any) {
+    if (err.name === 'AbortError' || controller.signal.aborted) {
+      throw new ApiError('Request timed out connecting to Delivshop API. Please check network and retry.', 408);
+    }
     throw new ApiError('Unable to connect to Delivshop backend API. Please ensure the server is online.', 0);
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   // Handle 401 Unauthorized with controlled Token Refresh Mutex

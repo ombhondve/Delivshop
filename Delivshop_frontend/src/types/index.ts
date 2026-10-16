@@ -799,10 +799,16 @@ export interface Route {
 
 export interface RouteSummary {
   totalRoutes: number;
+  dispatchableRoutes?: number;
+  publishedRoutes?: number;
   activeRoutes: number;
   draftRoutes: number;
   inactiveRoutes: number;
   totalStopsConfigured: number;
+  totalStops?: number;
+  avgDistanceKm?: number;
+  measuredRoutesCount?: number;
+  readinessPercentage?: number;
 }
 
 // ----------------------------------------------------

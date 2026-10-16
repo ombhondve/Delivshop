@@ -58,8 +58,12 @@ export const routeRepository = {
     }
 
     if (params?.status && params.status !== 'ALL') {
-      values.push(params.status);
-      whereClauses.push(`r.status = $${values.length}`);
+      if (params.status === 'PUBLISHED' || params.status === 'ACTIVE') {
+        whereClauses.push(`r.status IN ('PUBLISHED', 'ACTIVE')`);
+      } else {
+        values.push(params.status);
+        whereClauses.push(`r.status = $${values.length}`);
+      }
     }
 
     if (params?.city && params.city !== 'ALL') {
@@ -95,28 +99,44 @@ export const routeRepository = {
 
   async getSummary(): Promise<{
     totalRoutes: number;
+    dispatchableRoutes: number;
+    publishedRoutes: number;
     activeRoutes: number;
     draftRoutes: number;
     inactiveRoutes: number;
     totalStopsConfigured: number;
+    avgDistanceKm: number;
+    measuredRoutesCount: number;
+    readinessPercentage: number;
   }> {
     const res = await query(`
       SELECT
-        COUNT(*)::int as total_routes,
-        COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END)::int as active_routes,
+        COUNT(r.id)::int as total_routes,
+        COUNT(CASE WHEN status IN ('PUBLISHED', 'ACTIVE') AND (SELECT COUNT(rs.id) FROM route_stops rs WHERE rs.route_id = r.id) > 0 THEN 1 END)::int as dispatchable_routes,
+        COUNT(CASE WHEN status IN ('PUBLISHED', 'ACTIVE') THEN 1 END)::int as published_routes,
         COUNT(CASE WHEN status = 'DRAFT' THEN 1 END)::int as draft_routes,
         COUNT(CASE WHEN status = 'INACTIVE' THEN 1 END)::int as inactive_routes,
-        (SELECT COUNT(*)::int FROM route_stops) as total_stops_configured
-      FROM routes
-      WHERE deleted_at IS NULL
+        (SELECT COUNT(rs.id)::int FROM route_stops rs JOIN routes r2 ON rs.route_id = r2.id WHERE r2.deleted_at IS NULL) as total_stops_configured,
+        COALESCE(ROUND(AVG(total_distance_km) FILTER (WHERE total_distance_km > 0), 1), 0)::numeric as avg_distance_km,
+        COUNT(CASE WHEN total_distance_km > 0 THEN 1 END)::int as measured_routes_count
+      FROM routes r
+      WHERE r.deleted_at IS NULL
     `);
     const r = res.rows[0] || {};
+    const total = Number(r.total_routes) || 0;
+    const dispatchable = Number(r.dispatchable_routes) || 0;
+    const readiness = total > 0 ? Math.round((dispatchable / total) * 100) : 0;
     return {
-      totalRoutes: r.total_routes || 0,
-      activeRoutes: r.active_routes || 0,
-      draftRoutes: r.draft_routes || 0,
-      inactiveRoutes: r.inactive_routes || 0,
-      totalStopsConfigured: r.total_stops_configured || 0,
+      totalRoutes: total,
+      dispatchableRoutes: dispatchable,
+      publishedRoutes: Number(r.published_routes) || 0,
+      activeRoutes: Number(r.published_routes) || 0,
+      draftRoutes: Number(r.draft_routes) || 0,
+      inactiveRoutes: Number(r.inactive_routes) || 0,
+      totalStopsConfigured: Number(r.total_stops_configured) || 0,
+      avgDistanceKm: Number(r.avg_distance_km) || 0,
+      measuredRoutesCount: Number(r.measured_routes_count) || 0,
+      readinessPercentage: readiness,
     };
   },
 

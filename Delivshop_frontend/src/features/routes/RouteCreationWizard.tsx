@@ -144,7 +144,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
         city,
         state,
         depot,
-        status: publishImmediately ? 'ACTIVE' : 'DRAFT',
+        status: publishImmediately ? 'PUBLISHED' : 'DRAFT',
         stops: stopsPayload,
         totalDistanceKm: parseFloat((selectedStops.length * 4.2).toFixed(2)),
         estimatedDurationMinutes: selectedStops.length * 15,
