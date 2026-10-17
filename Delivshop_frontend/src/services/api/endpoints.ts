@@ -491,20 +491,28 @@ export const api = {
       search?: string;
       status?: string;
       vehicleType?: string;
+      depot?: string;
       city?: string;
+      compliance?: string;
       sortBy?: string;
       sortOrder?: string;
-    }): Promise<any[]> {
+      page?: number;
+      limit?: number;
+    }): Promise<{ data: any[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
       const query = new URLSearchParams();
       if (params?.search) query.set('search', params.search);
       if (params?.status) query.set('status', params.status);
       if (params?.vehicleType) query.set('vehicleType', params.vehicleType);
+      if (params?.depot) query.set('depot', params.depot);
       if (params?.city) query.set('city', params.city);
+      if (params?.compliance) query.set('compliance', params.compliance);
       if (params?.sortBy) query.set('sortBy', params.sortBy);
       if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+      if (params?.page) query.set('page', String(params.page));
+      if (params?.limit) query.set('limit', String(params.limit));
 
       const qs = query.toString();
-      return apiClient<any[]>(`vehicles${qs ? `?${qs}` : ''}`);
+      return apiClient<any>(`vehicles${qs ? `?${qs}` : ''}`);
     },
 
     async getSummary(): Promise<any> {
@@ -541,6 +549,25 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload),
       });
+    },
+
+    async deleteDocument(id: string, docId: string): Promise<any> {
+      return apiClient<any>(`vehicles/${id}/documents/${docId}`, {
+        method: 'DELETE',
+      });
+    },
+
+    async getDispatchEligibility(id: string, options?: { targetDate?: string; requiresRefrigeration?: boolean; excludeRunId?: string }): Promise<any> {
+      const query = new URLSearchParams();
+      if (options?.targetDate) query.set('targetDate', options.targetDate);
+      if (options?.requiresRefrigeration !== undefined) query.set('requiresRefrigeration', String(options.requiresRefrigeration));
+      if (options?.excludeRunId) query.set('excludeRunId', options.excludeRunId);
+      const qs = query.toString();
+      return apiClient<any>(`vehicles/${id}/dispatch-eligibility${qs ? `?${qs}` : ''}`);
+    },
+
+    async getActivity(id: string): Promise<any> {
+      return apiClient<any>(`vehicles/${id}/activity`);
     },
 
     async addMaintenance(id: string, payload: any): Promise<any> {

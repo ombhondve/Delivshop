@@ -17,6 +17,7 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
 
   const adminToken = generateAccessToken(adminUser);
   let testVehicleId: string;
+  let testDocId: string;
   const testReg = `MH-12-TEST-${Date.now().toString().slice(-4)}`;
 
   beforeAll(async () => {
@@ -50,20 +51,24 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
     expect(json.data).toHaveProperty('activeVehicles');
     expect(json.data).toHaveProperty('availableVehicles');
     expect(json.data).toHaveProperty('assignedVehicles');
+    expect(json.data).toHaveProperty('depots');
+    expect(json.data).toHaveProperty('vehicleTypes');
   });
 
-  it('should list all registered fleet vehicles', async () => {
-    const res = await fetch(`${baseUrl}/api/vehicles`, {
+  it('should list all registered fleet vehicles with pagination metadata', async () => {
+    const res = await fetch(`${baseUrl}/api/vehicles?page=1&limit=5`, {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(Array.isArray(json.data)).toBe(true);
-    expect(json.data.length).toBeGreaterThan(0);
+    expect(json.pagination).toBeDefined();
+    expect(json.pagination.page).toBe(1);
+    expect(json.pagination.limit).toBe(5);
   });
 
-  it('should allow ADMIN to register a new vehicle asset', async () => {
+  it('should allow ADMIN to register a new vehicle asset with specs and temperature', async () => {
     const res = await fetch(`${baseUrl}/api/vehicles`, {
       method: 'POST',
       headers: {
@@ -77,7 +82,11 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
         capacityKg: 1200,
         capacityCrates: 65,
         fuelType: 'CNG',
-        isRefrigerated: false,
+        isRefrigerated: true,
+        nickname: 'Chilled Express Unit 1',
+        manufacturingYear: 2024,
+        temperatureMinC: -18.0,
+        temperatureMaxC: 4.0,
         city: 'Pune',
         depot: 'Pune Central Cold Depot',
       }),
@@ -87,6 +96,8 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.data.registration_number).toBe(testReg);
+    expect(json.data.nickname).toBe('Chilled Express Unit 1');
+    expect(json.data.manufacturing_year).toBe(2024);
     testVehicleId = json.data.id;
   });
 
@@ -106,7 +117,11 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
     expect(res.status).toBe(409);
   });
 
-  it('should allow adding verified vehicle document (RC)', async () => {
+  it('should allow adding verified vehicle document (RC) with base64 binary content', async () => {
+    // Valid PDF header %PDF-1.4
+    const validPdfBuffer = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF');
+    const base64Data = validPdfBuffer.toString('base64');
+
     const res = await fetch(`${baseUrl}/api/vehicles/${testVehicleId}/documents`, {
       method: 'POST',
       headers: {
@@ -119,13 +134,29 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
         issueDate: '2025-01-01',
         expiryDate: '2040-01-01',
         verificationStatus: 'VALID',
-        notes: 'Verified against Maharashtra RTO portal',
+        fileName: 'rc_registration_certificate.pdf',
+        fileData: base64Data,
+        mimeType: 'application/pdf',
+        notes: 'Official RTO MH-12 Registration Certificate verified',
       }),
     });
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.data.document_type).toBe('RC');
+    expect(json.data.file_url).toContain('/download');
+    testDocId = json.data.id;
+  });
+
+  it('should allow streaming authenticated download of vehicle document', async () => {
+    const res = await fetch(`${baseUrl}/api/vehicles/${testVehicleId}/documents/${testDocId}/download`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('application/pdf');
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    const text = await res.text();
+    expect(text).toContain('%PDF-1.4');
   });
 
   it('should allow recording maintenance service log', async () => {
@@ -149,7 +180,66 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
     expect(json.data.odometer_km).toBe(5120);
   });
 
-  it('should retrieve vehicle details including documents and maintenance', async () => {
+  it('should evaluate vehicle dispatch eligibility accurately', async () => {
+    // Currently vehicle only has RC, missing Insurance
+    const res = await fetch(`${baseUrl}/api/vehicles/${testVehicleId}/dispatch-eligibility`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data.isEligible).toBe(false);
+    expect(json.data.reasons.some((r: string) => r.includes('Insurance'))).toBe(true);
+
+    // Now upload Insurance
+    await fetch(`${baseUrl}/api/vehicles/${testVehicleId}/documents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        documentType: 'INSURANCE',
+        documentNumber: `INS-${testReg}`,
+        issueDate: '2026-01-01',
+        expiryDate: '2027-01-01',
+        verificationStatus: 'VALID',
+      }),
+    });
+
+    // Check eligibility again - now eligible!
+    const res2 = await fetch(`${baseUrl}/api/vehicles/${testVehicleId}/dispatch-eligibility`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const json2 = await res2.json();
+    expect(json2.data.isEligible).toBe(true);
+    expect(json2.data.conditions.mandatoryDocumentsValid).toBe(true);
+  });
+
+  it('should retrieve audit activity history for the vehicle asset', async () => {
+    const res = await fetch(`${baseUrl}/api/vehicles/${testVehicleId}/activity`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+    expect(json.data.length).toBeGreaterThan(0);
+    expect(json.data.some((a: any) => a.action === 'VEHICLE_CREATED')).toBe(true);
+  });
+
+  it('should export fleet vehicles list as CSV statement', async () => {
+    const res = await fetch(`${baseUrl}/api/vehicles/export`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/csv');
+    const csv = await res.text();
+    expect(csv).toContain('Registration Number');
+    expect(csv).toContain(testReg);
+  });
+
+  it('should retrieve vehicle details including documents, maintenance, eligibility, and activity', async () => {
     const res = await fetch(`${baseUrl}/api/vehicles/${testVehicleId}`, {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -158,6 +248,8 @@ describe('Fleet Vehicles Management API & Invariants Suite', () => {
     expect(json.success).toBe(true);
     expect(json.data.documents.length).toBeGreaterThan(0);
     expect(json.data.maintenance.length).toBeGreaterThan(0);
+    expect(json.data.eligibility).toBeDefined();
+    expect(json.data.activity).toBeDefined();
   });
 
   it('should enforce deactivation-first deletion invariant on vehicles', async () => {

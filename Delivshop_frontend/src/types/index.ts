@@ -690,9 +690,14 @@ export interface Vehicle {
   fuelType?: string;
   is_refrigerated: boolean;
   isRefrigerated?: boolean;
-  city?: string;
-  state?: string;
-  depot?: string;
+  nickname?: string | null;
+  manufacturing_year?: number | null;
+  manufacturingYear?: number | null;
+  temperature_min_c?: number | null;
+  temperature_max_c?: number | null;
+  city?: string | null;
+  state?: string | null;
+  depot: string;
   depotName?: string | null;
   status: 'AVAILABLE' | 'ASSIGNED' | 'UNDER_MAINTENANCE' | 'MAINTENANCE' | 'INACTIVE';
   is_active: boolean;
@@ -705,16 +710,45 @@ export interface Vehicle {
   active_run_id?: string | null;
   active_run_code?: string | null;
   active_driver_name?: string | null;
+  active_driver_phone?: string | null;
+  active_route_name?: string | null;
+  compliance_status?: 'COMPLIANT' | 'EXPIRING_SOON' | 'EXPIRED' | 'MISSING_DOCS';
+  nearest_expiry_date?: string | null;
+  is_dispatch_eligible?: boolean;
+  total_documents_count?: number;
   expiring_documents_count?: number;
+  expired_documents_count?: number;
   documents?: VehicleDocument[];
   maintenance?: VehicleMaintenance[];
   assignments?: any[];
+  eligibility?: {
+    isEligible: boolean;
+    reasons: string[];
+    warnings: string[];
+    conditions: {
+      isActive: boolean;
+      notInMaintenance: boolean;
+      noConflictingAssignment: boolean;
+      mandatoryDocumentsValid: boolean;
+      refrigerationCompatible: boolean;
+    };
+  };
+  activity?: Array<{
+    id: string;
+    action: string;
+    details: any;
+    created_at: string;
+    ip_address?: string;
+    actor_name?: string;
+    actor_role?: string;
+    actor_email?: string;
+  }>;
 }
 
 export interface VehicleDocument {
   id: string;
   vehicle_id: string;
-  document_type: 'RC' | 'INSURANCE' | 'PUC' | 'FITNESS' | 'PERMIT' | string;
+  document_type: 'RC' | 'INSURANCE' | 'PUC' | 'FITNESS' | 'PERMIT' | 'TEMPERATURE_CALIBRATION' | 'OTHER' | string;
   documentType?: string;
   document_number: string;
   documentNumber?: string;
@@ -726,6 +760,9 @@ export interface VehicleDocument {
   verificationStatus?: string;
   file_url?: string | null;
   fileUrl?: string | null;
+  file_name?: string | null;
+  mime_type?: string | null;
+  file_size_bytes?: number | null;
   verifier_name?: string | null;
   verified_at?: string | null;
   notes?: string | null;
@@ -759,6 +796,8 @@ export interface VehicleSummary {
   underMaintenanceVehicles: number;
   inactiveVehicles: number;
   attentionRequired: number;
+  depots?: string[];
+  vehicleTypes?: string[];
 }
 
 // ----------------------------------------------------

@@ -50,7 +50,8 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
       setLoading(true);
       setError(null);
       const res = await api.vehicles.get(vehicleId);
-      setVehicle(res.data);
+      const data = res?.data || res;
+      setVehicle(data);
     } catch (err: any) {
       setError(err?.message || 'Failed to load vehicle details');
     } finally {
