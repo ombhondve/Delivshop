@@ -627,7 +627,7 @@ code {
 
 .toolbar-search-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(22, 128, 93, 0.2);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
 .toolbar-search-input::placeholder {
@@ -683,7 +683,7 @@ code {
 
 .toolbar-select-field:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(22, 128, 93, 0.2);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
 .toolbar-sort-btn {
@@ -1023,7 +1023,7 @@ code {
 .business-table th,
 .data-table th {
   padding: 8px 12px;
-  background-color: #F8FAF8;
+  background-color: #F8FAFC;
   color: var(--text-secondary);
   font-weight: 600;
   border-bottom: 1px solid var(--border-color);
@@ -1052,7 +1052,7 @@ code {
 
 .business-table tr:hover td,
 .data-table tr:hover td {
-  background-color: #F8FAF8;
+  background-color: #F8FAFC;
 }
 
 .font-semibold {

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Search, Filter, Truck, Calendar, User, 
-  Navigation, CheckCircle2, Clock, AlertTriangle, 
-  RefreshCw, Eye, AlertCircle
+  Plus, Search, Truck, Calendar, 
+  Navigation, CheckCircle2,
+  RefreshCw, Eye, X, ListFilter
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { DeliveryRun, Route } from '../../types';
 import { Button } from '../../components/common/Button';
+import { Card } from '../../components/common/Card';
+import { Badge } from '../../components/common/Badge';
 import { AssignmentWizardModal } from './AssignmentWizardModal';
 import { AssignmentDetailsDrawer } from './AssignmentDetailsDrawer';
 
@@ -67,9 +69,32 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
   const completedRuns = runs.filter(r => r.status === 'COMPLETED').length;
   const assignedRuns = runs.filter(r => r.status === 'ASSIGNED').length;
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return <Badge variant="success">Completed</Badge>;
+      case 'IN_PROGRESS':
+        return <Badge variant="info">In Progress</Badge>;
+      case 'ASSIGNED':
+        return <Badge variant="warning">Assigned</Badge>;
+      case 'CANCELLED':
+        return <Badge variant="danger">Cancelled</Badge>;
+      default:
+        return <Badge variant="neutral">{status}</Badge>;
+    }
+  };
+
+  const isFiltered = Boolean(searchTerm || statusFilter !== 'ALL' || dateFilter);
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('ALL');
+    setDateFilter('');
+  };
+
   return (
     <div className="page-container">
-      {/* Header */}
+      {/* 1. Page Header */}
       <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
           <h1 className="page-title">Assignments & Dispatch</h1>
@@ -82,237 +107,347 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             type="button"
             variant="secondary"
             onClick={() => loadAssignments()}
-            icon={<RefreshCw className="w-4 h-4" />}
+            icon={<RefreshCw size={15} className={loading ? 'spin-icon' : ''} />}
             title="Refresh runs"
           >
-            Refresh
+            {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button
             type="button"
             variant="primary"
             onClick={() => setIsWizardOpen(true)}
-            icon={<Plus className="w-4 h-4" />}
+            icon={<Plus size={16} />}
           >
             Dispatch New Run
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Scheduled Runs</span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <Calendar className="w-5 h-5" />
-            </div>
+      {/* 2. Compact 4-Card KPI Summary Strip */}
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('ALL')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'ALL' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ALL' ? 'var(--color-primary-subtle)' : undefined,
+          }}
+          title="Click to view all scheduled runs"
+        >
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
+            <Calendar size={18} />
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-slate-900">{totalRuns}</span>
-            <span className="text-xs text-slate-500 font-medium">{assignedRuns} pending start</span>
+          <div className="metric-info">
+            <span className="metric-title">Scheduled Runs</span>
+            <span className="metric-value">{totalRuns}</span>
+            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>
+              {assignedRuns} pending start
+            </span>
           </div>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active on Road</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-              <Truck className="w-5 h-5" />
-            </div>
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('IN_PROGRESS')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'IN_PROGRESS' ? 'var(--color-warning)' : undefined,
+            backgroundColor: statusFilter === 'IN_PROGRESS' ? 'var(--color-warning-bg)' : undefined,
+          }}
+          title="Click to filter active delivery runs in transit"
+        >
+          <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
+            <Truck size={18} />
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-amber-600">{inProgressRuns}</span>
-            <span className="text-xs text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded-full">
+          <div className="metric-info">
+            <span className="metric-title">Active on Road</span>
+            <span className="metric-value">{inProgressRuns}</span>
+            <span className="metric-trend" style={{ color: '#B45309' }}>
               In Transit
             </span>
           </div>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Completed Trips</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('COMPLETED')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'COMPLETED' ? 'var(--color-success)' : undefined,
+            backgroundColor: statusFilter === 'COMPLETED' ? 'var(--color-success-bg)' : undefined,
+          }}
+          title="Click to filter completed trips"
+        >
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
+            <CheckCircle2 size={18} />
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-emerald-600">{completedRuns}</span>
-            <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
-              {totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0}% success
+          <div className="metric-info">
+            <span className="metric-title">Completed Trips</span>
+            <span className="metric-value">{completedRuns}</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
+              {totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0}% success rate
             </span>
           </div>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ready for Dispatch</span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-              <Navigation className="w-5 h-5" />
-            </div>
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('ASSIGNED')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'ASSIGNED' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ASSIGNED' ? 'var(--color-primary-subtle)' : undefined,
+          }}
+          title="Click to filter verified assignments ready for dispatch"
+        >
+          <div className="metric-icon" style={{ backgroundColor: '#EDE9FE', color: '#6D28D9' }}>
+            <Navigation size={18} />
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-slate-900">{assignedRuns}</span>
-            <span className="text-xs text-slate-500 font-medium">Verified assignments</span>
+          <div className="metric-info">
+            <span className="metric-title">Ready for Dispatch</span>
+            <span className="metric-value">{assignedRuns}</span>
+            <span className="metric-trend" style={{ color: '#6D28D9' }}>
+              Verified assignments
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search run code, driver, vehicle..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-medium text-slate-500">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="ASSIGNED">Assigned</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-medium text-slate-500">Date:</span>
+      {/* 3. Search and Filter Toolbar */}
+      <div className="search-filter-toolbar">
+        <div className="toolbar-search-form">
+          <div className="search-input-wrapper">
+            <Search size={18} className="search-input-icon" />
             <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="text"
+              placeholder="Search run code, driver, vehicle, or route..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="toolbar-search-input"
+              aria-label="Search delivery runs"
             />
-            {dateFilter && (
-              <button 
-                onClick={() => setDateFilter('')}
-                className="text-xs text-blue-600 hover:text-blue-800"
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                }}
+                title="Clear search"
               >
-                Clear
+                <X size={14} />
               </button>
             )}
           </div>
         </div>
+
+        <div className="toolbar-filters-group">
+          {/* Status Filter */}
+          <div className="filter-select-wrapper">
+            <ListFilter size={16} className="filter-leading-icon" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="toolbar-select-field"
+              aria-label="Filter by run status"
+            >
+              <option value="ALL">All Run Statuses</option>
+              <option value="ASSIGNED">Assigned (Ready)</option>
+              <option value="IN_PROGRESS">In Progress (Transit)</option>
+              <option value="COMPLETED">Completed Trips</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          {/* Delivery Date Filter */}
+          <div className="filter-select-wrapper">
+            <Calendar size={16} className="filter-leading-icon" />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="toolbar-select-field"
+              aria-label="Filter by delivery date"
+            />
+          </div>
+
+          {/* Clear Filters Button */}
+          {isFiltered && (
+            <button
+              type="button"
+              className="btn btn-secondary toolbar-sort-btn"
+              onClick={clearAllFilters}
+              title="Reset all active filters"
+              style={{ color: 'var(--color-danger)' }}
+            >
+              <X size={14} />
+              <span>Clear</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+      {/* 4. Table Card */}
+      <Card
+        title="Daily Operational Delivery Runs"
+        subtitle={`Showing ${filteredRuns.length} of ${runs.length} delivery runs configured in central database`}
+        noPadding
+      >
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-sm text-slate-500 mt-3 font-medium">Loading assignments...</p>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+            <RefreshCw size={24} className="spin-icon text-muted" style={{ margin: '0 auto 8px auto' }} />
+            <p style={{ fontSize: '13px' }}>Retrieving live delivery run assignments...</p>
           </div>
         ) : filteredRuns.length === 0 ? (
-          <div className="p-12 text-center">
-            <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-900">No Delivery Runs Found</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-              {searchTerm || statusFilter !== 'ALL' || dateFilter
-                ? 'No runs match your search or filter filters.'
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
+            <Truck size={36} style={{ margin: '0 auto 10px auto', opacity: 0.4 }} />
+            <h4 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              No Delivery Runs Found
+            </h4>
+            <p style={{ fontSize: '12.5px', marginTop: '4px', maxWidth: '420px', margin: '4px auto 16px auto' }}>
+              {isFiltered
+                ? 'No delivery runs match your active search or filter criteria.'
                 : 'Plan and dispatch your first delivery run for today.'}
             </p>
-            <button
-              onClick={() => setIsWizardOpen(true)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Dispatch First Run
-            </button>
+            {isFiltered ? (
+              <Button variant="secondary" size="sm" onClick={clearAllFilters}>
+                Clear All Filters
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={() => setIsWizardOpen(true)} icon={<Plus size={15} />}>
+                Dispatch First Run
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+          <div className="business-table-container">
+            <table className="business-table">
+              <thead>
                 <tr>
-                  <th className="py-3.5 px-4">Run Code & Date</th>
-                  <th className="py-3.5 px-4">Route Template</th>
-                  <th className="py-3.5 px-4">Assigned Driver</th>
-                  <th className="py-3.5 px-4">Fleet Vehicle</th>
-                  <th className="py-3.5 px-4">Stops Progress</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Action</th>
+                  <th style={{ width: '160px', minWidth: '150px' }}>Run Code & Date</th>
+                  <th style={{ width: '200px', minWidth: '180px' }}>Route Template</th>
+                  <th style={{ width: '170px', minWidth: '150px' }}>Assigned Driver</th>
+                  <th style={{ width: '160px', minWidth: '140px' }}>Fleet Vehicle</th>
+                  <th style={{ width: '150px', minWidth: '130px' }}>Stops Progress</th>
+                  <th style={{ width: '130px', minWidth: '110px' }}>Status</th>
+                  <th style={{ width: '110px', minWidth: '90px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filteredRuns.map((run) => (
-                  <tr key={run.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="font-mono font-bold text-blue-700 text-xs">{run.run_code || run.runCode}</div>
-                      <div className="text-xs text-slate-500 mt-0.5 flex items-center space-x-1">
-                        <Calendar className="w-3 h-3 text-slate-400" />
+                  <tr key={run.id}>
+                    <td style={{ width: '160px', minWidth: '150px' }}>
+                      <code
+                        style={{
+                          fontFamily: 'monospace',
+                          fontWeight: 700,
+                          fontSize: '11.5px',
+                          color: 'var(--color-primary)',
+                          backgroundColor: 'var(--color-primary-subtle)',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          border: '1px solid #BFDBFE',
+                        }}
+                      >
+                        {run.run_code || run.runCode}
+                      </code>
+                      <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar size={11} />
                         <span>{run.delivery_date || run.deliveryDate}</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
-                      <div className="font-semibold text-slate-900">{run.route_name || run.routeName || 'Sequenced Route'}</div>
-                      <div className="text-xs text-slate-400 font-mono">{run.route_code || run.routeCode || 'RT'}</div>
+                    <td style={{ width: '200px', minWidth: '180px' }}>
+                      <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                        {run.route_name || run.routeName || 'Sequenced Route'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        {run.route_code || run.routeCode || 'RT-CORRIDOR'}
+                      </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td style={{ width: '170px', minWidth: '150px' }}>
                       {(run.driver_name || run.driverName) ? (
                         <div>
-                          <div className="font-medium text-slate-900">{run.driver_name || run.driverName}</div>
-                          <div className="text-xs text-slate-400">{run.driver_phone || run.driverPhone || '—'}</div>
+                          <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                            {run.driver_name || run.driverName}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            {run.driver_phone || run.driverPhone || '—'}
+                          </div>
                         </div>
                       ) : (
-                        <span className="text-xs text-amber-600 font-medium">Unassigned</span>
+                        <span style={{ fontSize: '11.5px', color: '#D97706', fontWeight: 500 }}>Unassigned</span>
                       )}
                     </td>
-                    <td className="py-4 px-4">
+                    <td style={{ width: '160px', minWidth: '140px' }}>
                       {(run.vehicle_registration || run.registrationNumber) ? (
                         <div>
-                          <div className="font-mono font-bold text-slate-900">{run.vehicle_registration || run.registrationNumber}</div>
-                          <div className="text-xs text-slate-400">{run.vehicle_type || run.vehicleType || 'Fleet'}</div>
+                          <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                            {run.vehicle_registration || run.registrationNumber}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            {run.vehicle_type || run.vehicleType || 'Commercial Van'}
+                          </div>
                         </div>
                       ) : (
-                        <span className="text-xs text-amber-600 font-medium">Unassigned</span>
+                        <span style={{ fontSize: '11.5px', color: '#D97706', fontWeight: 500 }}>Unallocated</span>
                       )}
                     </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-slate-900">
+                    <td style={{ width: '150px', minWidth: '130px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
                           {run.completed_stops_count ?? run.completedStopsCount ?? 0}/{run.planned_stops_count ?? run.totalStopsCount ?? 0}
                         </span>
-                        <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div style={{ width: '50px', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
                           <div 
-                            className="bg-blue-600 h-1.5 rounded-full"
                             style={{ 
+                              height: '100%',
+                              backgroundColor: 'var(--color-primary)',
+                              borderRadius: '3px',
                               width: `${(run.planned_stops_count ?? run.totalStopsCount ?? 0) > 0 
                                 ? Math.round(((run.completed_stops_count ?? run.completedStopsCount ?? 0) / (run.planned_stops_count ?? run.totalStopsCount ?? 1)) * 100) 
                                 : 0}%` 
                             }}
-                          ></div>
+                          />
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                        run.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                        run.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                        run.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {run.status}
-                      </span>
+                    <td style={{ width: '130px', minWidth: '110px' }}>
+                      {getStatusBadge(run.status)}
                     </td>
-                    <td className="py-4 px-4 text-right">
+                    <td style={{ width: '110px', minWidth: '90px', textAlign: 'right' }}>
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedRunId(run.id);
                           setIsDetailsOpen(true);
                         }}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center space-x-1 font-medium text-xs"
+                        className="btn btn-secondary btn-table-action"
+                        style={{
+                          height: '28px',
+                          padding: '0 10px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--color-primary)',
+                          backgroundColor: 'var(--color-primary-subtle)',
+                          border: '1px solid #BFDBFE',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                        }}
+                        title={`View delivery run details for ${run.run_code || run.runCode}`}
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye size={13} />
                         <span>Details</span>
                       </button>
                     </td>
@@ -322,7 +457,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Creation Wizard */}
       {isWizardOpen && (

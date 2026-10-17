@@ -317,7 +317,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
   const isEligible = eligibility?.isEligible;
 
   return (
-    <div className="page-container" style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto' }}>
+    <div className="page-container">
       {/* Toast Alert */}
       {toastMessage && (
         <div

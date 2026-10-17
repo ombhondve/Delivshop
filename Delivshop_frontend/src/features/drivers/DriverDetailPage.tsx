@@ -266,7 +266,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
   const recentAttendance: any[] = profile?.recentAttendance || [];
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1440px', margin: '0 auto' }}>
+    <div className="page-container">
       {/* Toast Notification */}
       {toastMessage && (
         <div

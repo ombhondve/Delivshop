@@ -5,12 +5,11 @@ import {
   Search,
   RefreshCw,
   Eye,
-  ShieldAlert,
   Wrench,
   CheckCircle2,
   AlertTriangle,
   Clock,
-  Filter,
+  ListFilter,
   Download,
   X,
   Thermometer,
@@ -24,11 +23,14 @@ import {
   Zap,
   Fuel,
   MapPin,
-  Package,
+  Radio,
+  AlertCircle,
 } from 'lucide-react';
+import { Card } from '../../components/common/Card';
+import { Badge } from '../../components/common/Badge';
+import { Button } from '../../components/common/Button';
 import { api } from '../../services/api/endpoints';
 import { Vehicle, VehicleSummary } from '../../types';
-import { Badge } from '../../components/common/Badge';
 import { AddVehicleModal } from './AddVehicleModal';
 import { EditVehicleModal } from './EditVehicleModal';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
@@ -55,6 +57,7 @@ export const VehiclesOverview: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
 
   // Filters & Search
   const [search, setSearch] = useState('');
@@ -166,8 +169,9 @@ export const VehiclesOverview: React.FC = () => {
       }
 
       setSummary(rawSummary?.data || rawSummary || {});
+      setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch (err: any) {
-      setError(err?.message || 'Failed to load fleet vehicles');
+      setError(err?.message || 'Failed to load fleet vehicles from server');
     } finally {
       setLoading(false);
     }
@@ -194,7 +198,7 @@ export const VehiclesOverview: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `delivshop_fleet_export_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `Delivshop_Fleet_Export_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -225,90 +229,15 @@ export const VehiclesOverview: React.FC = () => {
   // Status Badge Component
   const renderStatusBadge = (v: Vehicle) => {
     if (!v.is_active || v.status === 'INACTIVE') {
-      return (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '3px 8px',
-            borderRadius: '9999px',
-            fontSize: '11.5px',
-            fontWeight: 600,
-            backgroundColor: '#F1F5F9',
-            color: '#64748B',
-            border: '1px solid #E2E8F0',
-          }}
-        >
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#94A3B8' }} />
-          Inactive
-        </span>
-      );
+      return <Badge variant="neutral">INACTIVE</Badge>;
     }
-
     if (v.status === 'UNDER_MAINTENANCE') {
-      return (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '3px 8px',
-            borderRadius: '9999px',
-            fontSize: '11.5px',
-            fontWeight: 600,
-            backgroundColor: '#FEF3C7',
-            color: '#92400E',
-            border: '1px solid #FDE68A',
-          }}
-        >
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#D97706' }} />
-          Maintenance
-        </span>
-      );
+      return <Badge variant="warning">MAINTENANCE</Badge>;
     }
-
     if (v.status === 'ASSIGNED' || v.active_run_code) {
-      return (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '3px 8px',
-            borderRadius: '9999px',
-            fontSize: '11.5px',
-            fontWeight: 600,
-            backgroundColor: '#EFF6FF',
-            color: '#1E40AF',
-            border: '1px solid #BFDBFE',
-          }}
-        >
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2563EB' }} />
-          Assigned
-        </span>
-      );
+      return <Badge variant="info">ASSIGNED</Badge>;
     }
-
-    return (
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px',
-          padding: '3px 8px',
-          borderRadius: '9999px',
-          fontSize: '11.5px',
-          fontWeight: 600,
-          backgroundColor: '#DCFCE7',
-          color: '#166534',
-          border: '1px solid #BBF7D0',
-        }}
-      >
-        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
-        Available
-      </span>
-    );
+    return <Badge variant="success">AVAILABLE</Badge>;
   };
 
   // Compliance Badge Component
@@ -320,24 +249,10 @@ export const VehiclesOverview: React.FC = () => {
     if (expiredCount > 0) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '2px 8px',
-              borderRadius: '9999px',
-              fontSize: '11px',
-              fontWeight: 700,
-              backgroundColor: '#FEE2E2',
-              color: '#B91C1C',
-              border: '1px solid #FECACA',
-              width: 'fit-content',
-            }}
-          >
-            <AlertTriangle size={11} /> Expired ({expiredCount})
-          </span>
-          <span style={{ fontSize: '10.5px', color: '#DC2626', fontWeight: 500 }}>
+          <Badge variant="danger" icon={<AlertTriangle size={11} />}>
+            Expired ({expiredCount})
+          </Badge>
+          <span style={{ fontSize: '10.5px', color: 'var(--color-danger)', fontWeight: 500 }}>
             Mandatory renewal needed
           </span>
         </div>
@@ -347,23 +262,9 @@ export const VehiclesOverview: React.FC = () => {
     if (expiringCount > 0) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '2px 8px',
-              borderRadius: '9999px',
-              fontSize: '11px',
-              fontWeight: 700,
-              backgroundColor: '#FEF3C7',
-              color: '#B45309',
-              border: '1px solid #FDE68A',
-              width: 'fit-content',
-            }}
-          >
-            <Clock size={11} /> Expiring Soon ({expiringCount})
-          </span>
+          <Badge variant="warning" icon={<Clock size={11} />}>
+            Expiring ({expiringCount})
+          </Badge>
           {v.nearest_expiry_date && (
             <span style={{ fontSize: '10.5px', color: '#B45309' }}>
               Due: {v.nearest_expiry_date}
@@ -375,42 +276,16 @@ export const VehiclesOverview: React.FC = () => {
 
     if (totalDocs < 2) {
       return (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '2px 8px',
-            borderRadius: '9999px',
-            fontSize: '11px',
-            fontWeight: 600,
-            backgroundColor: '#F8FAFC',
-            color: '#64748B',
-            border: '1px solid #CBD5E1',
-          }}
-        >
+        <Badge variant="neutral">
           Missing Docs ({totalDocs}/4)
-        </span>
+        </Badge>
       );
     }
 
     return (
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px',
-          padding: '2px 8px',
-          borderRadius: '9999px',
-          fontSize: '11px',
-          fontWeight: 600,
-          backgroundColor: '#F0FDF4',
-          color: '#15803D',
-          border: '1px solid #DCFCE7',
-        }}
-      >
-        <ShieldCheck size={12} /> Compliant
-      </span>
+      <Badge variant="success" icon={<ShieldCheck size={11} />}>
+        Compliant
+      </Badge>
     );
   };
 
@@ -429,7 +304,7 @@ export const VehiclesOverview: React.FC = () => {
               fontSize: '10.5px',
               fontWeight: 700,
               backgroundColor: '#ECFDF5',
-              color: '#059669',
+              color: 'var(--color-success)',
               border: '1px solid #A7F3D0',
             }}
           >
@@ -447,8 +322,8 @@ export const VehiclesOverview: React.FC = () => {
               borderRadius: '4px',
               fontSize: '10.5px',
               fontWeight: 700,
-              backgroundColor: '#EFF6FF',
-              color: '#2563EB',
+              backgroundColor: 'var(--color-primary-subtle)',
+              color: 'var(--color-primary)',
               border: '1px solid #BFDBFE',
             }}
           >
@@ -456,24 +331,6 @@ export const VehiclesOverview: React.FC = () => {
           </span>
         );
       case 'PETROL':
-        return (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3px',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              fontSize: '10.5px',
-              fontWeight: 600,
-              backgroundColor: '#F8FAFC',
-              color: '#475569',
-              border: '1px solid #E2E8F0',
-            }}
-          >
-            Petrol
-          </span>
-        );
       case 'DIESEL':
       default:
         return (
@@ -488,10 +345,10 @@ export const VehiclesOverview: React.FC = () => {
               fontWeight: 600,
               backgroundColor: '#F8FAFC',
               color: '#475569',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--border-color)',
             }}
           >
-            Diesel
+            {fuelType || 'Diesel'}
           </span>
         );
     }
@@ -500,8 +357,8 @@ export const VehiclesOverview: React.FC = () => {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="page-container" style={{ padding: '24px', maxWidth: '1440px', margin: '0 auto' }}>
-      {/* Toast Alert */}
+    <div className="page-container">
+      {/* Toast Notification */}
       {toastMessage && (
         <div
           style={{
@@ -509,324 +366,198 @@ export const VehiclesOverview: React.FC = () => {
             top: '20px',
             right: '24px',
             zIndex: 1200,
-            padding: '12px 18px',
+            padding: '10px 16px',
             borderRadius: '8px',
-            backgroundColor: toastMessage.type === 'error' ? '#FEF2F2' : '#F0FDF4',
-            border: `1px solid ${toastMessage.type === 'error' ? '#FECACA' : '#BBF7D0'}`,
-            color: toastMessage.type === 'error' ? '#DC2626' : '#15803D',
+            backgroundColor: toastMessage.type === 'success' ? 'var(--color-navy)' : 'var(--color-danger)',
+            color: '#FFFFFF',
             fontSize: '13px',
             fontWeight: 600,
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
+            animation: 'fadeIn 0.2s ease-in-out',
           }}
         >
-          {toastMessage.type === 'error' ? <ShieldAlert size={16} /> : <CheckCircle2 size={16} />}
+          {toastMessage.type === 'success' ? <CheckCircle2 size={16} color="var(--color-success)" /> : <AlertCircle size={16} color="#FECACA" />}
           <span>{toastMessage.text}</span>
         </div>
       )}
 
-      {/* Breadcrumb & Section Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>
-        <span>Logistics Asset Management</span>
-        <span>/</span>
-        <span style={{ color: '#111F33', fontWeight: 600 }}>Fleet & Vehicles</span>
-      </div>
-
-      {/* Page Header Bar */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
+      {/* 1. Page Header */}
+      <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#111F33', margin: 0, letterSpacing: '-0.02em' }}>
-            Fleet & Vehicles Management
-          </h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#64748B' }}>
-            Manage commercial vehicles, compliance documents, dispatch availability, and fleet maintenance
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 className="page-title">Fleet & Vehicles Management</h1>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '2px 8px',
+                backgroundColor: 'var(--color-success-bg)',
+                border: '1px solid #BBF7D0',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: 'var(--color-success)',
+              }}
+            >
+              <Radio size={11} className="spin-icon" />
+              <span>Live Database</span>
+            </div>
+          </div>
+          <p className="page-desc">
+            Manage commercial vehicles, compliance documents, dispatch availability, and fleet maintenance.
+            <span style={{ marginLeft: '10px', color: '#94A3B8', fontSize: '11.5px' }}>
+              Last synchronized: {lastSyncTime}
+            </span>
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
+        <div className="page-header-actions">
+          <Button
             type="button"
-            className="btn btn-secondary"
+            variant="secondary"
+            onClick={handleExportCsv}
+            disabled={exporting || vehicles.length === 0}
+            icon={<Download size={15} className={exporting ? 'spin-icon' : ''} />}
+          >
+            {exporting ? 'Exporting...' : 'Export'}
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
             onClick={fetchVehicles}
             disabled={loading}
-            title="Refresh fleet assets"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            icon={<RefreshCw size={15} className={loading ? 'spin-icon' : ''} />}
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
-          </button>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
 
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary"
-            onClick={handleExportCsv}
-            disabled={exporting}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            title="Export full fleet CSV table"
-          >
-            <Download size={14} className={exporting ? 'animate-spin' : ''} />
-            <span>{exporting ? 'Exporting...' : 'Export Vehicles'}</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-primary"
+            variant="primary"
             onClick={() => setIsAddModalOpen(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: '#1976D2',
-              borderColor: '#1976D2',
-            }}
+            icon={<Plus size={16} />}
           >
-            <Plus size={16} /> Register Vehicle
-          </button>
+            Register Vehicle
+          </Button>
         </div>
       </div>
 
-      {/* Section B: Fleet Overview Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
-        {/* Card 1: Total Vehicles */}
+      {/* 2. Compact Clickable 4-Card KPI Summary Strip */}
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {/* 1. Total Vehicles */}
         <div
+          className="metric-card"
           onClick={() => {
             setStatusFilter('ALL');
             setComplianceFilter('ALL');
             setPage(1);
           }}
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: `1px solid ${statusFilter === 'ALL' && complianceFilter === 'ALL' ? '#1976D2' : '#E2E8F0'}`,
-            padding: '18px 20px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow:
-              statusFilter === 'ALL' && complianceFilter === 'ALL'
-                ? '0 0 0 2px rgba(25, 118, 210, 0.2)'
-                : '0 1px 3px rgba(0,0,0,0.05)',
+            borderColor: statusFilter === 'ALL' && complianceFilter === 'ALL' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ALL' && complianceFilter === 'ALL' ? 'var(--color-primary-subtle)' : undefined,
           }}
+          title="Click to view all registered fleet vehicles"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Total Vehicles
-              </span>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#111F33', marginTop: '4px', letterSpacing: '-0.02em' }}>
-                {summary.totalVehicles || 0}
-              </div>
-            </div>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                backgroundColor: '#F1F5F9',
-                color: '#111F33',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Truck size={20} />
-            </div>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
+            <Truck size={18} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', fontSize: '12px', color: '#64748B' }}>
-            <span style={{ color: '#16A34A', fontWeight: 600 }}>
-              ● {summary.activeVehicles || 0} Active
-            </span>
-            <span style={{ color: '#94A3B8' }}>•</span>
-            <span style={{ color: '#64748B' }}>
-              {summary.inactiveVehicles || 0} Inactive
+          <div className="metric-info">
+            <span className="metric-title">Total Vehicles</span>
+            <span className="metric-value">{summary.totalVehicles || 0}</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
+              {summary.activeVehicles || 0} active in fleet
             </span>
           </div>
         </div>
 
-        {/* Card 2: Available */}
+        {/* 2. Available for Dispatch */}
         <div
+          className="metric-card"
           onClick={() => handleStatusFilterChange('AVAILABLE')}
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: `1px solid ${statusFilter === 'AVAILABLE' ? '#16A34A' : '#E2E8F0'}`,
-            padding: '18px 20px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow:
-              statusFilter === 'AVAILABLE'
-                ? '0 0 0 2px rgba(22, 163, 74, 0.2)'
-                : '0 1px 3px rgba(0,0,0,0.05)',
+            borderColor: statusFilter === 'AVAILABLE' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'AVAILABLE' ? 'var(--color-primary-subtle)' : undefined,
           }}
+          title="Click to filter available fleet vehicles ready for dispatch"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Available
-              </span>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#15803D', marginTop: '4px', letterSpacing: '-0.02em' }}>
-                {summary.availableVehicles || 0}
-              </div>
-            </div>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                backgroundColor: '#DCFCE7',
-                color: '#15803D',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <CheckCircle2 size={20} />
-            </div>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
+            <CheckCircle2 size={18} />
           </div>
-          <div style={{ marginTop: '12px', fontSize: '12px', color: '#64748B' }}>
-            Ready for dispatch allocation
+          <div className="metric-info">
+            <span className="metric-title">Available</span>
+            <span className="metric-value">{summary.availableVehicles || 0}</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
+              Ready for dispatch
+            </span>
           </div>
         </div>
 
-        {/* Card 3: In Maintenance */}
+        {/* 3. In Maintenance */}
         <div
+          className="metric-card"
           onClick={() => handleStatusFilterChange('UNDER_MAINTENANCE')}
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: `1px solid ${statusFilter === 'UNDER_MAINTENANCE' ? '#D97706' : '#E2E8F0'}`,
-            padding: '18px 20px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow:
-              statusFilter === 'UNDER_MAINTENANCE'
-                ? '0 0 0 2px rgba(217, 119, 6, 0.2)'
-                : '0 1px 3px rgba(0,0,0,0.05)',
+            borderColor: statusFilter === 'UNDER_MAINTENANCE' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'UNDER_MAINTENANCE' ? 'var(--color-primary-subtle)' : undefined,
           }}
+          title="Click to filter vehicles under maintenance or workshop repair"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                In Maintenance
-              </span>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#B45309', marginTop: '4px', letterSpacing: '-0.02em' }}>
-                {summary.underMaintenanceVehicles || 0}
-              </div>
-            </div>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                backgroundColor: '#FEF3C7',
-                color: '#B45309',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Wrench size={20} />
-            </div>
+          <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
+            <Wrench size={18} />
           </div>
-          <div style={{ marginTop: '12px', fontSize: '12px', color: '#64748B' }}>
-            Under inspection or repairs
+          <div className="metric-info">
+            <span className="metric-title">In Maintenance</span>
+            <span className="metric-value">{summary.underMaintenanceVehicles || 0}</span>
+            <span className="metric-trend" style={{ color: '#B45309' }}>
+              Under inspection / repairs
+            </span>
           </div>
         </div>
 
-        {/* Card 4: Attention Required */}
+        {/* 4. Attention Required */}
         <div
+          className="metric-card"
           onClick={() => handleComplianceFilterChange('ATTENTION_REQUIRED')}
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: `1px solid ${complianceFilter === 'ATTENTION_REQUIRED' ? '#DC2626' : '#E2E8F0'}`,
-            padding: '18px 20px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow:
-              complianceFilter === 'ATTENTION_REQUIRED'
-                ? '0 0 0 2px rgba(220, 38, 38, 0.2)'
-                : '0 1px 3px rgba(0,0,0,0.05)',
+            borderColor: complianceFilter === 'ATTENTION_REQUIRED' ? 'var(--color-danger)' : undefined,
+            backgroundColor: complianceFilter === 'ATTENTION_REQUIRED' ? 'var(--color-danger-bg)' : undefined,
           }}
+          title="Vehicles with expired or expiring compliance documents"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Attention Required
-              </span>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#DC2626', marginTop: '4px', letterSpacing: '-0.02em' }}>
-                {summary.attentionRequired || 0}
-              </div>
-            </div>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                backgroundColor: '#FEE2E2',
-                color: '#DC2626',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <AlertTriangle size={20} />
-            </div>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}>
+            <AlertTriangle size={18} />
           </div>
-          <div style={{ marginTop: '12px', fontSize: '12px', color: '#DC2626', fontWeight: 600 }}>
-            Expired docs or upcoming renewals
+          <div className="metric-info">
+            <span className="metric-title">Attention Req.</span>
+            <span className="metric-value">{summary.attentionRequired || 0}</span>
+            <span className="metric-trend" style={{ color: 'var(--color-danger)' }}>
+              Expired / Expiring docs
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Section C: Search and Filters Toolbar */}
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '16px 20px',
-          marginBottom: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-        }}
-      >
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-          {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1 1 280px', minWidth: '240px' }}>
-            <Search
-              size={16}
-              style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#94A3B8',
-              }}
-            />
+      {/* 3. Search and Filter Toolbar */}
+      <div className="search-filter-toolbar">
+        <div className="toolbar-search-form">
+          <div className="search-input-wrapper">
+            <Search size={18} className="search-input-icon" />
             <input
               type="text"
-              className="form-control"
-              style={{ paddingLeft: '38px', paddingRight: search ? '32px' : '12px', height: '40px', fontSize: '13px' }}
+              className="toolbar-search-input"
               placeholder="Search registration, vehicle ID, make/model, driver, depot..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search vehicles"
             />
             {search && (
               <button
@@ -839,23 +570,27 @@ export const VehiclesOverview: React.FC = () => {
                   transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
-                  color: '#94A3B8',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                   padding: '2px',
                 }}
+                title="Clear search"
               >
                 <X size={14} />
               </button>
             )}
           </div>
+        </div>
 
+        <div className="toolbar-filters-group">
           {/* Status Filter */}
-          <div style={{ minWidth: '160px' }}>
+          <div className="filter-select-wrapper">
+            <ListFilter size={16} className="filter-leading-icon" />
             <select
-              className="form-control"
-              style={{ height: '40px', fontSize: '13px' }}
+              className="toolbar-select-field"
               value={statusFilter}
               onChange={(e) => handleStatusFilterChange(e.target.value)}
+              aria-label="Filter by operational status"
             >
               <option value="ALL">All Operational Statuses</option>
               <option value="AVAILABLE">Available for Dispatch</option>
@@ -866,12 +601,13 @@ export const VehiclesOverview: React.FC = () => {
           </div>
 
           {/* Vehicle Type Filter */}
-          <div style={{ minWidth: '180px' }}>
+          <div className="filter-select-wrapper">
+            <Truck size={16} className="filter-leading-icon" />
             <select
-              className="form-control"
-              style={{ height: '40px', fontSize: '13px' }}
+              className="toolbar-select-field"
               value={typeFilter}
               onChange={(e) => handleTypeFilterChange(e.target.value)}
+              aria-label="Filter by vehicle type"
             >
               <option value="ALL">All Vehicle Types</option>
               {summary.vehicleTypes && summary.vehicleTypes.length > 0 ? (
@@ -892,12 +628,13 @@ export const VehiclesOverview: React.FC = () => {
           </div>
 
           {/* Depot Filter */}
-          <div style={{ minWidth: '180px' }}>
+          <div className="filter-select-wrapper">
+            <MapPin size={16} className="filter-leading-icon" />
             <select
-              className="form-control"
-              style={{ height: '40px', fontSize: '13px' }}
+              className="toolbar-select-field"
               value={depotFilter}
               onChange={(e) => handleDepotFilterChange(e.target.value)}
+              aria-label="Filter by depot or hub"
             >
               <option value="ALL">All Depots & Hubs</option>
               {summary.depots && summary.depots.length > 0 ? (
@@ -919,12 +656,13 @@ export const VehiclesOverview: React.FC = () => {
           </div>
 
           {/* Document Compliance Filter */}
-          <div style={{ minWidth: '170px' }}>
+          <div className="filter-select-wrapper">
+            <ShieldCheck size={16} className="filter-leading-icon" />
             <select
-              className="form-control"
-              style={{ height: '40px', fontSize: '13px' }}
+              className="toolbar-select-field"
               value={complianceFilter}
               onChange={(e) => handleComplianceFilterChange(e.target.value)}
+              aria-label="Filter by document compliance"
             >
               <option value="ALL">All Compliance</option>
               <option value="COMPLIANT">Fully Compliant</option>
@@ -939,313 +677,143 @@ export const VehiclesOverview: React.FC = () => {
           {isFiltered && (
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary toolbar-sort-btn"
               onClick={clearAllFilters}
-              style={{ height: '40px', display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#DC2626' }}
+              title="Reset all active filters"
+              style={{ color: 'var(--color-danger)' }}
             >
-              <X size={14} /> Clear Filters
+              <X size={14} />
+              <span>Clear</span>
             </button>
           )}
         </div>
-
-        {/* Active Filter Chips & Match Count Header */}
-        <div
-          style={{
-            marginTop: '12px',
-            paddingTop: '10px',
-            borderTop: '1px solid #F1F5F9',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-            fontSize: '12.5px',
-          }}
-        >
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#64748B', fontWeight: 600 }}>Active Filters:</span>
-            {!isFiltered ? (
-              <span style={{ color: '#94A3B8' }}>None (showing full fleet)</span>
-            ) : (
-              <>
-                {debouncedSearch && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: '#EFF6FF',
-                      color: '#1E40AF',
-                      border: '1px solid #BFDBFE',
-                      fontSize: '11.5px',
-                    }}
-                  >
-                    Search: "{debouncedSearch}"
-                    <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSearch('')} />
-                  </span>
-                )}
-                {statusFilter !== 'ALL' && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: '#EFF6FF',
-                      color: '#1E40AF',
-                      border: '1px solid #BFDBFE',
-                      fontSize: '11.5px',
-                    }}
-                  >
-                    Status: {statusFilter}
-                    <X size={11} style={{ cursor: 'pointer' }} onClick={() => setStatusFilter('ALL')} />
-                  </span>
-                )}
-                {typeFilter !== 'ALL' && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: '#EFF6FF',
-                      color: '#1E40AF',
-                      border: '1px solid #BFDBFE',
-                      fontSize: '11.5px',
-                    }}
-                  >
-                    Type: {typeFilter}
-                    <X size={11} style={{ cursor: 'pointer' }} onClick={() => setTypeFilter('ALL')} />
-                  </span>
-                )}
-                {depotFilter !== 'ALL' && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: '#EFF6FF',
-                      color: '#1E40AF',
-                      border: '1px solid #BFDBFE',
-                      fontSize: '11.5px',
-                    }}
-                  >
-                    Depot: {depotFilter}
-                    <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDepotFilter('ALL')} />
-                  </span>
-                )}
-                {complianceFilter !== 'ALL' && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: '#FEF2F2',
-                      color: '#991B1B',
-                      border: '1px solid #FECACA',
-                      fontSize: '11.5px',
-                    }}
-                  >
-                    Compliance: {complianceFilter}
-                    <X size={11} style={{ cursor: 'pointer' }} onClick={() => setComplianceFilter('ALL')} />
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-
-          <div style={{ color: '#64748B', fontWeight: 600 }}>
-            Showing <strong style={{ color: '#111F33' }}>{vehicles.length}</strong> of{' '}
-            <strong style={{ color: '#111F33' }}>{totalCount}</strong> matching vehicle records
-          </div>
-        </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div
-          style={{
-            marginBottom: '16px',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            backgroundColor: '#FEF2F2',
-            border: '1px solid #FECACA',
-            color: '#DC2626',
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <ShieldAlert size={16} style={{ flexShrink: 0 }} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Section D: Redesigned Vehicle Table */}
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        }}
+      {/* 4. Commercial Fleet Registry Table Card */}
+      <Card
+        title="Commercial Fleet Registry"
+        subtitle={`Showing ${vehicles.length} of ${totalCount} fleet vehicles retrieved from central PostgreSQL database`}
+        noPadding
       >
-        <div className="table-responsive">
-          <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Vehicle Asset
-                </th>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Type & Specifications
-                </th>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Depot / Location
-                </th>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Capacity
-                </th>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Operational Status
-                </th>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Compliance
-                </th>
-                <th style={{ padding: '14px 18px', color: '#475569', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && vehicles.length === 0 ? (
+        {loading && vehicles.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+            <RefreshCw size={24} className="spin-icon text-muted" style={{ margin: '0 auto 8px auto' }} />
+            <p style={{ fontSize: '13px' }}>Retrieving live vehicle registry from database...</p>
+          </div>
+        ) : error ? (
+          <div style={{ padding: '30px', textAlign: 'center' }}>
+            <p style={{ color: '#B91C1C', fontSize: '13.5px', marginBottom: '12px' }}>{error}</p>
+            <Button variant="secondary" size="sm" onClick={fetchVehicles}>
+              Retry Connection
+            </Button>
+          </div>
+        ) : vehicles.length === 0 ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
+            <Truck size={36} style={{ margin: '0 auto 10px auto', opacity: 0.4 }} />
+            <h4 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              No matching vehicles found
+            </h4>
+            <p style={{ fontSize: '12.5px', marginTop: '4px', maxWidth: '420px', margin: '4px auto 16px auto' }}>
+              {isFiltered
+                ? 'No vehicle records match your active search and filter criteria.'
+                : 'No vehicles are registered in the commercial fleet registry yet.'}
+            </p>
+            {isFiltered ? (
+              <Button variant="secondary" size="sm" onClick={clearAllFilters}>
+                Clear All Filters
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={() => setIsAddModalOpen(true)} icon={<Plus size={15} />}>
+                Register Vehicle
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="business-table-container">
+            <table className="business-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
-                    <RefreshCw size={28} className="animate-spin" style={{ margin: '0 auto 12px auto', color: '#1976D2' }} />
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
-                      Loading fleet assets & compliance metrics...
-                    </div>
-                  </td>
+                  <th style={{ width: '220px', minWidth: '200px' }}>Vehicle Asset</th>
+                  <th style={{ width: '190px', minWidth: '175px' }}>Type & Specifications</th>
+                  <th style={{ width: '170px', minWidth: '155px' }}>Depot / Location</th>
+                  <th style={{ width: '120px', minWidth: '110px' }}>Capacity</th>
+                  <th style={{ width: '135px', minWidth: '125px' }}>Operational Status</th>
+                  <th style={{ width: '160px', minWidth: '145px' }}>Compliance</th>
+                  <th style={{ width: '140px', minWidth: '130px', textAlign: 'right' }}>Actions</th>
                 </tr>
-              ) : vehicles.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
-                    <div
-                      style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        backgroundColor: '#F1F5F9',
-                        color: '#94A3B8',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '12px',
-                      }}
-                    >
-                      <Truck size={28} />
-                    </div>
-                    <div style={{ fontWeight: 700, color: '#111F33', fontSize: '16px' }}>
-                      No vehicles found matching current criteria
-                    </div>
-                    <p style={{ margin: '6px 0 16px 0', fontSize: '13px', color: '#64748B' }}>
-                      {isFiltered
-                        ? 'Try clearing active filters or adjusting your search keyword.'
-                        : 'No vehicles are registered in the fleet registry yet.'}
-                    </p>
-                    {isFiltered ? (
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={clearAllFilters}>
-                        Clear All Filters
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => setIsAddModalOpen(true)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <Plus size={14} /> Register First Vehicle
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                vehicles.map((v) => (
-                  <tr
-                    key={v.id}
-                    style={{
-                      borderBottom: '1px solid #F1F5F9',
-                      transition: 'background-color 0.15s ease',
-                      backgroundColor: actionMenuOpenId === v.id ? '#F8FAFC' : 'transparent',
-                    }}
-                    className="hover:bg-slate-50"
-                  >
-                    {/* 1. Vehicle */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              </thead>
+              <tbody>
+                {vehicles.map((v) => (
+                  <tr key={v.id}>
+                    {/* 1. Vehicle Asset (Reg, Code, Make/Model) */}
+                    <td style={{ width: '220px', minWidth: '200px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div
                           style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '8px',
-                            backgroundColor: v.is_refrigerated ? '#E0F2FE' : v.fuel_type === 'ELECTRIC' ? '#DCFCE7' : '#F1F5F9',
-                            color: v.is_refrigerated ? '#0284C7' : v.fuel_type === 'ELECTRIC' ? '#15803D' : '#475569',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
+                            backgroundColor: 'var(--color-navy)',
+                            color: '#FFFFFF',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
                           }}
                         >
-                          <Truck size={20} />
+                          <Truck size={14} />
                         </div>
-                        <div>
+                        <div style={{ minWidth: 0, overflow: 'hidden' }}>
                           <div
                             onClick={() => navigate(`/admin/vehicles/${v.id}`)}
                             style={{
-                              fontSize: '13.5px',
-                              fontWeight: 700,
-                              color: '#1976D2',
+                              fontWeight: 600,
+                              fontSize: '12.5px',
+                              color: 'var(--color-primary)',
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '4px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
-                            title="Click to view full vehicle details"
+                            title={`View asset details for ${v.registration_number}`}
                           >
                             <span>{v.registration_number}</span>
                             {v.is_dispatch_eligible && (
                               <span title="Eligible for Dispatch" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                <CheckCircle2 size={13} style={{ color: '#16A34A' }} />
+                                <CheckCircle2 size={12} color="var(--color-success)" />
                               </span>
                             )}
                           </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '1px' }}>
                             <code
                               style={{
                                 fontFamily: 'monospace',
+                                fontWeight: 700,
                                 fontSize: '11px',
-                                fontWeight: 600,
-                                color: '#0369A1',
-                                backgroundColor: '#E0F2FE',
+                                color: 'var(--color-primary)',
+                                backgroundColor: 'var(--color-primary-subtle)',
                                 padding: '1px 5px',
                                 borderRadius: '4px',
+                                border: '1px solid #BFDBFE',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               {v.vehicle_code}
                             </code>
-                            <span style={{ fontSize: '11px', color: '#64748B' }}>
-                              {v.make_model} {v.nickname && `• "${v.nickname}"`}
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                color: '#64748B',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                              title={v.make_model || ''}
+                            >
+                              {v.make_model}
                             </span>
                           </div>
                         </div>
@@ -1253,12 +821,23 @@ export const VehiclesOverview: React.FC = () => {
                     </td>
 
                     {/* 2. Type & Specifications */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
-                      <div>
-                        <span style={{ color: '#111F33', fontWeight: 600, fontSize: '13px' }}>
+                    <td style={{ width: '190px', minWidth: '175px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: '12px',
+                            color: 'var(--text-primary)',
+                            display: 'block',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={v.vehicle_type}
+                        >
                           {v.vehicle_type}
                         </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', flexWrap: 'wrap' }}>
                           {renderFuelBadge(v.fuel_type)}
                           {v.is_refrigerated ? (
                             <span
@@ -1266,9 +845,9 @@ export const VehiclesOverview: React.FC = () => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '3px',
-                                padding: '2px 6px',
+                                padding: '2px 5px',
                                 borderRadius: '4px',
-                                fontSize: '10.5px',
+                                fontSize: '10px',
                                 fontWeight: 700,
                                 backgroundColor: '#E0F2FE',
                                 color: '#0284C7',
@@ -1277,66 +856,86 @@ export const VehiclesOverview: React.FC = () => {
                               title={
                                 v.temperature_min_c !== undefined && v.temperature_max_c !== undefined
                                   ? `Target Range: ${v.temperature_min_c}°C to ${v.temperature_max_c}°C`
-                                  : 'Chiller Unit'
+                                  : 'Refrigerated Chiller Unit'
                               }
                             >
-                              <Thermometer size={10} /> Chiller Active
+                              <Thermometer size={10} /> Chiller
                             </span>
                           ) : (
-                            <span style={{ fontSize: '11px', color: '#64748B' }}>Ambient Cargo</span>
+                            <span style={{ fontSize: '10.5px', color: '#64748B' }}>Ambient</span>
                           )}
                         </div>
                       </div>
                     </td>
 
                     {/* 3. Depot / Location */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
-                      <div>
-                        <span style={{ color: '#111F33', fontWeight: 600, fontSize: '13px' }}>
+                    <td style={{ width: '170px', minWidth: '155px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: '12px',
+                            color: 'var(--text-primary)',
+                            display: 'block',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={v.depot}
+                        >
                           {v.depot}
                         </span>
-                        <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <MapPin size={11} />
-                          <span>{v.city ? `${v.city}, ${v.state || 'Maharashtra'}` : 'Central Facility'}</span>
+                        <div style={{ fontSize: '11px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <MapPin size={11} color="#64748B" />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {v.city ? `${v.city}, ${v.state || 'Maharashtra'}` : 'Central Facility'}
+                          </span>
                         </div>
                       </div>
                     </td>
 
                     {/* 4. Capacity */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
+                    <td style={{ width: '120px', minWidth: '110px' }}>
                       <div>
-                        <strong style={{ color: '#111F33', fontSize: '13px' }}>
+                        <span style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)', display: 'block' }}>
                           {v.capacity_crates} crates
-                        </strong>
-                        <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
-                          {Number(v.capacity_kg).toLocaleString('en-IN')} KG payload
-                        </div>
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#64748B' }}>
+                          {Number(v.capacity_kg).toLocaleString('en-IN')} KG
+                        </span>
                       </div>
                     </td>
 
                     {/* 5. Operational Status */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <td style={{ width: '135px', minWidth: '125px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <div>{renderStatusBadge(v)}</div>
                         {v.active_run_code && (
                           <div
                             onClick={() => navigate('/admin/assignments')}
                             style={{
                               fontSize: '11px',
-                              color: '#1D4ED8',
+                              color: 'var(--color-primary)',
                               fontWeight: 600,
                               cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
+                              whiteSpace: 'nowrap',
                             }}
                             title="View Active Delivery Run Assignment"
                           >
-                            <span>Run: {v.active_run_code}</span>
+                            Run: {v.active_run_code}
                           </div>
                         )}
                         {v.active_driver_name && (
-                          <span style={{ fontSize: '10.5px', color: '#64748B' }}>
+                          <span
+                            style={{
+                              fontSize: '10.5px',
+                              color: '#64748B',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={`Assigned Driver: ${v.active_driver_name}`}
+                          >
                             Driver: {v.active_driver_name}
                           </span>
                         )}
@@ -1344,46 +943,63 @@ export const VehiclesOverview: React.FC = () => {
                     </td>
 
                     {/* 6. Compliance */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
+                    <td style={{ width: '160px', minWidth: '145px' }}>
                       {renderComplianceBadge(v)}
                     </td>
 
                     {/* 7. Actions */}
-                    <td style={{ padding: '14px 18px', verticalAlign: 'middle', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                    <td style={{ width: '140px', minWidth: '130px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
                         <button
                           type="button"
-                          className="btn btn-secondary btn-sm"
                           onClick={() => navigate(`/admin/vehicles/${v.id}`)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', height: '32px' }}
+                          className="btn btn-secondary btn-table-action"
+                          style={{
+                            height: '28px',
+                            padding: '0 10px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: 'var(--color-primary)',
+                            backgroundColor: 'var(--color-primary-subtle)',
+                            border: '1px solid #BFDBFE',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                          title={`View full details for ${v.registration_number}`}
+                          aria-label={`View full details for ${v.registration_number}`}
                         >
-                          <Eye size={13} /> Details
+                          <Eye size={13} />
+                          <span>Details</span>
                         </button>
 
-                        {/* Overflow menu toggle */}
+                        {/* Overflow contextual menu toggle */}
                         <button
                           type="button"
-                          className="btn btn-secondary btn-sm"
+                          className="btn-icon-square"
+                          style={{ width: '28px', height: '28px' }}
                           onClick={() => setActionMenuOpenId(actionMenuOpenId === v.id ? null : v.id)}
-                          style={{ padding: '6px', height: '32px' }}
-                          title="Quick actions"
+                          title="More actions"
+                          aria-label="More actions"
                         >
-                          <MoreVertical size={14} />
+                          <MoreVertical size={13} />
                         </button>
 
-                        {/* Contextual dropdown menu */}
+                        {/* Dropdown Menu */}
                         {actionMenuOpenId === v.id && (
                           <div
                             style={{
                               position: 'absolute',
                               right: 0,
-                              top: '36px',
+                              top: '32px',
                               zIndex: 100,
                               backgroundColor: '#FFFFFF',
                               borderRadius: '8px',
                               boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
-                              border: '1px solid #E2E8F0',
-                              minWidth: '190px',
+                              border: '1px solid var(--border-color)',
+                              minWidth: '180px',
                               padding: '4px 0',
                               textAlign: 'left',
                             }}
@@ -1399,16 +1015,16 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12.5px',
-                                color: '#1E293B',
+                                padding: '8px 12px',
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <Eye size={14} style={{ color: '#1976D2' }} /> View Asset Details
+                              <Eye size={13} style={{ color: 'var(--color-primary)' }} /> View Asset Details
                             </button>
 
                             <button
@@ -1422,16 +1038,16 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12.5px',
-                                color: '#1E293B',
+                                padding: '8px 12px',
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <Pencil size={14} style={{ color: '#0284C7' }} /> Edit Specifications
+                              <Pencil size={13} style={{ color: 'var(--color-primary)' }} /> Edit Specifications
                             </button>
 
                             <button
@@ -1445,16 +1061,16 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12.5px',
-                                color: '#1E293B',
+                                padding: '8px 12px',
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <FileText size={14} style={{ color: '#16A34A' }} /> Upload Document
+                              <FileText size={13} style={{ color: 'var(--color-success)' }} /> Upload Document
                             </button>
 
                             <button
@@ -1468,19 +1084,19 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12.5px',
-                                color: '#1E293B',
+                                padding: '8px 12px',
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <Wrench size={14} style={{ color: '#D97706' }} /> Log Service Record
+                              <Wrench size={13} style={{ color: '#D97706' }} /> Log Service Record
                             </button>
 
-                            <div style={{ height: '1px', backgroundColor: '#E2E8F0', margin: '4px 0' }} />
+                            <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
 
                             <button
                               type="button"
@@ -1490,16 +1106,16 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12.5px',
-                                color: v.is_active ? '#DC2626' : '#16A34A',
+                                padding: '8px 12px',
+                                fontSize: '12px',
+                                color: v.is_active ? 'var(--color-danger)' : 'var(--color-success)',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <Power size={14} />
+                              <Power size={13} />
                               {v.is_active ? 'Deactivate Vehicle' : 'Activate Vehicle'}
                             </button>
                           </div>
@@ -1507,76 +1123,66 @@ export const VehiclesOverview: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {/* Pagination Toolbar */}
-        <div
-          style={{
-            padding: '12px 20px',
-            backgroundColor: '#F8FAFC',
-            borderTop: '1px solid #E2E8F0',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            fontSize: '12.5px',
-            color: '#64748B',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>Rows per page:</span>
-            <select
-              className="form-control form-control-sm"
-              style={{ width: '70px', height: '30px' }}
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
+        {/* Table Pagination Footer */}
+        <div className="table-pagination-footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="pagination-info">
+              Showing <strong>{vehicles.length > 0 ? (page - 1) * pageSize + 1 : 0}</strong> -{' '}
+              <strong>{Math.min(page * pageSize, totalCount)}</strong> of <strong>{totalCount}</strong> vehicles
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Per page:</span>
+              <select
+                className="toolbar-select-field"
+                style={{ height: '28px', padding: '0 6px', fontSize: '11.5px' }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span>
-              Page <strong style={{ color: '#111F33' }}>{page}</strong> of{' '}
-              <strong style={{ color: '#111F33' }}>{totalPages}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+              Page {page} of {totalPages}
             </span>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
+            <div className="pagination-buttons">
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || loading}
-                style={{ padding: '4px 8px', height: '30px' }}
                 title="Previous page"
               >
-                <ChevronLeft size={15} />
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
+                <ChevronLeft size={14} />
+                <span>Prev</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages || loading}
-                style={{ padding: '4px 8px', height: '30px' }}
                 title="Next page"
               >
-                <ChevronRight size={15} />
-              </button>
+                <span>Next</span>
+                <ChevronRight size={14} />
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Register Vehicle Modal */}
       <AddVehicleModal
