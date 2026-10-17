@@ -213,15 +213,15 @@ export const EditShopModal: React.FC<EditShopModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: '#F8F8F2',
+            backgroundColor: 'var(--bg-primary)',
           }}
         >
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#20342C', margin: 0 }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Edit Shop Profile
             </h3>
             <div style={{ fontSize: '12px', color: '#64748B', marginTop: '3px' }}>
-              Store: <strong style={{ color: '#20342C' }}>{shop.name}</strong> • ID: <code style={{ color: '#16805D', fontWeight: 600 }}>{shop.shop_id}</code>
+              Store: <strong style={{ color: 'var(--text-primary)' }}>{shop.name}</strong> • ID: <code style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{shop.shop_id}</code>
             </div>
           </div>
           <button
@@ -277,7 +277,7 @@ export const EditShopModal: React.FC<EditShopModalProps> = ({
                 gap: '10px',
               }}
             >
-              <CheckCircle2 size={18} style={{ color: '#16805D' }} />
+              <CheckCircle2 size={18} style={{ color: '#10B981' }} />
               <div>{successMsg}</div>
             </div>
           )}

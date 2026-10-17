@@ -222,11 +222,11 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(18, 61, 50, 0.1)',
+                backgroundColor: 'var(--color-primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#123D32',
+                color: 'var(--color-primary)',
               }}
             >
               <Building2 size={22} />
@@ -319,8 +319,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
           {/* Section 1: Basic Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Building2 size={16} color="#168264" />
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Building2 size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 1. Basic Information
               </h3>
             </div>
@@ -451,8 +451,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
           {/* Section 2: Contact Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Phone size={16} color="#168264" />
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Phone size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 2. Contact Information
               </h3>
             </div>
@@ -563,8 +563,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
           {/* Section 3: Business and Tax Details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <FileText size={16} color="#168264" />
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <FileText size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 3. Tax & Registration Information
               </h3>
             </div>
@@ -644,8 +644,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
           {/* Section 4: Address Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <MapPin size={16} color="#168264" />
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <MapPin size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 4. Registered Address
               </h3>
             </div>
@@ -787,8 +787,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
           {/* Section 5: Internal Notes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <FileText size={16} color="#168264" />
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <FileText size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 5. Internal Notes & Compliance
               </h3>
             </div>
@@ -855,7 +855,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
                 padding: '9px 20px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: isSubmitting ? '#94A3B8' : '#168264',
+                backgroundColor: isSubmitting ? '#94A3B8' : 'var(--color-primary)',
                 color: '#FFFFFF',
                 fontSize: '14px',
                 fontWeight: 600,

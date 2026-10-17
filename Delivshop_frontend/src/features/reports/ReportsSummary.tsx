@@ -116,13 +116,13 @@ export const ReportsSummary: React.FC = () => {
       {/* KPI Overview */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#059669' }}>
             <Database size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Audit Trail Integrity</span>
             <span className="metric-value">Verified</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>Neon PostgreSQL Ledger</span>
+            <span className="metric-trend" style={{ color: '#059669' }}>Neon PostgreSQL Ledger</span>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ export const ReportsSummary: React.FC = () => {
           <div className="metric-info">
             <span className="metric-title">Active Admin Sessions</span>
             <span className="metric-value">1 Active</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>Bearer JWT authenticated</span>
+            <span className="metric-trend" style={{ color: '#059669' }}>Bearer JWT authenticated</span>
           </div>
         </div>
 
@@ -213,12 +213,12 @@ export const ReportsSummary: React.FC = () => {
                     <Badge variant="neutral">{ev.category}</Badge>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#20342C', fontSize: '13px' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px' }}>
                       {ev.actor}
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748B' }}>{ev.role}</div>
                   </td>
-                  <td style={{ fontSize: '13px', color: '#20342C', maxWidth: '320px' }}>
+                  <td style={{ fontSize: '13px', color: 'var(--text-primary)', maxWidth: '320px' }}>
                     {ev.target}
                   </td>
                   <td style={{ fontSize: '12px', fontFamily: 'monospace', color: '#64748B' }}>

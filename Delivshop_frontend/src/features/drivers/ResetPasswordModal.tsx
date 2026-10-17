@@ -101,7 +101,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
               <Key size={18} />
             </div>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Reset Driver App Password
               </h3>
               <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
@@ -155,7 +155,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#16805D',
+                  color: 'var(--color-primary)',
                   fontSize: '11.5px',
                   fontWeight: 600,
                   cursor: 'pointer',

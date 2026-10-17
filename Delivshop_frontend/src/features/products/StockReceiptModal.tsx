@@ -167,11 +167,11 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(22, 130, 100, 0.15)',
+                backgroundColor: 'var(--color-primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#168264',
+                color: 'var(--color-primary)',
               }}
             >
               <PackagePlus size={22} />
@@ -466,7 +466,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                 padding: '9px 22px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: isSubmitting ? '#94A3B8' : '#168264',
+                backgroundColor: isSubmitting ? '#94A3B8' : 'var(--color-primary)',
                 color: '#FFFFFF',
                 fontSize: '14px',
                 fontWeight: 600,

@@ -125,15 +125,15 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            backgroundColor: '#FAFAF7',
+            backgroundColor: '#FFFFFF',
           }}
         >
           <div>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Edit Driver Profile: {driver.name}
             </h3>
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-              Employee ID: <code style={{ fontWeight: 600, color: '#16805D' }}>{driver.employee_id || 'N/A'}</code>
+            <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
+              Employee ID: <code style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{driver.employee_id || 'N/A'}</code>
             </p>
           </div>
           <button
@@ -177,7 +177,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
           {/* Contact Details */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <User size={14} /> Personal & Contact Details
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
@@ -262,7 +262,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
           {/* Address */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <MapPin size={14} /> Address & Location
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
@@ -318,7 +318,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
           {/* Employment & Status */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Shield size={14} /> Employment Status & Identity
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -367,7 +367,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
           {/* License & Verification */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <FileText size={14} /> License Details & Compliance
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -415,7 +415,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
           {/* Emergency Contact */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Phone size={14} /> Emergency Contact (Next of Kin)
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -479,7 +479,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '10px',
-            backgroundColor: '#FAFAF7',
+            backgroundColor: 'var(--bg-primary)',
           }}
         >
           <Button variant="secondary" onClick={onClose} disabled={loading}>

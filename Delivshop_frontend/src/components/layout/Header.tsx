@@ -64,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }
       <div className="header-right-group">
         {/* Live Status indicator */}
         <div className="header-status-pill" title="Backend API operational and verified">
-          <CheckCircle2 size={13} className="text-emerald" />
+          <CheckCircle2 size={13} style={{ color: 'var(--color-success)' }} />
           <span className="status-pill-text">API Online</span>
         </div>
 

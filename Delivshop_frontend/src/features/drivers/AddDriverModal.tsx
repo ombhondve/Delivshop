@@ -176,7 +176,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            backgroundColor: '#FAFAF7',
+            backgroundColor: '#FFFFFF',
           }}
         >
           <div>
@@ -186,8 +186,8 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  backgroundColor: '#DCFCE7',
-                  color: '#16805D',
+                  backgroundColor: 'var(--color-primary-subtle)',
+                  color: 'var(--color-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -195,7 +195,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               >
                 <User size={18} />
               </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Onboard New Driver Personnel
               </h3>
             </div>
@@ -228,8 +228,8 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                backgroundColor: '#DCFCE7',
-                color: '#16805D',
+                backgroundColor: 'var(--color-success-bg)',
+                color: 'var(--color-success)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -239,7 +239,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               <CheckCircle2 size={36} />
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#123D32', margin: '0 0 8px 0' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
               Driver Successfully Onboarded!
             </h3>
             <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '480px', margin: '0 auto 24px auto' }}>
@@ -264,8 +264,8 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     fontFamily: 'monospace',
                     fontWeight: 700,
                     fontSize: '13.5px',
-                    color: '#16805D',
-                    backgroundColor: '#DCFCE7',
+                    color: 'var(--color-primary)',
+                    backgroundColor: 'var(--color-primary-subtle)',
                     padding: '2px 8px',
                     borderRadius: '4px',
                   }}
@@ -356,7 +356,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: '#16805D',
+                  color: 'var(--color-primary)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -506,7 +506,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: '#16805D',
+                  color: 'var(--color-primary)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -610,7 +610,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: '#16805D',
+                  color: 'var(--color-primary)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -701,7 +701,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: '#16805D',
+                  color: 'var(--color-primary)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -787,7 +787,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: '#16805D',
+                  color: 'var(--color-primary)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -868,14 +868,14 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 style={{
                   fontSize: '13px',
                   fontWeight: 700,
-                  color: '#20342C',
+                  color: 'var(--text-primary)',
                   marginBottom: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                 }}
               >
-                <Lock size={15} color="#16805D" /> 6. Driver Mobile App Credentials
+                <Lock size={15} color="var(--color-primary)" /> 6. Driver Mobile App Credentials
               </h4>
               <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '10px' }}>
                 The driver will sign in using their <strong>Employee ID</strong> (or Email) and this initial access password.

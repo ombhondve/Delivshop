@@ -137,7 +137,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
                   width: '56px',
                   height: '56px',
                   borderRadius: '12px',
-                  backgroundColor: '#123D32',
+                  backgroundColor: 'var(--color-navy)',
                   color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
@@ -240,7 +240,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                 Associated Products
               </div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: '#123D32', marginTop: '4px' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px' }}>
                 {company.productsCount ?? 0}
               </div>
             </div>
@@ -256,7 +256,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                 Operational State
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: company.status === 'ACTIVE' ? '#168264' : '#64748B', marginTop: '6px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: company.status === 'ACTIVE' ? 'var(--color-success)' : '#64748B', marginTop: '6px' }}>
                 {company.status === 'ACTIVE' ? 'Active & Processing' : 'Inactive / Paused'}
               </div>
             </div>
@@ -316,7 +316,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Phone size={16} color="#168264" />
+                <Phone size={16} color="var(--color-primary)" />
                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
                   Contact Information
                 </h4>
@@ -331,7 +331,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
                   <span style={{ color: '#64748B', display: 'block', fontSize: '11.5px', fontWeight: 600 }}>OFFICIAL PHONE</span>
                   <a
                     href={`tel:${company.phone}`}
-                    style={{ color: '#168264', textDecoration: 'none', fontWeight: 600 }}
+                    style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}
                   >
                     {company.phone}
                   </a>
@@ -340,7 +340,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
                   <span style={{ color: '#64748B', display: 'block', fontSize: '11.5px', fontWeight: 600 }}>OFFICIAL EMAIL</span>
                   <a
                     href={`mailto:${company.email}`}
-                    style={{ color: '#168264', textDecoration: 'none', fontWeight: 600 }}
+                    style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}
                   >
                     {company.email}
                   </a>
@@ -368,7 +368,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <ShieldCheck size={16} color="#168264" />
+                <ShieldCheck size={16} color="var(--color-primary)" />
                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
                   Business & Tax Information
                 </h4>
@@ -387,7 +387,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: '#64748B' }}
                         title="Copy GSTIN"
                       >
-                        {copiedKey === 'gstin' ? <Check size={14} color="#168264" /> : <Copy size={14} />}
+                        {copiedKey === 'gstin' ? <Check size={14} color="#059669" /> : <Copy size={14} />}
                       </button>
                     </div>
                   ) : (
@@ -407,7 +407,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: '#64748B' }}
                         title="Copy PAN"
                       >
-                        {copiedKey === 'pan' ? <Check size={14} color="#168264" /> : <Copy size={14} />}
+                        {copiedKey === 'pan' ? <Check size={14} color="#059669" /> : <Copy size={14} />}
                       </button>
                     </div>
                   ) : (
@@ -433,7 +433,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <MapPin size={16} color="#168264" />
+                <MapPin size={16} color="var(--color-primary)" />
                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
                   Operational Facility Address
                 </h4>
@@ -458,7 +458,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <FileText size={16} color="#168264" />
+                <FileText size={16} color="var(--color-primary)" />
                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
                   Internal Records & Audit
                 </h4>

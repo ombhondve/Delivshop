@@ -177,13 +177,13 @@ export const CollectionsLedger: React.FC = () => {
       {/* KPI Overview Cards */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#059669' }}>
             <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Today's Collections (Shift 1)</span>
             <span className="metric-value">{formatCurrency(totalCollectedToday)}</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>
+            <span className="metric-trend" style={{ color: '#059669' }}>
               4 of 5 shops settled
             </span>
           </div>
@@ -222,7 +222,7 @@ export const CollectionsLedger: React.FC = () => {
           <div className="metric-info">
             <span className="metric-title">Reconciliation Rate</span>
             <span className="metric-value">91.4%</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>
+            <span className="metric-trend" style={{ color: '#059669' }}>
               +3.2% vs last week
             </span>
           </div>
@@ -317,13 +317,13 @@ export const CollectionsLedger: React.FC = () => {
                     style={{
                       fontWeight: 600,
                       fontVariantNumeric: 'tabular-nums',
-                      color: item.paidAmount < item.amount ? '#B91C1C' : '#16805D',
+                      color: item.paidAmount < item.amount ? '#B91C1C' : '#059669',
                     }}
                   >
                     {formatCurrency(item.paidAmount)}
                   </td>
                   <td>{getMethodBadge(item.method)}</td>
-                  <td style={{ fontSize: '13px', color: '#20342C' }}>{item.collectedBy}</td>
+                  <td style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{item.collectedBy}</td>
                   <td style={{ fontSize: '12px', color: '#64748B' }}>{formatDateOnly(item.date)}</td>
                   <td>
                     <Badge

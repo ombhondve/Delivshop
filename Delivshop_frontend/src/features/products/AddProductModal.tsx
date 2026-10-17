@@ -313,11 +313,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(18, 61, 50, 0.1)',
+                backgroundColor: 'var(--color-primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#123D32',
+                color: 'var(--color-primary)',
               }}
             >
               <Package size={22} />
@@ -400,8 +400,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           {/* Section 1: Basic Product Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Package size={16} color="#168264" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Package size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 1. Basic Product Information
               </h3>
             </div>
@@ -550,8 +550,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           {/* Section 2: Supplier Company (Mandatory Relationship) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Building2 size={16} color="#168264" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Building2 size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 2. Supplier Company (Mandatory Relationship)
               </h3>
             </div>
@@ -599,8 +599,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           {/* Section 3: Packaging & Units */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Tag size={16} color="#168264" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Tag size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 3. Packaging & Measurement Units
               </h3>
             </div>
@@ -700,8 +700,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           {/* Section 4: Pricing & Taxes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <DollarSign size={16} color="#168264" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <DollarSign size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 4. Commercial Pricing & Tax
               </h3>
             </div>
@@ -785,7 +785,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                     type="checkbox"
                     checked={isTaxInclusive}
                     onChange={(e) => setIsTaxInclusive(e.target.checked)}
-                    style={{ width: '16px', height: '16px', accentColor: '#168264' }}
+                    style={{ width: '16px', height: '16px', accentColor: 'var(--color-primary)' }}
                   />
                   <span>Prices are Tax-Inclusive</span>
                 </label>
@@ -796,8 +796,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           {/* Section 5: Stock Configuration & Opening Balance */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Boxes size={16} color="#168264" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Boxes size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 5. Stock & Opening Inventory Configuration
               </h3>
             </div>
@@ -939,8 +939,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           {/* Section 6: Dairy Quality Specifications */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Thermometer size={16} color="#168264" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Thermometer size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 6. Dairy Quality & Storage Specifications
               </h3>
             </div>
@@ -1074,7 +1074,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 borderRadius: '8px',
                 border: '1px solid #CBD5E1',
                 backgroundColor: '#FAFAF9',
-                color: '#123D32',
+                color: 'var(--text-primary)',
                 fontSize: '14px',
                 fontWeight: 600,
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
@@ -1094,7 +1094,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 padding: '9px 22px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: isSubmitting ? '#94A3B8' : '#168264',
+                backgroundColor: isSubmitting ? '#94A3B8' : 'var(--color-primary)',
                 color: '#FFFFFF',
                 fontSize: '14px',
                 fontWeight: 600,

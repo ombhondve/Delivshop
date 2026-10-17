@@ -402,8 +402,8 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: '#DCFCE7',
-                color: '#16805D',
+                background: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -476,7 +476,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       width: '26px',
                       height: '26px',
                       borderRadius: '50%',
-                      background: isCompleted ? '#16A34A' : isCurrent ? '#16805D' : '#CBD5E1',
+                      background: isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary)' : '#CBD5E1',
                       color: '#FFFFFF',
                       fontSize: '12px',
                       fontWeight: 700,
@@ -491,7 +491,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     style={{
                       fontSize: '12.5px',
                       fontWeight: isCurrent ? 700 : 500,
-                      color: isCurrent ? '#16805D' : '#1E293B',
+                      color: isCurrent ? 'var(--color-primary)' : 'var(--text-primary)',
                     }}
                   >
                     {s.title}
@@ -572,7 +572,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, display: 'block' }}>
                     Authoritative Route Identifier
                   </span>
-                  <strong style={{ fontSize: '22px', fontFamily: 'monospace', color: '#16805D', letterSpacing: '0.05em' }}>
+                  <strong style={{ fontSize: '22px', fontFamily: 'monospace', color: 'var(--color-navy)', letterSpacing: '0.05em' }}>
                     {createdRoute.route_code || (createdRoute as any).code}
                   </strong>
                 </div>
@@ -620,7 +620,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                 </div>
                 <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                   <span style={{ fontSize: '11px', color: '#64748B', display: 'block' }}>Assigned Stops</span>
-                  <strong style={{ fontSize: '13px', color: '#16805D' }}>
+                  <strong style={{ fontSize: '13px', color: 'var(--color-navy)' }}>
                     {createdRoute.stops?.length || createdRoute.stops_count || selectedStops.length} Retail Shops
                   </strong>
                 </div>
@@ -657,7 +657,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       borderRadius: '8px',
                       fontWeight: 600,
                       fontSize: '13px',
-                      background: '#16805D',
+                      background: 'var(--color-primary)',
                       color: '#FFFFFF',
                       border: 'none',
                       cursor: 'pointer',
@@ -691,7 +691,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       color: '#166534',
                     }}
                   >
-                    <Info size={18} color="#16805D" style={{ flexShrink: 0 }} />
+                    <Info size={18} color="#059669" style={{ flexShrink: 0 }} />
                     <div>
                       <strong>Automatic Route Code Generation:</strong> The unique Route Code (e.g.{' '}
                       <code style={{ background: '#DCFCE7', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
@@ -871,7 +871,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                         color: '#166534',
                       }}
                     >
-                      <CheckCircle2 size={16} color="#16805D" />
+                      <CheckCircle2 size={16} color="#059669" />
                       <div>
                         Geographic Corridor Verified: <strong>{city}</strong> is validated within <strong>{state}</strong>.
                       </div>
@@ -958,7 +958,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   {/* Loading, Error, Empty, and Populated List */}
                   {loadingShops ? (
                     <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                      <RefreshCw size={24} className="spin-icon" color="#16805D" style={{ margin: '0 auto 10px auto' }} />
+                      <RefreshCw size={24} className="spin-icon" color="var(--color-primary)" style={{ margin: '0 auto 10px auto' }} />
                       <p style={{ fontSize: '13px', color: '#64748B' }}>Fetching saved shops from database...</p>
                     </div>
                   ) : shopsError ? (
@@ -1092,9 +1092,9 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                                   fontSize: '12px',
                                   fontWeight: 600,
                                   borderRadius: '6px',
-                                  border: isSelected ? '1px solid #BBF7D0' : '1px solid #16805D',
+                                  border: isSelected ? '1px solid #BBF7D0' : '1px solid var(--color-primary)',
                                   background: isSelected ? '#DCFCE7' : '#FFFFFF',
-                                  color: isSelected ? '#166534' : '#16805D',
+                                  color: isSelected ? '#166534' : 'var(--color-primary)',
                                   cursor: isSelected ? 'default' : 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1160,7 +1160,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                                   width: '22px',
                                   height: '22px',
                                   borderRadius: '50%',
-                                  background: '#16805D',
+                                  background: 'var(--color-navy)',
                                   color: '#FFFFFF',
                                   fontSize: '11px',
                                   fontWeight: 700,
@@ -1262,7 +1262,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                         <div style={{ color: '#475569' }}>
                           Est. Duration: <strong>{selectedStops.length * 15} mins</strong>
                         </div>
-                        <div style={{ color: '#16805D', fontWeight: 600 }}>
+                        <div style={{ color: '#059669', fontWeight: 600 }}>
                           {selectedStops.length} stops ready
                         </div>
                       </div>
@@ -1331,16 +1331,6 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   type="button"
                   className="btn btn-primary"
                   onClick={handleNext}
-                  style={{
-                    padding: '8px 22px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    background: '#16805D',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
                 >
                   Continue to Step {step + 1}
                 </button>
@@ -1348,18 +1338,10 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                 <>
                   <button
                     type="button"
-                    className="btn btn-outline-primary"
+                    className="btn btn-secondary"
                     disabled={loading || selectedStops.length === 0}
                     onClick={() => handleSaveRoute(false)}
                     style={{
-                      padding: '8px 16px',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      borderRadius: '6px',
-                      border: '1px solid #16805D',
-                      background: '#FFFFFF',
-                      color: '#16805D',
-                      cursor: loading ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
@@ -1373,17 +1355,6 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     className="btn btn-primary"
                     disabled={loading || selectedStops.length === 0}
                     onClick={() => handleSaveRoute(true)}
-                    style={{
-                      padding: '8px 22px',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      borderRadius: '6px',
-                      background: '#16805D',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.75 : 1,
-                    }}
                   >
                     {loading ? 'Creating Route...' : 'Validate & Publish Route'}
                   </button>

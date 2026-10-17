@@ -101,7 +101,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isCurrentlyActive ? '#D97706' : '#16805D',
+                color: isCurrentlyActive ? '#D97706' : '#10B981',
               }}
             >
               {isCurrentlyActive ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
@@ -171,8 +171,8 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
                 width: '36px',
                 height: '36px',
                 borderRadius: '8px',
-                backgroundColor: 'rgba(18, 61, 50, 0.08)',
-                color: '#123D32',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -328,11 +328,11 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
                 borderRadius: '8px',
                 border: 'none',
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                backgroundColor: isCurrentlyActive ? '#D97706' : '#168264',
+                backgroundColor: isCurrentlyActive ? '#D97706' : 'var(--color-primary)',
                 color: '#FFFFFF',
                 boxShadow: isCurrentlyActive
                   ? '0 2px 4px rgba(217, 119, 6, 0.25)'
-                  : '0 2px 4px rgba(22, 130, 100, 0.25)',
+                  : '0 2px 4px rgba(25, 118, 210, 0.25)',
               }}
             >
               {isSubmitting ? (

@@ -268,7 +268,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           >
             <div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>Current On-Hand Stock</div>
-              <div style={{ fontSize: '20px', fontWeight: 800, color: '#123D32' }}>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
                 {product.stockQuantity} <span style={{ fontSize: '13px', fontWeight: 500 }}>{product.baseUnit}s</span>
               </div>
             </div>
@@ -279,7 +279,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 style={{
                   fontSize: '20px',
                   fontWeight: 800,
-                  color: projectedBalance < 0 ? '#EF4444' : '#168264',
+                  color: projectedBalance < 0 ? '#EF4444' : '#059669',
                 }}
               >
                 {projectedBalance} <span style={{ fontSize: '13px', fontWeight: 500 }}>{product.baseUnit}s</span>

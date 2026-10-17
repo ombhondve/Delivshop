@@ -210,7 +210,7 @@ export const ProductCatalog: React.FC = () => {
           {/* 1. Page Header & Breadcrumbs */}
           <div className="catalog-header-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#64748B' }}>
-              <span style={{ cursor: 'pointer', color: '#168264', fontWeight: 500 }} onClick={() => navigate('/')}>
+              <span style={{ cursor: 'pointer', color: 'var(--color-primary)', fontWeight: 500 }} onClick={() => navigate('/')}>
                 Dashboard
               </span>
               <span>/</span>
@@ -219,7 +219,7 @@ export const ProductCatalog: React.FC = () => {
 
             <div className="catalog-header-title-row">
               <div>
-                <h1 className="page-title" style={{ fontSize: '22px', fontWeight: 800, color: '#123D32', margin: 0 }}>
+                <h1 className="page-title" style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                   Products & Inventory
                 </h1>
                 <p className="page-desc" style={{ marginTop: '2px', color: '#64748B', fontSize: '13px' }}>
@@ -326,20 +326,20 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'ALL' ? '#123D32' : '#E2E8F0'}`,
-                boxShadow: activeTab === 'ALL' ? '0 2px 6px rgba(18, 61, 50, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
+                border: `1px solid ${activeTab === 'ALL' ? 'var(--color-navy)' : '#E2E8F0'}`,
+                boxShadow: activeTab === 'ALL' ? '0 2px 6px rgba(17, 31, 51, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
               <div>
                 <div style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Total Products
                 </div>
-                <div className="card-metric-val" style={{ fontSize: '16px', fontWeight: 800, color: '#123D32', marginTop: '1px', lineHeight: 1.2 }}>
+                <div className="card-metric-val" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1px', lineHeight: 1.2 }}>
                   {statsLoading ? '...' : stats?.totalProducts ?? data.total}
                 </div>
                 <div style={{ fontSize: '9.5px', color: '#94A3B8' }}>Catalogue items</div>
               </div>
-              <div className="catalog-card-icon-box" style={{ backgroundColor: 'rgba(18, 61, 50, 0.08)', color: '#123D32' }}>
+              <div className="catalog-card-icon-box" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
                 <Package size={15} />
               </div>
             </div>
@@ -352,20 +352,20 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'ACTIVE' ? '#168264' : '#E2E8F0'}`,
-                boxShadow: activeTab === 'ACTIVE' ? '0 2px 6px rgba(22, 130, 100, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
+                border: `1px solid ${activeTab === 'ACTIVE' ? 'var(--color-primary)' : '#E2E8F0'}`,
+                boxShadow: activeTab === 'ACTIVE' ? '0 2px 6px rgba(25, 118, 210, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
               <div>
                 <div style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Active Products
                 </div>
-                <div className="card-metric-val" style={{ fontSize: '16px', fontWeight: 800, color: '#168264', marginTop: '1px', lineHeight: 1.2 }}>
+                <div className="card-metric-val" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-primary)', marginTop: '1px', lineHeight: 1.2 }}>
                   {statsLoading ? '...' : stats?.activeProducts ?? '—'}
                 </div>
-                <div style={{ fontSize: '9.5px', color: '#166534' }}>Ready for dispatch</div>
+                <div style={{ fontSize: '9.5px', color: '#059669' }}>Ready for dispatch</div>
               </div>
-              <div className="catalog-card-icon-box" style={{ backgroundColor: 'rgba(22, 130, 100, 0.1)', color: '#168264' }}>
+              <div className="catalog-card-icon-box" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
                 <CheckCircle2 size={15} />
               </div>
             </div>
@@ -473,7 +473,7 @@ export const ProductCatalog: React.FC = () => {
               }}
               style={{
                 backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
-                color: isSelected ? '#123D32' : '#64748B',
+                color: isSelected ? 'var(--color-navy)' : '#64748B',
                 fontWeight: isSelected ? 700 : 500,
                 boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               }}
@@ -673,7 +673,7 @@ export const ProductCatalog: React.FC = () => {
       >
         {tableLoading ? (
           <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748B' }}>
-            <RefreshCw size={28} className="spin-icon" style={{ margin: '0 auto 12px auto', color: '#168264' }} />
+            <RefreshCw size={28} className="spin-icon" style={{ margin: '0 auto 12px auto', color: 'var(--color-primary)' }} />
             <div style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
               Retrieving live products & stock from PostgreSQL...
             </div>
@@ -701,8 +701,8 @@ export const ProductCatalog: React.FC = () => {
                 width: '64px',
                 height: '64px',
                 borderRadius: '16px',
-                backgroundColor: 'rgba(18, 61, 50, 0.08)',
-                color: '#123D32',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -769,8 +769,8 @@ export const ProductCatalog: React.FC = () => {
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: 'rgba(18, 61, 50, 0.08)',
-                              color: '#123D32',
+                              backgroundColor: 'var(--color-primary-subtle)',
+                              color: 'var(--color-primary)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -802,12 +802,12 @@ export const ProductCatalog: React.FC = () => {
                               style={{
                                 fontSize: '13px',
                                 fontWeight: 700,
-                                color: '#123D32',
+                                color: 'var(--text-primary)',
                                 cursor: 'pointer',
                                 lineHeight: 1.25,
                               }}
-                              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = '#168264')}
-                              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = '#123D32')}
+                              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--color-primary)')}
+                              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--text-primary)')}
                             >
                               {prod.name}
                             </div>
@@ -839,7 +839,7 @@ export const ProductCatalog: React.FC = () => {
                       {/* Column 3: Supplier Company */}
                       <td style={{ padding: '6px 8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Building2 size={12} color="#168264" />
+                          <Building2 size={12} color="var(--color-primary)" />
                           <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
                             {prod.company?.name || 'Assigned Supplier'}
                           </span>
@@ -863,7 +863,7 @@ export const ProductCatalog: React.FC = () => {
 
                       {/* Column 5: Cost / Selling Price */}
                       <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#168264' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-navy)' }}>
                           ₹{Number(prod.price).toFixed(2)}
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>
@@ -877,7 +877,7 @@ export const ProductCatalog: React.FC = () => {
                           style={{
                             fontSize: '13.5px',
                             fontWeight: 800,
-                            color: isOut ? '#DC2626' : isLow ? '#D97706' : '#123D32',
+                            color: isOut ? '#DC2626' : isLow ? '#D97706' : 'var(--text-primary)',
                             lineHeight: 1.2,
                           }}
                         >
@@ -920,7 +920,7 @@ export const ProductCatalog: React.FC = () => {
                                 gap: '3px',
                                 fontSize: '10px',
                                 fontWeight: 700,
-                                color: prod.isExpiringSoon ? '#D97706' : '#168264',
+                                color: prod.isExpiringSoon ? '#D97706' : '#059669',
                               }}
                             >
                               <Clock size={10} />
@@ -999,9 +999,9 @@ export const ProductCatalog: React.FC = () => {
                             style={{
                               padding: '4px',
                               borderRadius: '5px',
-                              border: '1px solid #BBF7D0',
-                              backgroundColor: '#F0FDF4',
-                              color: '#168264',
+                              border: '1px solid #BFDBFE',
+                              backgroundColor: '#EFF6FF',
+                              color: 'var(--color-primary)',
                               cursor: 'pointer',
                               width: '26px',
                               height: '26px',
@@ -1077,7 +1077,7 @@ export const ProductCatalog: React.FC = () => {
                               border: '1px solid',
                               borderColor: prod.isActive ? '#FDE68A' : '#BBF7D0',
                               backgroundColor: prod.isActive ? '#FFFBEB' : '#F0FDF4',
-                              color: prod.isActive ? '#D97706' : '#168264',
+                              color: prod.isActive ? '#D97706' : '#059669',
                               cursor: 'pointer',
                               width: '26px',
                               height: '26px',

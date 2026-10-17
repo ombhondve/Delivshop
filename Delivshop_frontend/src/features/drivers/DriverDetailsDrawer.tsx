@@ -111,28 +111,51 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-sm flex justify-end transition-opacity">
-      <div className="w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300">
-        
+    <div className="drawer-backdrop" onClick={onClose}>
+      <div className="drawer-panel" style={{ maxWidth: '880px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg border border-emerald-200 shadow-sm">
+        <div className="drawer-header" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '10px',
+                backgroundColor: 'var(--color-navy)',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '16px',
+              }}
+            >
               {driver?.name ? driver.name.charAt(0) : 'D'}
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-bold text-slate-900">{driver?.name || 'Driver Profile'}</h2>
-                <span className="font-mono text-xs px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-semibold">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {driver?.name || 'Driver Profile'}
+                </h2>
+                <code
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: 'var(--color-primary)',
+                    backgroundColor: 'var(--color-primary-subtle)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid #BFDBFE',
+                  }}
+                >
                   {driver?.employee_id || profile?.employment?.employeeId || 'DRV'}
-                </span>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                  driver?.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                }`}>
+                </code>
+                <Badge variant={driver?.is_active ? 'success' : 'neutral'}>
                   {driver?.is_active ? 'Active' : 'Inactive'}
-                </span>
+                </Badge>
               </div>
-              <p className="text-xs text-slate-500 mt-1 flex items-center space-x-3">
+              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0', display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span>{driver?.phone}</span>
                 <span>•</span>
                 <span>{driver?.email || 'No email registered'}</span>

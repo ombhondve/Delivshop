@@ -175,10 +175,11 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
                   fontFamily: 'monospace',
                   fontWeight: 700,
                   fontSize: '13px',
-                  color: '#16805D',
-                  background: '#DCFCE7',
+                  color: 'var(--color-primary)',
+                  background: 'var(--color-primary-subtle)',
                   padding: '2px 8px',
                   borderRadius: '4px',
+                  border: '1px solid #BFDBFE',
                 }}
               >
                 {route.route_code || route.code}
@@ -194,11 +195,11 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12.5px', color: '#64748B' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <MapPin size={13} color="#16805D" />
+                <MapPin size={13} color="var(--color-primary)" />
                 <span>{route.city}, {route.state}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Store size={13} color="#0369A1" />
+                <Store size={13} color="var(--color-primary)" />
                 <span>{stopsCount} {stopsCount === 1 ? 'shop stop' : 'shop stops'}</span>
               </div>
             </div>
@@ -219,7 +220,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
               gap: '8px',
             }}
           >
-            <CheckCircle2 size={16} color="#16805D" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <CheckCircle2 size={16} color="#059669" style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
               <strong>Historical Data Safe:</strong> Deleting this route will soft-archive its template. Shop records, past deliveries, orders, driver payroll, and client accounts are <strong>never</strong> deleted.
             </div>

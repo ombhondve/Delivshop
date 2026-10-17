@@ -127,13 +127,13 @@ export const DeliveriesTracking: React.FC = () => {
       {/* KPI Overview */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#059669' }}>
             <Truck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active Vehicles on Road</span>
             <span className="metric-value">2 Vehicles</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>Morning Shift Run</span>
+            <span className="metric-trend" style={{ color: '#059669' }}>Morning Shift Run</span>
           </div>
         </div>
 
@@ -144,7 +144,7 @@ export const DeliveriesTracking: React.FC = () => {
           <div className="metric-info">
             <span className="metric-title">Cold Chain Avg Temp</span>
             <span className="metric-value">4.2°C</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>Optimal Safe Range (&lt;5°C)</span>
+            <span className="metric-trend" style={{ color: '#059669' }}>Optimal Safe Range (&lt;5°C)</span>
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export const DeliveriesTracking: React.FC = () => {
           <div className="metric-info">
             <span className="metric-title">Completed Drops</span>
             <span className="metric-value">23 / 33 Drops</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>69.7% route progress</span>
+            <span className="metric-trend" style={{ color: '#059669' }}>69.7% route progress</span>
           </div>
         </div>
 
@@ -237,7 +237,7 @@ export const DeliveriesTracking: React.FC = () => {
                       <div className="font-semibold text-primary">{r.routeName}</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600, color: '#20342C' }}>{r.driverName}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{r.driverName}</div>
                       <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Phone size={11} /> {r.driverPhone}
                       </div>
@@ -263,7 +263,7 @@ export const DeliveriesTracking: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ minWidth: '130px' }}>
-                      <div style={{ fontSize: '12px', color: '#20342C', fontWeight: 600, marginBottom: '3px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '3px' }}>
                         {r.completedDrops} / {r.totalDrops} drops ({percent}%)
                       </div>
                       <div style={{ width: '100%', height: '6px', backgroundColor: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
@@ -271,14 +271,14 @@ export const DeliveriesTracking: React.FC = () => {
                           style={{
                             width: `${percent}%`,
                             height: '100%',
-                            backgroundColor: r.status === 'COMPLETED' ? '#16805D' : r.status === 'DELAYED' ? '#B91C1C' : '#0369A1',
+                            backgroundColor: r.status === 'COMPLETED' ? 'var(--color-success)' : r.status === 'DELAYED' ? '#B91C1C' : '#0369A1',
                           }}
                         />
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '12.5px', color: '#20342C', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={12} className="text-emerald" />
+                      <div style={{ fontSize: '12.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <MapPin size={12} style={{ color: 'var(--color-primary)' }} />
                         <span>{r.currentShop}</span>
                       </div>
                       <div style={{ fontSize: '11.5px', color: '#64748B' }}>ETA: {r.eta}</div>

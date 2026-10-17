@@ -185,13 +185,13 @@ export const OrdersList: React.FC = () => {
       {/* KPI Overview */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#059669' }}>
             <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Delivered Orders</span>
             <span className="metric-value">2 Completed</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>Confirmed by shop pin</span>
+            <span className="metric-trend" style={{ color: '#059669' }}>Confirmed by shop pin</span>
           </div>
         </div>
 
@@ -284,7 +284,7 @@ export const OrdersList: React.FC = () => {
                     <div className="text-secondary text-xs">{o.shopId}</div>
                   </td>
                   <td>
-                    <div style={{ fontSize: '13px', color: '#20342C' }}>{o.driver}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{o.driver}</div>
                     <div style={{ fontSize: '12px', color: '#64748B' }}>{o.route}</div>
                   </td>
                   <td style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -359,7 +359,7 @@ export const OrdersList: React.FC = () => {
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Assigned Driver
                   </span>
-                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#20342C' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {selectedOrder.driver}
                   </div>
                 </div>
@@ -367,7 +367,7 @@ export const OrdersList: React.FC = () => {
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Delivery Route
                   </span>
-                  <div style={{ fontSize: '13.5px', color: '#20342C' }}>
+                  <div style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>
                     {selectedOrder.route}
                   </div>
                 </div>
@@ -375,7 +375,7 @@ export const OrdersList: React.FC = () => {
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Total Crates
                   </span>
-                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#20342C' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {selectedOrder.cratesCount} Crates
                   </div>
                 </div>
@@ -383,7 +383,7 @@ export const OrdersList: React.FC = () => {
 
               {/* Items Breakdown Table */}
               <div>
-                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#20342C', marginBottom: '8px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
                   Crate Allocation Breakdown
                 </h4>
                 <table className="business-table" style={{ fontSize: '13px' }}>
@@ -407,7 +407,7 @@ export const OrdersList: React.FC = () => {
                         <td
                           style={{
                             fontWeight: 600,
-                            color: item.deliveredCrates < item.orderedCrates ? '#B91C1C' : '#16805D',
+                            color: item.deliveredCrates < item.orderedCrates ? '#B91C1C' : '#059669',
                           }}
                         >
                           {item.deliveredCrates} crates
@@ -424,7 +424,7 @@ export const OrdersList: React.FC = () => {
                       <td colSpan={4} style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #E2E8F0' }}>
                         Order Total:
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #E2E8F0', color: '#20342C' }}>
+                      <td style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #E2E8F0', color: 'var(--color-navy)' }}>
                         {formatCurrency(selectedOrder.totalAmount)}
                       </td>
                     </tr>
@@ -440,7 +440,7 @@ export const OrdersList: React.FC = () => {
                     borderRadius: '6px',
                     backgroundColor: selectedOrder.status === 'DISPUTED' ? '#FEF2F2' : '#F1F5F9',
                     border: `1px solid ${selectedOrder.status === 'DISPUTED' ? '#FECACA' : '#E2E8F0'}`,
-                    color: selectedOrder.status === 'DISPUTED' ? '#991B1B' : '#20342C',
+                    color: selectedOrder.status === 'DISPUTED' ? '#991B1B' : 'var(--text-primary)',
                     fontSize: '12.5px',
                   }}
                 >

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { DeliveryRun, Route } from '../../types';
+import { Button } from '../../components/common/Button';
 import { AssignmentWizardModal } from './AssignmentWizardModal';
 import { AssignmentDetailsDrawer } from './AssignmentDetailsDrawer';
 
@@ -67,30 +68,33 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
   const assignedRuns = runs.filter(r => r.status === 'ASSIGNED').length;
 
   return (
-    <div className="space-y-6">
+    <div className="page-container">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assignments & Dispatch</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="page-title">Assignments & Dispatch</h1>
+          <p className="page-desc">
             Daily operational delivery runs coordinating scheduled routes, drivers, and fleet vehicles.
           </p>
         </div>
-        <div className="flex items-center space-x-3 w-full sm:w-auto">
-          <button
+        <div className="page-header-actions">
+          <Button
+            type="button"
+            variant="secondary"
             onClick={() => loadAssignments()}
-            className="p-2.5 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors shadow-sm"
+            icon={<RefreshCw className="w-4 h-4" />}
             title="Refresh runs"
           >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
+            Refresh
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
             onClick={() => setIsWizardOpen(true)}
-            className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center space-x-2 transition-all shadow-sm hover:shadow"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>Dispatch New Run</span>
-          </button>
+            Dispatch New Run
+          </Button>
         </div>
       </div>
 

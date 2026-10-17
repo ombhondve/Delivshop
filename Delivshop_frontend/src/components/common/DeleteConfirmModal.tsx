@@ -195,7 +195,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             </div>
             {entityIdentifier && (
               <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '3px' }}>
-                Identifier: <code style={{ fontWeight: 600, color: '#123D32' }}>{entityIdentifier}</code>
+                Identifier: <code style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{entityIdentifier}</code>
               </div>
             )}
           </div>

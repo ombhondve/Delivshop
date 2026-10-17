@@ -140,11 +140,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 width: '44px',
                 height: '44px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(18, 61, 50, 0.1)',
+                backgroundColor: 'var(--color-primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#123D32',
+                color: 'var(--color-primary)',
                 overflow: 'hidden',
               }}
             >
@@ -200,7 +200,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div style={{ overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
           {loading ? (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748B' }}>
-              <Loader2 size={30} className="animate-spin" style={{ margin: '0 auto 12px auto', color: '#168264' }} />
+              <Loader2 size={30} className="animate-spin" style={{ margin: '0 auto 12px auto', color: 'var(--color-primary)' }} />
               <div style={{ fontSize: '14px', fontWeight: 600 }}>Loading product metrics...</div>
             </div>
           ) : error || !product ? (
@@ -285,8 +285,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       gap: '5px',
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #168264',
-                      backgroundColor: '#168264',
+                      border: '1px solid var(--color-primary)',
+                      backgroundColor: 'var(--color-primary)',
                       color: '#FFFFFF',
                       fontSize: '12.5px',
                       fontWeight: 600,
@@ -370,9 +370,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                       On-Hand Stock
                     </span>
-                    <Boxes size={18} color="#168264" />
+                    <Boxes size={18} color="var(--color-primary)" />
                   </div>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: '#123D32', marginTop: '6px' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '6px' }}>
                     {product.stockQuantity.toLocaleString()}{' '}
                     <span style={{ fontSize: '14px', fontWeight: 500, color: '#64748B' }}>{product.baseUnit}s</span>
                   </div>
@@ -387,9 +387,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                       Pricing & Margin
                     </span>
-                    <DollarSign size={18} color="#168264" />
+                    <DollarSign size={18} color="var(--color-primary)" />
                   </div>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: '#168264', marginTop: '6px' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-primary)', marginTop: '6px' }}>
                     ₹{product.price.toFixed(2)}{' '}
                     <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>selling</span>
                   </div>
@@ -404,9 +404,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                       Supplying Company
                     </span>
-                    <Building2 size={18} color="#123D32" />
+                    <Building2 size={18} color="var(--color-primary)" />
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', marginTop: '6px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px' }}>
                     {product.company?.name || 'Assigned Supplier'}
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
@@ -418,7 +418,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* Active Batches (FEFO Tracking) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Active Product Batches ({product.batches?.length || 0}) — First Expired, First Out (FEFO)
                   </h3>
                   <button
@@ -427,7 +427,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     style={{
                       border: 'none',
                       background: 'transparent',
-                      color: '#168264',
+                      color: 'var(--color-primary)',
                       fontSize: '12.5px',
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -515,7 +515,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
               {/* Dairy Quality Specs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Dairy Specifications & Storage Guidelines
                 </h3>
 

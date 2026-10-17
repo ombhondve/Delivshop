@@ -200,7 +200,7 @@ export const SettingsPage: React.FC = () => {
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#20342C' }}>
+                <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>
                   Web Frontend Isolation
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#64748B' }}>
@@ -222,7 +222,7 @@ export const SettingsPage: React.FC = () => {
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#20342C' }}>
+                <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>
                   Direct PostgreSQL Access
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#64748B' }}>
@@ -244,7 +244,7 @@ export const SettingsPage: React.FC = () => {
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#20342C' }}>
+                <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>
                   Session Security
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#64748B' }}>

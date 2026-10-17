@@ -155,10 +155,10 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="page-container">
       {/* Page Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h2 className="page-title">Operations Dispatch Center</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h1 className="page-title">Operations Dispatch Center</h1>
             <Badge variant={apiHealthy ? 'success' : 'neutral'} icon={<ShieldCheck size={13} />}>
               {apiHealthy ? 'Backend API Active' : 'API Connecting...'}
             </Badge>
@@ -182,65 +182,65 @@ export const DashboardPage: React.FC = () => {
       {/* Operational KPI Grid */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <Store size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Registered Milk Shops</span>
             <span className="metric-value">{metrics.totalShops}</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
               Live from PostgreSQL
             </span>
           </div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}>
             <Milk size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Orders Requiring Action</span>
             <span className="metric-value">{metrics.pendingOrders}</span>
-            <span className="metric-trend" style={{ color: '#B45309' }}>
+            <span className="metric-trend" style={{ color: 'var(--color-warning)' }}>
               Morning dispatch batch
             </span>
           </div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#E0F2FE', color: '#0369A1' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <Truck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active Routes En Route</span>
             <span className="metric-value">{metrics.activeDeliveries}</span>
-            <span className="metric-trend" style={{ color: '#0369A1' }}>
+            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>
               32 crates remaining
             </span>
           </div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
             <CheckCircle2 size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Completed Drop-offs</span>
             <span className="metric-value">{metrics.completedDeliveries}</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
               94.8% on-time delivery
             </span>
           </div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}>
             <Wallet size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Outstanding Collections</span>
             <span className="metric-value">{formatCurrency(metrics.outstandingBalance)}</span>
-            <span className="metric-trend" style={{ color: '#B91C1C' }}>
+            <span className="metric-trend" style={{ color: 'var(--color-danger)' }}>
               Follow-up required
             </span>
           </div>
@@ -280,7 +280,7 @@ export const DashboardPage: React.FC = () => {
                         <div className="text-secondary text-xs">{ord.shopId}</div>
                       </td>
                       <td>
-                        <div style={{ fontSize: '12.5px', color: '#20342C' }}>{ord.route}</div>
+                        <div style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{ord.route}</div>
                       </td>
                       <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                         {ord.crates} crates
@@ -326,7 +326,7 @@ export const DashboardPage: React.FC = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div>
-                      <span style={{ fontWeight: 600, fontSize: '14px', color: '#20342C' }}>
+                      <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
                         {f.driver}
                       </span>
                       <span style={{ fontSize: '12px', color: '#64748B', marginLeft: '8px' }}>
@@ -348,7 +348,7 @@ export const DashboardPage: React.FC = () => {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B', marginBottom: '6px' }}>
                     <span>{f.route}</span>
-                    <span style={{ fontWeight: 600, color: '#20342C' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       {f.completedDrops} / {f.totalDrops} drops completed ({f.progress}%)
                     </span>
                   </div>
@@ -360,7 +360,7 @@ export const DashboardPage: React.FC = () => {
                         width: `${f.progress}%`,
                         height: '100%',
                         backgroundColor:
-                          f.status === 'COMPLETED' ? '#16805D' : f.status === 'DELAYED' ? '#B91C1C' : '#0369A1',
+                          f.status === 'COMPLETED' ? 'var(--color-success)' : f.status === 'DELAYED' ? 'var(--color-danger)' : 'var(--color-primary)',
                         transition: 'width 0.4s ease',
                       }}
                     />
@@ -388,7 +388,7 @@ export const DashboardPage: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, fontSize: '13px', color: '#20342C' }}>
+                  <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
                     Frontend API Isolation
                   </span>
                   <Badge variant="success">Compliant</Badge>
@@ -407,7 +407,7 @@ export const DashboardPage: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, fontSize: '13px', color: '#20342C' }}>
+                  <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
                     PostgreSQL Isolation
                   </span>
                   <Badge variant="neutral">Direct Access Blocked</Badge>
@@ -426,7 +426,7 @@ export const DashboardPage: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, fontSize: '13px', color: '#20342C' }}>
+                  <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
                     Role Authority
                   </span>
                   <Badge variant="success">Server Enforced</Badge>
@@ -447,17 +447,17 @@ export const DashboardPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
                 <Clock size={16} color="#64748B" />
                 <span style={{ color: '#64748B' }}>Order Cut-Off:</span>
-                <span style={{ fontWeight: 600, color: '#20342C' }}>03:30 AM (Closed)</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>03:30 AM (Closed)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
                 <Truck size={16} color="#64748B" />
                 <span style={{ color: '#64748B' }}>Fleet Departure:</span>
-                <span style={{ fontWeight: 600, color: '#20342C' }}>04:30 AM (Dispatched)</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>04:30 AM (Dispatched)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
-                <CheckCircle2 size={16} color="#16805D" />
+                <CheckCircle2 size={16} color="var(--color-success)" />
                 <span style={{ color: '#64748B' }}>Estimated Drop Completion:</span>
-                <span style={{ fontWeight: 600, color: '#16805D' }}>08:00 AM (92% complete)</span>
+                <span style={{ fontWeight: 600, color: 'var(--color-success)' }}>08:00 AM (92% complete)</span>
               </div>
             </div>
           </Card>

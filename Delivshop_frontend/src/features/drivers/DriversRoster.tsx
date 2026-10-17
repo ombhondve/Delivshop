@@ -143,7 +143,7 @@ export const DriversRoster: React.FC = () => {
             zIndex: 1200,
             padding: '10px 16px',
             borderRadius: '8px',
-            backgroundColor: toastMessage.type === 'success' ? '#123D32' : '#B91C1C',
+            backgroundColor: toastMessage.type === 'success' ? 'var(--color-navy)' : 'var(--color-danger)',
             color: '#FFFFFF',
             fontSize: '13px',
             fontWeight: 600,
@@ -154,28 +154,28 @@ export const DriversRoster: React.FC = () => {
             animation: 'fadeIn 0.2s ease-in-out',
           }}
         >
-          {toastMessage.type === 'success' ? <CheckCircle2 size={16} color="#4ADE80" /> : <AlertCircle size={16} color="#FECACA" />}
+          {toastMessage.type === 'success' ? <CheckCircle2 size={16} color="var(--color-success)" /> : <AlertCircle size={16} color="#FECACA" />}
           <span>{toastMessage.text}</span>
         </div>
       )}
 
       {/* 1. Page Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 className="page-title">Drivers Roster</h2>
+            <h1 className="page-title">Drivers Roster</h1>
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
                 padding: '2px 8px',
-                backgroundColor: '#DCFCE7',
+                backgroundColor: 'var(--color-success-bg)',
                 border: '1px solid #BBF7D0',
                 borderRadius: '12px',
                 fontSize: '11px',
                 fontWeight: 600,
-                color: '#16805D',
+                color: 'var(--color-success)',
               }}
             >
               <Radio size={11} className="spin-icon" />
@@ -230,18 +230,18 @@ export const DriversRoster: React.FC = () => {
           onClick={() => setStatusFilter('ALL')}
           style={{
             cursor: 'pointer',
-            borderColor: statusFilter === 'ALL' ? '#16805D' : undefined,
-            backgroundColor: statusFilter === 'ALL' ? '#F0FDF4' : undefined,
+            borderColor: statusFilter === 'ALL' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ALL' ? 'var(--color-primary-subtle)' : undefined,
           }}
           title="Click to view all registered drivers"
         >
-          <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <Users size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Total Drivers</span>
             <span className="metric-value">{summary.totalDrivers}</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>100% verified</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>100% verified</span>
           </div>
         </div>
 
@@ -251,18 +251,18 @@ export const DriversRoster: React.FC = () => {
           onClick={() => setStatusFilter('ACTIVE')}
           style={{
             cursor: 'pointer',
-            borderColor: statusFilter === 'ACTIVE' ? '#16805D' : undefined,
-            backgroundColor: statusFilter === 'ACTIVE' ? '#F0FDF4' : undefined,
+            borderColor: statusFilter === 'ACTIVE' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ACTIVE' ? 'var(--color-primary-subtle)' : undefined,
           }}
           title="Click to filter active accounts"
         >
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
             <ShieldCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Active Drivers</span>
             <span className="metric-value">{summary.activeDrivers}</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>Authorized fleet</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>Authorized fleet</span>
           </div>
         </div>
 
@@ -272,18 +272,18 @@ export const DriversRoster: React.FC = () => {
           onClick={() => setStatusFilter('AVAILABLE')}
           style={{
             cursor: 'pointer',
-            borderColor: statusFilter === 'AVAILABLE' ? '#16805D' : undefined,
-            backgroundColor: statusFilter === 'AVAILABLE' ? '#F0FDF4' : undefined,
+            borderColor: statusFilter === 'AVAILABLE' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'AVAILABLE' ? 'var(--color-primary-subtle)' : undefined,
           }}
           title="Click to filter available drivers for order dispatch"
         >
-          <div className="metric-icon" style={{ backgroundColor: '#E0F2FE', color: '#0369A1' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <UserCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">Available Drivers</span>
             <span className="metric-value">{summary.availableDrivers}</span>
-            <span className="metric-trend" style={{ color: '#0369A1' }}>Ready for dispatch</span>
+            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>Ready for dispatch</span>
           </div>
         </div>
 
@@ -293,8 +293,8 @@ export const DriversRoster: React.FC = () => {
           onClick={() => setStatusFilter('ON_DELIVERY')}
           style={{
             cursor: 'pointer',
-            borderColor: statusFilter === 'ON_DELIVERY' ? '#16805D' : undefined,
-            backgroundColor: statusFilter === 'ON_DELIVERY' ? '#F0FDF4' : undefined,
+            borderColor: statusFilter === 'ON_DELIVERY' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ON_DELIVERY' ? 'var(--color-primary-subtle)' : undefined,
           }}
           title="Click to filter drivers currently on delivery"
         >
@@ -314,8 +314,8 @@ export const DriversRoster: React.FC = () => {
           onClick={() => setStatusFilter('INACTIVE')}
           style={{
             cursor: 'pointer',
-            borderColor: statusFilter === 'INACTIVE' ? '#16805D' : undefined,
-            backgroundColor: statusFilter === 'INACTIVE' ? '#F0FDF4' : undefined,
+            borderColor: statusFilter === 'INACTIVE' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'INACTIVE' ? 'var(--color-primary-subtle)' : undefined,
           }}
           title="Click to filter inactive or deactivated drivers"
         >
@@ -430,7 +430,7 @@ export const DriversRoster: React.FC = () => {
         ) : drivers.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
             <Users size={36} style={{ margin: '0 auto 10px auto', opacity: 0.4 }} />
-            <h4 style={{ fontSize: '14.5px', fontWeight: 600, color: '#20342C' }}>
+            <h4 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
               No matching drivers found
             </h4>
             <p style={{ fontSize: '12.5px', marginTop: '4px', maxWidth: '420px', margin: '4px auto 16px auto' }}>
@@ -474,8 +474,8 @@ export const DriversRoster: React.FC = () => {
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: '#123D32',
-                              color: '#C7A75A',
+                              backgroundColor: 'var(--color-navy)',
+                              color: '#FFFFFF',
                               fontWeight: 700,
                               fontSize: '11px',
                               display: 'flex',
@@ -492,7 +492,7 @@ export const DriversRoster: React.FC = () => {
                               style={{
                                 fontWeight: 600,
                                 fontSize: '12.5px',
-                                color: '#16805D',
+                                color: 'var(--color-primary)',
                                 cursor: 'pointer',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
@@ -525,11 +525,11 @@ export const DriversRoster: React.FC = () => {
                             fontFamily: 'monospace',
                             fontWeight: 700,
                             fontSize: '11.5px',
-                            color: '#16805D',
-                            backgroundColor: '#F0FDF4',
+                            color: 'var(--color-primary)',
+                            backgroundColor: 'var(--color-primary-subtle)',
                             padding: '2px 6px',
                             borderRadius: '4px',
-                            border: '1px solid #BBF7D0',
+                            border: '1px solid #BFDBFE',
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -562,7 +562,7 @@ export const DriversRoster: React.FC = () => {
                             style={{
                               fontWeight: 600,
                               fontSize: '12px',
-                              color: '#20342C',
+                              color: 'var(--text-primary)',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -633,7 +633,7 @@ export const DriversRoster: React.FC = () => {
                               fontVariantNumeric: 'tabular-nums',
                               fontWeight: 700,
                               fontSize: '13.5px',
-                              color: (drv.today_deliveries || 0) > 0 ? '#16805D' : '#64748B',
+                              color: (drv.today_deliveries || 0) > 0 ? 'var(--color-navy)' : '#64748B',
                             }}
                           >
                             {drv.today_deliveries || 0}
@@ -666,9 +666,9 @@ export const DriversRoster: React.FC = () => {
                               gap: '6px',
                               fontSize: '12px',
                               fontWeight: 600,
-                              color: '#16805D',
-                              backgroundColor: '#F0FDF4',
-                              border: '1px solid #BBF7D0',
+                              color: 'var(--color-primary)',
+                              backgroundColor: 'var(--color-primary-subtle)',
+                              border: '1px solid #BFDBFE',
                               borderRadius: '6px',
                               cursor: 'pointer',
                             }}

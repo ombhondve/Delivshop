@@ -182,7 +182,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             zIndex: 1200,
             padding: '10px 16px',
             borderRadius: '8px',
-            backgroundColor: toastMessage.type === 'success' ? '#123D32' : '#B91C1C',
+            backgroundColor: toastMessage.type === 'success' ? 'var(--color-navy)' : 'var(--color-danger)',
             color: '#FFFFFF',
             fontSize: '13px',
             fontWeight: 600,
@@ -193,31 +193,31 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             animation: 'fadeIn 0.2s ease-in-out',
           }}
         >
-          {toastMessage.type === 'success' ? <CheckCircle2 size={16} color="#4ADE80" /> : <AlertCircle size={16} color="#FECACA" />}
+          {toastMessage.type === 'success' ? <CheckCircle2 size={16} color="var(--color-success)" /> : <AlertCircle size={16} color="#FECACA" />}
           <span>{toastMessage.text}</span>
         </div>
       )}
 
       {/* 1. Page Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 className="page-title">Delivery Routes</h2>
+            <h1 className="page-title">Delivery Routes</h1>
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
                 padding: '2px 8px',
-                backgroundColor: '#DCFCE7',
+                backgroundColor: 'var(--color-success-bg)',
                 border: '1px solid #BBF7D0',
                 borderRadius: '12px',
                 fontSize: '11px',
                 fontWeight: 600,
-                color: '#16805D',
+                color: 'var(--color-success)',
               }}
             >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16805D' }} />
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }} />
               <span>Live Database</span>
             </div>
           </div>
@@ -245,7 +245,6 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             variant="primary"
             onClick={() => setIsWizardOpen(true)}
             icon={<Plus size={16} />}
-            style={{ fontWeight: 600, padding: '9px 18px', background: '#16805D', color: '#FFFFFF' }}
           >
             Create Delivery Route
           </Button>
@@ -257,13 +256,13 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
         
         {/* Card 1: Total Routes */}
         <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => setStatusFilter('ALL')}>
-          <div className="metric-icon" style={{ backgroundColor: '#F1F7F1', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <RouteIcon size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">TOTAL ROUTES</span>
             <span className="metric-value">{summary.totalRoutes}</span>
-            <span className="metric-trend" style={{ color: '#16805D' }}>
+            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>
               {summary.activeRoutes} active templates
             </span>
           </div>
@@ -271,13 +270,13 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
 
         {/* Card 2: Published & Dispatchable */}
         <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => setStatusFilter('PUBLISHED')}>
-          <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#16805D' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
             <ShieldCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">DISPATCH READY</span>
             <span className="metric-value">{summary.dispatchableRoutes ?? 0}</span>
-            <span className="metric-trend" style={{ color: summary.readinessPercentage && summary.readinessPercentage > 50 ? '#16805D' : '#B45309' }}>
+            <span className="metric-trend" style={{ color: summary.readinessPercentage && summary.readinessPercentage > 50 ? 'var(--color-success)' : 'var(--color-warning)' }}>
               {summary.totalRoutes > 0 ? `${summary.readinessPercentage}% ready for runs` : '0% ready'}
             </span>
           </div>
@@ -285,7 +284,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
 
         {/* Card 3: Sequenced Stops */}
         <div className="metric-card">
-          <div className="metric-icon" style={{ backgroundColor: '#FAF6ED', color: '#C7A75A' }}>
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <MapPin size={18} />
           </div>
           <div className="metric-info">
@@ -403,7 +402,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
         {error ? (
           <div className="table-error-container" style={{ padding: '36px 20px', textAlign: 'center' }}>
             <AlertCircle size={36} color="#B91C1C" style={{ margin: '0 auto 12px' }} />
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#20342C' }}>Unable to Load Delivery Routes</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Unable to Load Delivery Routes</h3>
             <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '440px', margin: '6px auto 16px' }}>
               {error}
             </p>
@@ -500,7 +499,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
                       {/* City & Depot */}
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12.5px', fontWeight: 500 }}>
-                          <MapPin size={13} color="#16805D" />
+                          <MapPin size={13} color="var(--color-primary)" />
                           <span>{route.city}, {route.state}</span>
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>
@@ -508,9 +507,9 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
                         </div>
                       </td>
 
-                      {/* Stops Count */}
+                       {/* Stops Count */}
                       <td style={{ textAlign: 'center' }}>
-                        <span style={{ fontWeight: 700, fontSize: '13px', color: stopsCount > 0 ? '#123B32' : '#B45309' }}>
+                        <span style={{ fontWeight: 700, fontSize: '13px', color: stopsCount > 0 ? 'var(--text-primary)' : 'var(--color-warning)' }}>
                           {stopsCount}
                         </span>
                         <div style={{ fontSize: '10.5px', color: '#64748B' }}>
@@ -539,7 +538,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
                       <td>
                         {isDispatchable ? (
                           <span className="route-readiness-tag route-readiness-ready">
-                            <CheckCircle2 size={12} color="#16805D" />
+                            <CheckCircle2 size={12} color="var(--color-success)" />
                             <span>Dispatch Ready</span>
                           </span>
                         ) : stopsCount === 0 ? (

@@ -313,7 +313,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               gap: '6px',
               background: 'none',
               border: 'none',
-              color: '#16805D',
+              color: 'var(--color-primary)',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -326,7 +326,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#123D32', margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
               {driver.name}
             </h1>
             <code
@@ -334,11 +334,11 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                 fontFamily: 'monospace',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: '#16805D',
-                backgroundColor: '#F0FDF4',
+                color: 'var(--color-primary)',
+                backgroundColor: 'var(--color-primary-subtle)',
                 padding: '3px 8px',
                 borderRadius: '6px',
-                border: '1px solid #BBF7D0',
+                border: '1px solid #BFDBFE',
               }}
             >
               {driver.employee_id || 'N/A'}
@@ -454,7 +454,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
             Today's Drops
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#16805D', marginTop: '6px' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '6px' }}>
             {driver.today_deliveries || 0}
           </div>
           <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
@@ -478,7 +478,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
             Completed Drops
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#123D32', marginTop: '6px' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '6px' }}>
             {driver.completed_deliveries || 0}
           </div>
           <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
@@ -490,7 +490,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
             Attendance This Month
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#123D32', marginTop: '6px' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '6px' }}>
             {attendanceSummary.daysPresentMonth}{' '}
             <span style={{ fontSize: '14px', fontWeight: 500, color: '#64748B' }}>days</span>
           </div>
@@ -535,8 +535,8 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                 padding: '10px 16px',
                 border: 'none',
                 background: 'none',
-                borderBottom: isActive ? '2px solid #16805D' : '2px solid transparent',
-                color: isActive ? '#16805D' : '#64748B',
+                borderBottom: isActive ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: isActive ? 'var(--color-primary)' : '#64748B',
                 fontWeight: isActive ? 700 : 500,
                 fontSize: '13.5px',
                 cursor: 'pointer',
@@ -548,8 +548,8 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               {typeof tab.count === 'number' && tab.count > 0 && (
                 <span
                   style={{
-                    backgroundColor: isActive ? '#DCFCE7' : '#F1F5F9',
-                    color: isActive ? '#16805D' : '#64748B',
+                    backgroundColor: isActive ? 'var(--color-primary-subtle)' : '#F1F5F9',
+                    color: isActive ? 'var(--color-primary)' : '#64748B',
                     fontSize: '11px',
                     fontWeight: 700,
                     padding: '1px 6px',
@@ -571,7 +571,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           {/* Driver Identity Card */}
           <Card style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#123D32', margin: '0 0 16px 0' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
               Driver Identification & Contacts
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
@@ -580,8 +580,8 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                   width: '56px',
                   height: '56px',
                   borderRadius: '12px',
-                  backgroundColor: '#123D32',
-                  color: '#C7A75A',
+                  backgroundColor: 'var(--color-navy)',
+                  color: '#FFFFFF',
                   fontSize: '20px',
                   fontWeight: 800,
                   display: 'flex',
@@ -640,7 +640,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
           {/* Operational Status & Assignment Overview */}
           <Card style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#123D32', margin: '0 0 16px 0' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
               Current Assignment & Schedule
             </h3>
 
@@ -690,7 +690,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               </div>
               <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
                 Driver creation is independent of fleet vehicle assignment. Vehicles are scheduled dynamically through the{' '}
-                <strong style={{ color: '#16805D', cursor: 'pointer' }} onClick={() => navigate('/admin/assignments')}>
+                <strong style={{ color: 'var(--color-primary)', cursor: 'pointer' }} onClick={() => navigate('/admin/assignments')}>
                   Assignments Module
                 </strong>
                 .
@@ -703,7 +703,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       {/* 2. PERSONAL & KYC TAB */}
       {activeTab === 'personal' && (
         <Card style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
             Personal Demographics & Residential Information
           </h3>
 
@@ -736,7 +736,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             </div>
           </div>
 
-          <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: '24px 0 12px 0', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '24px 0 12px 0', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
             Residential Address
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
@@ -777,7 +777,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             </div>
           </div>
 
-          <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: '24px 0 12px 0', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '24px 0 12px 0', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
             Emergency Contact Details
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
@@ -814,7 +814,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       {/* 3. EMPLOYMENT TAB */}
       {activeTab === 'employment' && (
         <Card style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
             Employment Profile & Internal Governance
           </h3>
 
@@ -823,7 +823,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase' }}>
                 Employee ID (Unique)
               </div>
-              <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', color: '#16805D', marginTop: '4px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-primary)', marginTop: '4px' }}>
                 {driver.employee_id || 'N/A'}
               </div>
             </div>
@@ -898,7 +898,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <Card style={{ padding: '24px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', margin: '0 0 16px 0' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
                   Commercial Driving Licence
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
@@ -948,7 +948,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           {/* Compliance Documents Table */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Compliance & KYC Document Records
               </h4>
               <span style={{ fontSize: '12px', color: '#64748B' }}>
@@ -1001,9 +1001,9 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                               padding: '3px 8px',
                               fontSize: '11.5px',
                               fontWeight: 600,
-                              color: '#16805D',
-                              backgroundColor: '#F0FDF4',
-                              border: '1px solid #BBF7D0',
+                              color: 'var(--color-primary)',
+                              backgroundColor: 'var(--color-primary-subtle)',
+                              border: '1px solid #BFDBFE',
                               borderRadius: '6px',
                               textDecoration: 'none',
                             }}
@@ -1031,7 +1031,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           {/* Scheduled Runs Section */}
           <Card style={{ padding: '0', overflow: 'hidden', marginBottom: '24px' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Assigned Delivery Runs History
               </h4>
             </div>
@@ -1076,7 +1076,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           {/* Individual Delivery Drops Table */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Individual Delivery Drops ({deliveries.length})
               </h4>
             </div>
@@ -1159,7 +1159,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                 Current Roster Shift
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', marginTop: '8px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '8px' }}>
                 {attendanceSummary.currentShift || 'MORNING'}
               </div>
             </Card>
@@ -1168,7 +1168,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           {/* Attendance Log Table */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Attendance & GPS Check-In Log
               </h4>
             </div>
@@ -1229,7 +1229,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <Card style={{ padding: '24px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                   Compensation & Remuneration Structure
                 </h3>
                 <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0 0' }}>
@@ -1250,7 +1250,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase' }}>
                   Base Monthly Salary
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#16805D', marginTop: '4px' }}>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '4px' }}>
                   {salaryConfig ? formatCurrency(salaryConfig.base_monthly_salary || 0) : '₹18,000'}
                 </div>
               </div>
@@ -1287,7 +1287,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           {/* Payroll Disbursements Ledger */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Disbursed Payroll Ledger
               </h4>
             </div>
@@ -1318,7 +1318,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                       <td>{formatCurrency(p.base_salary)}</td>
                       <td>{formatCurrency(Number(p.allowances || 0) + Number(p.incentives || 0))}</td>
                       <td>{formatCurrency(p.deductions || 0)}</td>
-                      <td style={{ fontWeight: 800, color: '#16805D' }}>{formatCurrency(p.net_amount)}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--color-navy)' }}>{formatCurrency(p.net_amount)}</td>
                       <td>{p.payment_date ? formatDate(p.payment_date) : '—'}</td>
                       <td><code>{p.payment_reference || '—'}</code></td>
                       <td>
@@ -1339,7 +1339,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       {activeTab === 'audit' && (
         <Card style={{ padding: '0', overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Audit Trail & Operational Security Log ({auditHistory.length})
             </h4>
           </div>

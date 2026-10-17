@@ -98,11 +98,11 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: isCurrentlyActive ? 'rgba(217, 119, 6, 0.15)' : 'rgba(22, 130, 100, 0.15)',
+                backgroundColor: isCurrentlyActive ? 'rgba(217, 119, 6, 0.15)' : 'var(--color-primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isCurrentlyActive ? '#D97706' : '#168264',
+                color: isCurrentlyActive ? '#D97706' : 'var(--color-primary)',
               }}
             >
               {isCurrentlyActive ? <AlertTriangle size={22} /> : <CheckCircle size={22} />}
@@ -250,7 +250,7 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
                 padding: '9px 20px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: isCurrentlyActive ? '#D97706' : '#168264',
+                backgroundColor: isCurrentlyActive ? '#D97706' : 'var(--color-primary)',
                 color: '#FFFFFF',
                 fontSize: '14px',
                 fontWeight: 600,

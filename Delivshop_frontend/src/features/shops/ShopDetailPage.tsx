@@ -385,7 +385,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
                   <span
                     className="metric-value"
                     style={{
-                      color: Number(shop.outstanding_balance) > 0 ? '#B91C1C' : '#16805D',
+                      color: Number(shop.outstanding_balance) > 0 ? '#B91C1C' : '#059669',
                     }}
                   >
                     ₹{Number(shop.outstanding_balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -997,7 +997,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Assigned Driver
                   </span>
-                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#20342C' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {selectedOrder.driver_name || selectedOrder.driverName || 'Unassigned'}
                   </div>
                 </div>
@@ -1005,7 +1005,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Order Date
                   </span>
-                  <div style={{ fontSize: '13.5px', color: '#20342C' }}>
+                  <div style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>
                     {selectedOrder.created_at || selectedOrder.createdAt
                       ? new Date(selectedOrder.created_at || selectedOrder.createdAt!).toLocaleString('en-IN')
                       : 'Recent'}
@@ -1015,7 +1015,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Total Order Value
                   </span>
-                  <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#16805D' }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-navy)' }}>
                     ₹{Number(selectedOrder.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
@@ -1025,13 +1025,13 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
               <div
                 style={{
                   padding: '12px 14px',
-                  backgroundColor: '#F8F8F2',
+                  backgroundColor: 'var(--bg-primary)',
                   borderRadius: '6px',
                   border: '1px solid #E2E8F0',
                   fontSize: '13px',
                 }}
               >
-                <span style={{ fontWeight: 600, color: '#20342C' }}>Destination Address: </span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Destination Address: </span>
                 <span style={{ color: '#64748B' }}>
                   {typeof selectedOrder.delivery_address === 'string'
                     ? selectedOrder.delivery_address

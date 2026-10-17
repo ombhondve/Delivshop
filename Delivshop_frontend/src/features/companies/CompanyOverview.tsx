@@ -214,7 +214,7 @@ export const CompanyOverview: React.FC = () => {
       {/* 1. Page Header & Breadcrumbs */}
       <div style={{ marginBottom: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>
-          <span style={{ cursor: 'pointer', color: '#168264' }} onClick={() => navigate('/')}>
+          <span style={{ cursor: 'pointer', color: 'var(--color-primary)' }} onClick={() => navigate('/')}>
             Dashboard
           </span>
           <span>/</span>
@@ -223,7 +223,7 @@ export const CompanyOverview: React.FC = () => {
 
         <div className="page-header" style={{ marginBottom: 0 }}>
           <div>
-            <h1 className="page-title" style={{ fontSize: '19px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+            <h1 className="page-title" style={{ fontSize: '19px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Company Management
             </h1>
             <p className="page-desc" style={{ marginTop: '2px', color: '#64748B', fontSize: '12.5px' }}>
@@ -297,7 +297,7 @@ export const CompanyOverview: React.FC = () => {
             <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Companies
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#123D32', marginTop: '1px', lineHeight: 1.2 }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1px', lineHeight: 1.2 }}>
               {statsLoading ? '...' : stats?.totalCompanies ?? data.total}
             </div>
             <div style={{ fontSize: '10px', color: '#94A3B8' }}>
@@ -309,11 +309,11 @@ export const CompanyOverview: React.FC = () => {
               width: '32px',
               height: '32px',
               borderRadius: '6px',
-              backgroundColor: 'rgba(18, 61, 50, 0.08)',
+              backgroundColor: 'var(--color-primary-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#123D32',
+              color: 'var(--color-primary)',
             }}
           >
             <Building2 size={16} />
@@ -337,10 +337,10 @@ export const CompanyOverview: React.FC = () => {
             <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Active Companies
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#168264', marginTop: '1px', lineHeight: 1.2 }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-primary)', marginTop: '1px', lineHeight: 1.2 }}>
               {statsLoading ? '...' : stats?.activeCompanies ?? '—'}
             </div>
-            <div style={{ fontSize: '10px', color: '#166534' }}>
+            <div style={{ fontSize: '10px', color: '#059669' }}>
               Ready for supply dispatch
             </div>
           </div>
@@ -349,11 +349,11 @@ export const CompanyOverview: React.FC = () => {
               width: '32px',
               height: '32px',
               borderRadius: '6px',
-              backgroundColor: 'rgba(22, 130, 100, 0.1)',
+              backgroundColor: 'var(--color-primary-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#168264',
+              color: 'var(--color-primary)',
             }}
           >
             <CheckCircle2 size={16} />
@@ -638,7 +638,7 @@ export const CompanyOverview: React.FC = () => {
       >
         {tableLoading ? (
           <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748B' }}>
-            <RefreshCw size={28} className="spin-icon" style={{ margin: '0 auto 12px auto', color: '#168264' }} />
+            <RefreshCw size={28} className="spin-icon" style={{ margin: '0 auto 12px auto', color: 'var(--color-primary)' }} />
             <div style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
               Retrieving companies from database...
             </div>
@@ -666,8 +666,8 @@ export const CompanyOverview: React.FC = () => {
                 width: '64px',
                 height: '64px',
                 borderRadius: '16px',
-                backgroundColor: 'rgba(18, 61, 50, 0.08)',
-                color: '#123D32',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -736,8 +736,8 @@ export const CompanyOverview: React.FC = () => {
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: isActive ? 'rgba(18, 61, 50, 0.08)' : 'rgba(217, 119, 6, 0.1)',
-                              color: isActive ? '#123D32' : '#D97706',
+                              backgroundColor: isActive ? 'var(--color-primary-subtle)' : 'rgba(217, 119, 6, 0.1)',
+                              color: isActive ? 'var(--color-primary)' : '#D97706',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -770,12 +770,12 @@ export const CompanyOverview: React.FC = () => {
                               style={{
                                 fontSize: '13px',
                                 fontWeight: 700,
-                                color: '#123D32',
+                                color: 'var(--text-primary)',
                                 cursor: 'pointer',
                                 lineHeight: 1.25,
                               }}
-                              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = '#168264')}
-                              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = '#123D32')}
+                              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--color-primary)')}
+                              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--text-primary)')}
                             >
                               {company.name}
                             </div>
@@ -821,7 +821,7 @@ export const CompanyOverview: React.FC = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '11.5px' }}>
                           {company.phone ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155' }}>
-                              <Phone size={11} color="#168264" />
+                              <Phone size={11} color="var(--color-primary)" />
                               <span>{company.phone}</span>
                             </div>
                           ) : null}
@@ -841,7 +841,7 @@ export const CompanyOverview: React.FC = () => {
                       <td style={{ padding: '6px 8px' }}>
                         {company.city ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
-                            <MapPin size={12} color="#168264" />
+                            <MapPin size={12} color="var(--color-primary)" />
                             <span>{company.city}</span>
                           </div>
                         ) : (
@@ -872,7 +872,7 @@ export const CompanyOverview: React.FC = () => {
                           >
                             <span>{company.gstin}</span>
                             {copiedGstin === company.gstin ? (
-                              <Check size={10} color="#168264" />
+                              <Check size={10} color="#059669" />
                             ) : (
                               <Copy size={10} color="#94A3B8" />
                             )}
@@ -985,7 +985,7 @@ export const CompanyOverview: React.FC = () => {
                               border: '1px solid',
                               borderColor: isActive ? '#FDE68A' : '#BBF7D0',
                               backgroundColor: isActive ? '#FFFBEB' : '#F0FDF4',
-                              color: isActive ? '#D97706' : '#168264',
+                              color: isActive ? '#D97706' : '#059669',
                               cursor: 'pointer',
                               width: '26px',
                               height: '26px',

@@ -1,50 +1,52 @@
 /* ==========================================================================
-   DELIVSHOP BUSINESS DESIGN SYSTEM
-   Palette 9: Emerald & Ivory
-   Sidebar: #123B32 | Page Background: #F8F8F2 | Surfaces: #FFFFFF
-   Primary Action: #16805D | Accent: #C7A75A | Primary Text: #20342C
-   Secondary Text: #64748B | Borders: #E2E8F0 | Success: #16805D
-   Warning: #B45309 | Error: #B91C1C | Information: #0369A1
+   DELIVSHOP ENTERPRISE DESIGN SYSTEM
+   Midnight Navy & Professional Blue Palette
+   Midnight Navy: #111F33 | Professional Blue: #1976D2 | Cool Gray: #F5F7FA
+   White: #FFFFFF | Border Gray: #E2E8F0 | Secondary Slate: #64748B
+   Success: #10B981 | Warning: #F59E0B | Danger: #EF4444 | Info: #1976D2
    ========================================================================== */
 
 :root {
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   
-  /* Palette 9: Emerald & Ivory Tokens */
-  --color-sidebar: #123B32;
-  --color-sidebar-dark: #0A241E;
+  /* Delivshop Brand Core Tokens */
+  --color-sidebar: #111F33;
+  --color-sidebar-dark: #0B1522;
   --color-sidebar-hover: rgba(255, 255, 255, 0.08);
   
-  --color-primary: #16805D;
-  --color-primary-hover: #11674A;
-  --color-primary-subtle: #F1F7F1;
-  --color-accent: #C7A75A;
-  --color-accent-subtle: #FAF6ED;
+  --color-primary: #1976D2;
+  --color-primary-hover: #1565C0;
+  --color-primary-subtle: #EFF6FF;
+  --color-navy: #111F33;
+  --color-navy-hover: #0D1828;
+  --color-navy-subtle: #F0F4F8;
+  --color-accent: #38BDF8;
+  --color-accent-subtle: #F0F9FF;
 
   /* Neutrals & Surfaces */
-  --bg-primary: #F8F8F2;    /* Light Ivory page background */
+  --bg-primary: #F5F7FA;    /* Cool Gray page background */
   --bg-secondary: #FFFFFF;  /* White card & toolbar surfaces */
   --bg-card: #FFFFFF;
-  --bg-hover: #F1F7F1;
+  --bg-hover: #F8FAFC;
   --bg-muted: #F1F5F9;
   --border-color: #E2E8F0;
   --border-input: #CBD5E1;
 
   /* Typography */
-  --text-primary: #20342C;  /* Dark forest-gray primary text */
-  --text-secondary: #64748B;
+  --text-primary: #111F33;  /* Midnight Navy primary text */
+  --text-secondary: #64748B; /* Secondary Slate */
   --text-muted: #94A3B8;
 
   /* Status Colors */
-  --color-success: #16805D;
-  --color-success-bg: #DCFCE7;
-  --color-warning: #B45309;
+  --color-success: #10B981;
+  --color-success-bg: #ECFDF5;
+  --color-warning: #F59E0B;
   --color-warning-bg: #FEF3C7;
-  --color-danger: #B91C1C;
-  --color-danger-bg: #FEE2E2;
-  --color-info: #0369A1;
-  --color-info-bg: #E0F2FE;
-  --color-neutral: #475569;
+  --color-danger: #EF4444;
+  --color-danger-bg: #FEF2F2;
+  --color-info: #1976D2;
+  --color-info-bg: #EFF6FF;
+  --color-neutral: #64748B;
   --color-neutral-bg: #F1F5F9;
 
   /* Standard Radii & Shadows */
@@ -516,7 +518,7 @@ code {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: #16805D;
+  background-color: var(--color-primary);
   border: 1px solid var(--color-accent);
   color: #FFFFFF;
   display: flex;
@@ -718,10 +720,10 @@ code {
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(22, 128, 93, 0.25);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.25);
 }
 
-/* Primary Button: Emerald */
+/* Primary Button: Professional Blue */
 .btn-primary {
   background-color: var(--color-primary);
   color: #FFFFFF;
@@ -731,7 +733,20 @@ code {
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
-  box-shadow: 0 2px 6px rgba(22, 128, 93, 0.25);
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.25);
+}
+
+/* Navy Button: Midnight Navy */
+.btn-navy {
+  background-color: var(--color-navy);
+  color: #FFFFFF;
+  border-color: var(--color-navy);
+}
+
+.btn-navy:hover:not(:disabled) {
+  background-color: var(--color-navy-hover);
+  border-color: var(--color-navy-hover);
+  box-shadow: 0 2px 6px rgba(17, 31, 51, 0.25);
 }
 
 /* Secondary Button: Clean White with border */
@@ -749,6 +764,18 @@ code {
   color: var(--color-primary);
 }
 
+/* Ghost Button */
+.btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--color-primary);
+}
+
 /* Destructive Button: Red */
 .btn-danger {
   background-color: var(--color-danger);
@@ -757,7 +784,9 @@ code {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #991B1B;
+  background-color: #DC2626;
+  border-color: #DC2626;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
 }
 
 /* Button Sizes */
@@ -1252,16 +1281,16 @@ select.input-field:focus {
 }
 
 /* ==========================================================================
-   Modals & Dialogs
+   Modals & Dialogs (Enterprise Delivshop Standard)
    ========================================================================== */
 
 .modal-overlay,
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(18, 59, 50, 0.5);
+  background-color: rgba(17, 31, 51, 0.65);
   backdrop-filter: blur(4px);
-  z-index: 100;
+  z-index: 1050;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1274,12 +1303,38 @@ select.input-field:focus {
   background-color: #FFFFFF;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(17, 31, 51, 0.25);
   max-height: 90vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: modalFadeIn 0.2s ease-out;
+}
+
+/* Modal Standard Size Variants */
+.modal-sm {
+  max-width: 440px;
+}
+
+.modal-md {
+  max-width: 560px;
+}
+
+.modal-lg {
+  max-width: 760px;
+}
+
+.modal-xl {
+  max-width: 920px;
+}
+
+.modal-2xl {
+  max-width: 1100px;
+}
+
+.modal-full {
+  max-width: 96vw;
 }
 
 @keyframes modalFadeIn {
@@ -1306,6 +1361,7 @@ select.input-field:focus {
   font-size: 17px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .modal-desc {
@@ -1314,24 +1370,7 @@ select.input-field:focus {
   margin-top: 2px;
 }
 
-.modal-close-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close-btn:hover,
-.btn-close:hover {
-  background-color: var(--bg-hover);
-  color: var(--color-primary);
-}
-
+.modal-close-btn,
 .btn-close {
   background: transparent;
   border: none;
@@ -1342,6 +1381,13 @@ select.input-field:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover,
+.btn-close:hover {
+  background-color: var(--bg-hover);
+  color: var(--color-primary);
 }
 
 .modal-title-group {
@@ -1354,8 +1400,9 @@ select.input-field:focus {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background-color: rgba(0, 168, 107, 0.12);
+  background-color: var(--color-primary-subtle);
   color: var(--color-primary);
+  border: 1px solid #BFDBFE;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1383,12 +1430,13 @@ select.input-field:focus {
   padding: 24px;
   overflow-y: auto;
   background-color: #FFFFFF;
+  flex: 1;
 }
 
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border-color);
-  background-color: #F8FAF8;
+  background-color: #F8FAFC;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1605,7 +1653,7 @@ select.input-field:focus {
 .login-card-success-fade {
   transform: scale(0.98) translateY(-4px);
   opacity: 0;
-  box-shadow: 0 0 30px rgba(22, 128, 93, 0.25);
+  box-shadow: 0 0 30px rgba(25, 118, 210, 0.25);
 }
 
 /* Brand Header */
@@ -1626,7 +1674,7 @@ select.input-field:focus {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(18, 59, 50, 0.25);
+  box-shadow: 0 2px 8px rgba(17, 31, 51, 0.25);
 }
 
 .login-brand-text {
@@ -1656,7 +1704,7 @@ select.input-field:focus {
   gap: 6px;
   padding: 4px 10px;
   background-color: var(--color-primary-subtle);
-  border: 1px solid #BBF7D0;
+  border: 1px solid #BFDBFE;
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 700;
@@ -1770,7 +1818,7 @@ select.input-field:focus {
 .login-input-control:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(22, 128, 93, 0.2);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
 .login-input-control:disabled {
@@ -1816,7 +1864,7 @@ select.input-field:focus {
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(22, 128, 93, 0.25);
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.25);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
 }
@@ -1824,13 +1872,13 @@ select.input-field:focus {
 .login-action-btn:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
-  box-shadow: 0 4px 14px rgba(22, 128, 93, 0.35);
+  box-shadow: 0 4px 14px rgba(25, 118, 210, 0.35);
   transform: translateY(-1px);
 }
 
 .login-action-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(22, 128, 93, 0.3);
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
 }
 
 .login-action-btn:disabled {
@@ -1842,7 +1890,7 @@ select.input-field:focus {
 .login-action-btn.is-success {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  box-shadow: 0 0 20px rgba(22, 128, 93, 0.45);
+  box-shadow: 0 0 20px rgba(25, 118, 210, 0.45);
   transform: scale(1.01);
 }
 
@@ -2099,7 +2147,7 @@ select.input-field:focus {
 .btn-outline-success {
   background-color: #FFFFFF;
   border: 1px solid #BBF7D0;
-  color: #16805D;
+  color: #059669;
   font-weight: 600;
   cursor: pointer;
   border-radius: var(--radius-sm);
@@ -2385,7 +2433,7 @@ select.input-field:focus {
   gap: 8px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #123B32;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
@@ -2799,7 +2847,7 @@ select.input-field:focus {
 
 .route-readiness-ready {
   background-color: #DCFCE7;
-  color: #16805D;
+  color: #059669;
   border: 1px solid #BBF7D0;
 }
 
@@ -2837,7 +2885,7 @@ select.input-field:focus {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #123B32;
+  background-color: var(--color-navy);
   color: #FFFFFF;
   font-size: 11px;
   font-weight: 700;
@@ -2904,12 +2952,12 @@ select.input-field:focus {
 }
 
 /* ==========================================================================
-   Slide-in Side Drawer & Tab Navigation (Delivshop Palette 9)
+   Slide-in Side Drawer & Tab Navigation (Delivshop Enterprise Standard)
    ========================================================================== */
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(18, 61, 50, 0.45);
+  background-color: rgba(17, 31, 51, 0.65);
   backdrop-filter: blur(3px);
   z-index: 1100;
   display: flex;
@@ -2927,7 +2975,7 @@ select.input-field:focus {
   max-width: 760px;
   background-color: #FFFFFF;
   height: 100%;
-  box-shadow: -8px 0 25px rgba(0, 0, 0, 0.15);
+  box-shadow: -8px 0 25px rgba(17, 31, 51, 0.2);
   display: flex;
   flex-direction: column;
   animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2941,7 +2989,7 @@ select.input-field:focus {
 .drawer-header {
   padding: 18px 24px;
   border-bottom: 1px solid var(--border-color);
-  background-color: #FAFAF7;
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2958,7 +3006,7 @@ select.input-field:focus {
 
 .drawer-metric-card {
   padding: 10px 14px;
-  background-color: #F8FAF8;
+  background-color: #F8FAFC;
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
@@ -3018,7 +3066,7 @@ select.input-field:focus {
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
-  background-color: #FBFBF9;
+  background-color: #F8FAFC;
 }
 
 .timeline-stop-card {

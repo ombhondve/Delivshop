@@ -151,11 +151,11 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(18, 61, 50, 0.1)',
+                backgroundColor: 'var(--color-primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#123D32',
+                color: 'var(--color-primary)',
               }}
             >
               <History size={22} />
@@ -275,7 +275,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
         <div style={{ overflowY: 'auto', flex: 1, padding: 0 }}>
           {loading ? (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748B' }}>
-              <RefreshCw size={26} className="spin-icon" style={{ margin: '0 auto 10px auto', color: '#168264' }} />
+              <RefreshCw size={26} className="spin-icon" style={{ margin: '0 auto 10px auto', color: 'var(--color-primary)' }} />
               <div style={{ fontSize: '13.5px', fontWeight: 600 }}>Loading ledger records...</div>
             </div>
           ) : error ? (
@@ -351,7 +351,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
                       </td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', color: '#475569' }}>
                         <span style={{ color: '#94A3B8' }}>{m.previousStock}</span> →{' '}
-                        <strong style={{ color: '#123D32' }}>{m.newStock}</strong>
+                        <strong style={{ color: 'var(--text-primary)' }}>{m.newStock}</strong>
                       </td>
                       <td style={{ padding: '10px 14px', maxWidth: '200px' }}>
                         <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#334155' }} title={m.reason || ''}>

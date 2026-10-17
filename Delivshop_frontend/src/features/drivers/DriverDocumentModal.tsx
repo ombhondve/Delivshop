@@ -151,8 +151,8 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#DCFCE7',
-                color: '#16805D',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -161,10 +161,10 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
               <FileText size={20} />
             </div>
             <div>
-              <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Upload Driver Document
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
                 {driverName} • Secure Compliance Storage
               </p>
             </div>
@@ -357,8 +357,8 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: `2px dashed ${dragOver ? '#16805D' : '#CBD5E1'}`,
-                    backgroundColor: dragOver ? '#F0FDF4' : '#F8FAFC',
+                    border: `2px dashed ${dragOver ? 'var(--color-primary)' : '#CBD5E1'}`,
+                    backgroundColor: dragOver ? 'var(--color-primary-subtle)' : '#F8FAFC',
                     borderRadius: '12px',
                     padding: '24px 16px',
                     textAlign: 'center',
@@ -387,13 +387,13 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                    <FileCheck size={20} color="#16805D" style={{ flexShrink: 0 }} />
+                    <FileCheck size={20} color="#059669" style={{ flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
                       <div
                         style={{
                           fontSize: '12.5px',
                           fontWeight: 600,
-                          color: '#16805D',
+                          color: '#059669',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -468,7 +468,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                 fontSize: '13px',
                 fontWeight: 600,
                 color: '#FFFFFF',
-                backgroundColor: '#16805D',
+                backgroundColor: 'var(--color-primary)',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: loading ? 'not-allowed' : 'pointer',

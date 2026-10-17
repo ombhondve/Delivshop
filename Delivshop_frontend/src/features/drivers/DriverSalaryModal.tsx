@@ -219,8 +219,8 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#DCFCE7',
-                color: '#16805D',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -229,10 +229,10 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
               <DollarSign size={20} />
             </div>
             <div>
-              <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Driver Compensation & Remuneration
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
                 {driverName} • Authorized Fleet Payroll
               </p>
             </div>
@@ -271,8 +271,8 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
               fontWeight: 600,
               background: 'none',
               border: 'none',
-              borderBottom: activeTab === 'CONFIG' ? '2px solid #16805D' : '2px solid transparent',
-              color: activeTab === 'CONFIG' ? '#16805D' : '#64748B',
+              borderBottom: activeTab === 'CONFIG' ? '2px solid var(--color-primary)' : '2px solid transparent',
+              color: activeTab === 'CONFIG' ? 'var(--color-primary)' : '#64748B',
               cursor: 'pointer',
             }}
           >
@@ -287,8 +287,8 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
               fontWeight: 600,
               background: 'none',
               border: 'none',
-              borderBottom: activeTab === 'PAYMENT' ? '2px solid #16805D' : '2px solid transparent',
-              color: activeTab === 'PAYMENT' ? '#16805D' : '#64748B',
+              borderBottom: activeTab === 'PAYMENT' ? '2px solid var(--color-primary)' : '2px solid transparent',
+              color: activeTab === 'PAYMENT' ? 'var(--color-primary)' : '#64748B',
               cursor: 'pointer',
             }}
           >
@@ -563,7 +563,7 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
                   fontSize: '13px',
                   fontWeight: 600,
                   color: '#FFFFFF',
-                  backgroundColor: '#16805D',
+                  backgroundColor: 'var(--color-primary)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: loading ? 'not-allowed' : 'pointer',
@@ -726,10 +726,10 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
                   justifyContent: 'space-between',
                 }}
               >
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#16805D' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-primary)' }}>
                   Net Disbursed Amount:
                 </span>
-                <span style={{ fontSize: '17px', fontWeight: 800, color: '#123D32' }}>
+                <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>
                   ₹{netPayPreview.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
@@ -816,7 +816,7 @@ export const DriverSalaryModal: React.FC<DriverSalaryModalProps> = ({
                   fontSize: '13px',
                   fontWeight: 600,
                   color: '#FFFFFF',
-                  backgroundColor: '#16805D',
+                  backgroundColor: 'var(--color-primary)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: loading ? 'not-allowed' : 'pointer',

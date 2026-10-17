@@ -102,8 +102,8 @@ export const AssignVehicleModal: React.FC<AssignVehicleModalProps> = ({
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                backgroundColor: '#DCFCE7',
-                color: '#16805D',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -112,7 +112,7 @@ export const AssignVehicleModal: React.FC<AssignVehicleModalProps> = ({
               <Truck size={18} />
             </div>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#123D32', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Allocate Vehicle to Driver
               </h3>
               <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>

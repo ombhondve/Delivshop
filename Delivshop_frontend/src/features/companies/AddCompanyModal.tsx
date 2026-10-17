@@ -266,7 +266,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#123D32',
+                backgroundColor: 'var(--color-navy)',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -353,7 +353,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
           {/* Section 1: Basic Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#123D32', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 1. Basic Information
               </h4>
             </div>
@@ -510,7 +510,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
           {/* Section 2: Contact Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#123D32', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 2. Contact Information
               </h4>
             </div>
@@ -616,7 +616,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
           {/* Section 3: Business & Tax Identifiers */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#123D32', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 3. Business & Tax Identifiers
               </h4>
             </div>
@@ -701,7 +701,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
           {/* Section 4: Operational Facility Address */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#123D32', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 4. Operational Address
               </h4>
             </div>
@@ -853,7 +853,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
           {/* Section 5: Additional Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#123D32', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 5. Internal Notes
               </h4>
             </div>

@@ -300,7 +300,7 @@ export const ShopOverview: React.FC = () => {
                       <div
                         className="text-xs font-semibold"
                         style={{
-                          color: Number(shop.outstanding_balance) > 0 ? '#B91C1C' : '#16805D',
+                          color: Number(shop.outstanding_balance) > 0 ? '#B91C1C' : '#059669',
                         }}
                       >
                         Bal: ₹{Number(shop.outstanding_balance || 0).toLocaleString('en-IN')}
