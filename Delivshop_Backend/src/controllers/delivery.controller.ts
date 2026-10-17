@@ -260,6 +260,26 @@ export const deliveryController = {
     }
   },
 
+  async downloadDriverDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id: driverId, docId } = req.params;
+      const { filePath, filename, mimeType } = await deliveryService.downloadDriverDocument(
+        driverId,
+        docId,
+        req.user!
+      );
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+
+      res.sendFile(filePath);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getFullProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const profile = await deliveryService.getFullProfile(req.params.id);

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { deliveryRepository } from '../repositories/delivery.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { auditService } from './audit.service.js';
@@ -5,6 +7,7 @@ import { AppError } from '../utils/errors.js';
 import { hashPassword } from '../utils/password.js';
 import { generateDriverEmployeeId } from './driver-employee-id.service.js';
 import { attendanceService } from './attendance.service.js';
+import { fileService, getStorageDir } from './file.service.js';
 
 export const deliveryService = {
   async getDelivery(deliveryId: string) {
@@ -544,7 +547,59 @@ export const deliveryService = {
     const driver = await deliveryRepository.findDriverById(driverId);
     if (!driver) throw new AppError('Driver not found', 404);
 
-    const doc = await deliveryRepository.upsertDriverDocument(driverId, data, actorId);
+    let storagePath: string | undefined = undefined;
+    let fileSizeBytes: number | undefined = undefined;
+    let mimeType = data.mimeType || 'application/pdf';
+    let fileName = data.fileName || data.originalFilename || undefined;
+
+    if (data.fileData) {
+      // Decode base64 file data
+      let base64Content = data.fileData;
+      if (base64Content.includes(',')) {
+        base64Content = base64Content.split(',')[1];
+      }
+
+      const buffer = Buffer.from(base64Content, 'base64');
+      fileSizeBytes = buffer.length;
+
+      if (buffer.length > 5 * 1024 * 1024) {
+        throw new AppError('File size exceeds the 5MB maximum limit.', 400);
+      }
+
+      const allowedMimes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+      if (!allowedMimes.has(mimeType)) {
+        throw new AppError(`Disallowed file MIME type "${mimeType}". Allowed: PDF, JPEG, PNG, WebP.`, 400);
+      }
+
+      if (!fileService.validateFileSignature(buffer, mimeType)) {
+        throw new AppError('File signature does not match declared type. Corrupted or disallowed file rejected.', 400);
+      }
+
+      const ext = mimeType === 'application/pdf' ? '.pdf' : mimeType === 'image/jpeg' ? '.jpg' : mimeType === 'image/png' ? '.png' : '.webp';
+      const storageFilename = `driver_${driverId.slice(0, 8)}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
+      const storageDir = getStorageDir();
+      storagePath = path.join(storageDir, storageFilename);
+
+      await fs.promises.writeFile(storagePath, buffer);
+      fileName = fileName ? path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_') : storageFilename;
+    }
+
+    const payload = {
+      ...data,
+      fileName,
+      storagePath,
+      mimeType,
+      fileSizeBytes,
+    };
+
+    const doc = await deliveryRepository.upsertDriverDocument(driverId, payload, actorId);
+
+    // If document has storagePath, assign authenticated download URL
+    if (doc.id && storagePath) {
+      const fileUrl = `/api/deliveries/drivers/${driverId}/documents/${doc.id}/download`;
+      await deliveryRepository.upsertDriverDocument(driverId, { ...payload, fileUrl }, actorId);
+      doc.file_url = fileUrl;
+    }
 
     await auditService.log({
       actorId,
@@ -555,11 +610,33 @@ export const deliveryService = {
         documentType: data.documentType,
         documentNumber: data.documentNumber,
         verificationStatus: data.verificationStatus,
+        fileName,
       },
       ipAddress,
     });
 
     return doc;
+  },
+
+  async downloadDriverDocument(driverId: string, docId: string, requestingUser: any) {
+    if (requestingUser.role !== 'ADMIN' && requestingUser.role !== 'MANAGER' && requestingUser.id !== driverId) {
+      throw new AppError('Forbidden: You do not have permission to view this document.', 403);
+    }
+
+    const doc = await deliveryRepository.getDriverDocumentById(driverId, docId);
+    if (!doc) {
+      throw new AppError('Document not found', 404);
+    }
+
+    if (!doc.storage_path || !fs.existsSync(doc.storage_path)) {
+      throw new AppError('Document file not found on storage server', 404);
+    }
+
+    return {
+      filePath: doc.storage_path,
+      filename: doc.file_name || `${doc.document_type.toLowerCase()}.pdf`,
+      mimeType: doc.mime_type || 'application/pdf',
+    };
   },
 
   async getFullProfile(driverId: string) {

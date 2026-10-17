@@ -112,6 +112,13 @@ router.post(
   deliveryController.upsertDriverDocument
 );
 
+router.get(
+  '/drivers/:id/documents/:docId/download',
+  authenticate,
+  authorizeRoles('SUPPLIER', 'ADMIN', 'DRIVER'),
+  deliveryController.downloadDriverDocument
+);
+
 // Attendance routes
 router.post(
   '/drivers/:id/attendance/check-in',

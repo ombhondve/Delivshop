@@ -17,9 +17,10 @@ import { Vehicle, VehicleSummary } from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { AddVehicleModal } from './AddVehicleModal';
-import { VehicleDetailsDrawer } from './VehicleDetailsDrawer';
+import { useNavigation } from '../../context/NavigationContext';
 
 export const VehiclesOverview: React.FC = () => {
+  const { navigate } = useNavigation();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [summary, setSummary] = useState<VehicleSummary>({
     totalVehicles: 0,
@@ -296,7 +297,11 @@ export const VehiclesOverview: React.FC = () => {
                     className="table-row-hover"
                   >
                     <td style={{ padding: '14px 18px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+                        onClick={() => navigate(`/admin/vehicles/${v.id}`)}
+                        title="View Full Vehicle Details"
+                      >
                         <div
                           style={{
                             background: v.is_refrigerated ? '#E0F2FE' : '#F1F5F9',
@@ -308,7 +313,7 @@ export const VehiclesOverview: React.FC = () => {
                           <Truck size={18} />
                         </div>
                         <div>
-                          <strong style={{ fontSize: '13px', color: '#0F172A', display: 'block' }}>
+                          <strong style={{ fontSize: '13px', color: '#0369A1', display: 'block', textDecoration: 'underline', textDecorationColor: '#BAE6FD' }}>
                             {v.registration_number}
                           </strong>
                           <span style={{ fontSize: '11px', color: '#64748B' }}>
@@ -330,7 +335,7 @@ export const VehiclesOverview: React.FC = () => {
                     <td style={{ padding: '14px 18px' }}>
                       <div>
                         <span style={{ color: '#0F172A' }}>{v.depot}</span>
-                        <div style={{ fontSize: '11px', color: '#64748B' }}>{v.city}, {v.state}</div>
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>{v.city ? `${v.city}, ${v.state}` : 'Central Fleet Depot'}</div>
                       </div>
                     </td>
 
@@ -361,7 +366,7 @@ export const VehiclesOverview: React.FC = () => {
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-primary"
-                        onClick={() => setSelectedVehicleId(v.id)}
+                        onClick={() => navigate(`/admin/vehicles/${v.id}`)}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
                         <Eye size={13} /> Details
@@ -382,13 +387,6 @@ export const VehiclesOverview: React.FC = () => {
         onVehicleCreated={() => {
           fetchVehicles();
         }}
-      />
-
-      {/* Vehicle Details Drawer */}
-      <VehicleDetailsDrawer
-        vehicleId={selectedVehicleId}
-        onClose={() => setSelectedVehicleId(null)}
-        onVehicleUpdated={fetchVehicles}
       />
     </div>
   );

@@ -8,6 +8,7 @@ export interface RouteState {
   shopId: string | null;
   companyId: string | null;
   driverId: string | null;
+  vehicleId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
 }
@@ -19,6 +20,7 @@ interface NavigationContextValue {
   shopId: string | null;
   companyId: string | null;
   driverId: string | null;
+  vehicleId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
   navigate: (to: string) => void;
@@ -33,6 +35,7 @@ export function parsePath(pathname: string): {
   shopId: string | null;
   companyId: string | null;
   driverId: string | null;
+  vehicleId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
 } {
@@ -46,6 +49,7 @@ export function parsePath(pathname: string): {
       shopId: null,
       companyId: null,
       driverId: null,
+      vehicleId: null,
       isNotFound: false,
       isLogin: true,
     };
@@ -59,6 +63,7 @@ export function parsePath(pathname: string): {
       shopId: null,
       companyId: decodeURIComponent(companyMatch[1]),
       driverId: null,
+      vehicleId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -72,6 +77,7 @@ export function parsePath(pathname: string): {
       shopId: decodeURIComponent(shopMatch[1]),
       companyId: null,
       driverId: null,
+      vehicleId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -85,12 +91,27 @@ export function parsePath(pathname: string): {
       shopId: null,
       companyId: null,
       driverId: decodeURIComponent(driverMatch[1]),
+      vehicleId: null,
       isNotFound: false,
       isLogin: false,
     };
   }
 
-  // 4. Check standard section routes (supports both /<section> and /admin/<section>)
+  // 5. Check /vehicles/:vehicleId and /admin/vehicles/:vehicleId
+  const vehicleMatch = cleanPath.match(/^(?:\/admin)?\/vehicles\/([^\/]+)$/);
+  if (vehicleMatch) {
+    return {
+      activeTab: 'vehicles',
+      shopId: null,
+      companyId: null,
+      driverId: null,
+      vehicleId: decodeURIComponent(vehicleMatch[1]),
+      isNotFound: false,
+      isLogin: false,
+    };
+  }
+
+  // 6. Check standard section routes (supports both /<section> and /admin/<section>)
   const routeMap: Record<string, ActiveTab> = {
     '/': 'dashboard',
     '/dashboard': 'dashboard',
@@ -128,17 +149,19 @@ export function parsePath(pathname: string): {
       shopId: null,
       companyId: null,
       driverId: null,
+      vehicleId: null,
       isNotFound: false,
       isLogin: false,
     };
   }
 
-  // 5. Unknown route -> Not Found
+  // 7. Unknown route -> Not Found
   return {
     activeTab: 'dashboard',
     shopId: null,
     companyId: null,
     driverId: null,
+    vehicleId: null,
     isNotFound: true,
     isLogin: false,
   };
@@ -194,6 +217,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     shopId: routeDetails.shopId,
     companyId: routeDetails.companyId,
     driverId: routeDetails.driverId,
+    vehicleId: routeDetails.vehicleId,
     isNotFound: routeDetails.isNotFound,
     isLogin: routeDetails.isLogin,
     navigate,

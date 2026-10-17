@@ -157,7 +157,7 @@ export const deliveryRepository = {
               u.created_at, u.updated_at,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED'))::int as active_deliveries,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED')::int as completed_deliveries,
-              (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED' AND d.delivered_at >= CURRENT_DATE)::int as today_deliveries,
+              (SELECT (COALESCE((SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED' AND (d.delivered_at AT TIME ZONE 'Asia/Kolkata')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date), 0) + COALESCE((SELECT COUNT(*) FROM delivery_run_stops drs JOIN delivery_runs dr ON drs.run_id = dr.id WHERE dr.driver_id = u.id AND drs.status = 'COMPLETED' AND (drs.arrival_time AT TIME ZONE 'Asia/Kolkata')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date), 0)))::int as today_deliveries,
               (SELECT d.status FROM deliveries d WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED') ORDER BY d.created_at DESC LIMIT 1) as current_delivery_status,
               (SELECT o.order_number FROM deliveries d JOIN orders o ON d.order_id = o.id WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED') ORDER BY d.created_at DESC LIMIT 1) as current_order_number,
               (SELECT s.name FROM deliveries d JOIN orders o ON d.order_id = o.id JOIN shops s ON o.shop_id = s.id WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED') ORDER BY d.created_at DESC LIMIT 1) as current_shop_name
@@ -224,7 +224,7 @@ export const deliveryRepository = {
               u.created_at, u.updated_at,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED'))::int as active_deliveries,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED')::int as completed_deliveries,
-              (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED' AND d.delivered_at >= CURRENT_DATE)::int as today_deliveries
+              (SELECT (COALESCE((SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED' AND (d.delivered_at AT TIME ZONE 'Asia/Kolkata')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date), 0) + COALESCE((SELECT COUNT(*) FROM delivery_run_stops drs JOIN delivery_runs dr ON drs.run_id = dr.id WHERE dr.driver_id = u.id AND drs.status = 'COMPLETED' AND (drs.arrival_time AT TIME ZONE 'Asia/Kolkata')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date), 0)))::int as today_deliveries
        FROM users u 
        WHERE u.id = $1 AND u.role = 'DRIVER' AND u.deleted_at IS NULL 
        LIMIT 1`,
@@ -490,28 +490,53 @@ export const deliveryRepository = {
   },
 
   async upsertSalaryConfig(driverId: string, data: {
-    baseMonthlySalary: number;
+    baseMonthlySalary?: number;
+    baseSalary?: number;
+    salaryType?: string;
+    hraAllowance?: number;
+    fuelAllowance?: number;
+    pfDeduction?: number;
     dailyAllowance?: number;
     perDeliveryIncentive?: number;
     effectiveFrom?: string;
+    effectiveTo?: string;
     notes?: string;
+    status?: string;
   }): Promise<any> {
     // Mark previous configs as not current
     await query(`UPDATE driver_salary_configs SET is_current = FALSE WHERE driver_id = $1`, [driverId]);
 
+    const base = Number(data.baseMonthlySalary ?? data.baseSalary ?? 18000.0);
+    const salaryType = data.salaryType || (data as any).paymentCycle || 'MONTHLY';
+    const hra = Number(data.hraAllowance ?? (data as any).allowances?.hra ?? 0);
+    const fuel = Number(data.fuelAllowance ?? (data as any).allowances?.fuel ?? 0);
+    const pf = Number(data.pfDeduction ?? (data as any).deductions?.pf ?? 0);
+    const daily = Number(data.dailyAllowance ?? 150.0);
+    const perDelivery = Number(data.perDeliveryIncentive ?? 25.0);
+    const status = data.status || 'ACTIVE';
+    const effectiveFromDate = data.effectiveFrom || (data as any).effectiveFromDate || null;
+
     const res = await query(
       `INSERT INTO driver_salary_configs (
-        driver_id, base_monthly_salary, daily_allowance, per_delivery_incentive, effective_from, is_current, notes
+        driver_id, base_monthly_salary, daily_allowance, per_delivery_incentive,
+        effective_from, effective_to, is_current, notes, salary_type,
+        hra_allowance, fuel_allowance, pf_deduction, status
        )
-       VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), TRUE, $6)
+       VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), $6::date, TRUE, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         driverId,
-        data.baseMonthlySalary,
-        data.dailyAllowance ?? 150.0,
-        data.perDeliveryIncentive ?? 25.0,
-        data.effectiveFrom || null,
+        base,
+        daily,
+        perDelivery,
+        effectiveFromDate,
+        data.effectiveTo || null,
         data.notes || null,
+        salaryType,
+        hra,
+        fuel,
+        pf,
+        status,
       ]
     );
     return res.rows[0];
@@ -593,6 +618,18 @@ export const deliveryRepository = {
     return res.rows;
   },
 
+  async getDriverDocumentById(driverId: string, docId: string): Promise<any | null> {
+    const res = await query(
+      `SELECT dd.*, u.name as verifier_name
+       FROM driver_documents dd
+       LEFT JOIN users u ON dd.verified_by = u.id
+       WHERE dd.driver_id = $1 AND dd.id = $2
+       LIMIT 1`,
+      [driverId, docId]
+    );
+    return res.rows[0] || null;
+  },
+
   async upsertDriverDocument(driverId: string, data: {
     documentType: string;
     documentNumber: string;
@@ -600,20 +637,29 @@ export const deliveryRepository = {
     expiryDate?: string;
     verificationStatus?: string;
     fileUrl?: string;
+    fileName?: string;
+    storagePath?: string;
+    mimeType?: string;
+    fileSizeBytes?: number;
     notes?: string;
   }, verifiedBy?: string): Promise<any> {
     const res = await query(
       `INSERT INTO driver_documents (
         driver_id, document_type, document_number, issue_date, expiry_date,
-        verification_status, file_url, verified_by, verified_at, notes
+        verification_status, file_url, file_name, storage_path, mime_type, file_size_bytes,
+        verified_by, verified_at, notes
        )
-       VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8::uuid, CASE WHEN $8::uuid IS NOT NULL THEN NOW() ELSE NULL END, $9)
+       VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8, $9, $10, $11, $12::uuid, CASE WHEN $12::uuid IS NOT NULL THEN NOW() ELSE NULL END, $13)
        ON CONFLICT (driver_id, document_type) DO UPDATE
        SET document_number = EXCLUDED.document_number,
            issue_date = EXCLUDED.issue_date,
            expiry_date = EXCLUDED.expiry_date,
            verification_status = EXCLUDED.verification_status,
            file_url = COALESCE(EXCLUDED.file_url, driver_documents.file_url),
+           file_name = COALESCE(EXCLUDED.file_name, driver_documents.file_name),
+           storage_path = COALESCE(EXCLUDED.storage_path, driver_documents.storage_path),
+           mime_type = COALESCE(EXCLUDED.mime_type, driver_documents.mime_type),
+           file_size_bytes = COALESCE(EXCLUDED.file_size_bytes, driver_documents.file_size_bytes),
            verified_by = COALESCE(EXCLUDED.verified_by, driver_documents.verified_by),
            verified_at = CASE WHEN EXCLUDED.verified_by IS NOT NULL THEN NOW() ELSE driver_documents.verified_at END,
            notes = EXCLUDED.notes,
@@ -627,6 +673,10 @@ export const deliveryRepository = {
         data.expiryDate || null,
         data.verificationStatus || 'VALID',
         data.fileUrl || null,
+        data.fileName || null,
+        data.storagePath || null,
+        data.mimeType || null,
+        data.fileSizeBytes || null,
         verifiedBy || null,
         data.notes || null,
       ]

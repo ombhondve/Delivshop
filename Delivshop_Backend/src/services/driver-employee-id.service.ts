@@ -1,42 +1,34 @@
+import crypto from 'crypto';
 import pg from 'pg';
 import { dbPool } from '../config/database.js';
+import { AppError } from '../utils/errors.js';
 
-const PREFIX = 'EMP-DRV';
+const PREFIX = 'EMP';
 
 /**
- * Concurrency-safe atomic generation of driver employee IDs (e.g. EMP-DRV-1006)
+ * Cryptographically secure random generation of Driver Employee IDs
+ * Format: EMP- followed by exactly 10 numeric digits (e.g. EMP-5831047296)
+ * Enforces uniqueness against users table with bounded collision retries.
  */
 export async function generateDriverEmployeeId(client?: pg.PoolClient): Promise<string> {
   const runner = client || dbPool;
+  const maxAttempts = 12;
 
-  const queryText = `
-    INSERT INTO driver_employee_id_counters (counter_prefix, last_sequence, updated_at)
-    VALUES ($1, 1006, NOW())
-    ON CONFLICT (counter_prefix) DO UPDATE
-    SET last_sequence = driver_employee_id_counters.last_sequence + 1,
-        updated_at = NOW()
-    RETURNING last_sequence;
-  `;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Generate exactly 10 cryptographically random numeric digits (0-9)
+    let digits = '';
+    for (let i = 0; i < 10; i++) {
+      digits += crypto.randomInt(0, 10).toString();
+    }
 
-  const res = await runner.query<{ last_sequence: number }>(queryText, [PREFIX]);
-  let sequence = res.rows[0]?.last_sequence || 1006;
-  let empId = `${PREFIX}-${sequence}`;
+    const candidateId = `${PREFIX}-${digits}`;
 
-  // Fallback safety loop to guarantee no collisions even if manual accounts exist
-  let exists = await runner.query('SELECT 1 FROM users WHERE employee_id = $1', [empId]);
-  while (exists.rows.length > 0) {
-    const adv = await runner.query<{ last_sequence: number }>(
-      `UPDATE driver_employee_id_counters
-       SET last_sequence = last_sequence + 1,
-           updated_at = NOW()
-       WHERE counter_prefix = $1
-       RETURNING last_sequence`,
-      [PREFIX]
-    );
-    sequence = adv.rows[0].last_sequence;
-    empId = `${PREFIX}-${sequence}`;
-    exists = await runner.query('SELECT 1 FROM users WHERE employee_id = $1', [empId]);
+    // Verify uniqueness against existing database users
+    const exists = await runner.query('SELECT 1 FROM users WHERE employee_id = $1 LIMIT 1', [candidateId]);
+    if (exists.rows.length === 0) {
+      return candidateId;
+    }
   }
 
-  return empId;
+  throw new AppError('Unable to generate unique Driver Employee ID after maximum collision attempts.', 500);
 }

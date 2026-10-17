@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Copy,
   Check,
+  Download,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import {
@@ -43,7 +44,7 @@ import { EditDriverModal } from './EditDriverModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { DriverSalaryModal } from './DriverSalaryModal';
 import { DriverDocumentModal } from './DriverDocumentModal';
-import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
+import { AssignVehicleModal } from './AssignVehicleModal';
 
 interface DriverDetailPageProps {
   driverId: string;
@@ -71,10 +72,10 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Status toggle confirmation
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
@@ -142,17 +143,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
     }
   };
 
-  const handleConfirmDelete = async (reason?: string) => {
-    if (!driver) return;
-    try {
-      const res = await api.deliveries.deleteDriver(driver.id, reason);
-      showToast(res.message || 'Driver record archived successfully');
-      setIsDeleteModalOpen(false);
-      navigate('/admin/drivers');
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to delete driver', 'error');
-    }
-  };
+
 
   if (loading) {
     return (
@@ -381,10 +372,25 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         </div>
 
         {/* Header Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={() => setIsEditModalOpen(true)}>
             <Pencil size={14} style={{ marginRight: '6px' }} />
             Edit Profile
+          </Button>
+
+          <Button variant="secondary" onClick={() => setIsVehicleModalOpen(true)}>
+            <Truck size={14} style={{ marginRight: '6px' }} />
+            Assign Vehicle
+          </Button>
+
+          <Button variant="secondary" onClick={() => setIsSalaryModalOpen(true)}>
+            <DollarSign size={14} style={{ marginRight: '6px' }} />
+            Configure Salary
+          </Button>
+
+          <Button variant="secondary" onClick={() => setIsDocModalOpen(true)}>
+            <Plus size={14} style={{ marginRight: '6px' }} />
+            Upload Document
           </Button>
 
           <Button variant="secondary" onClick={() => setIsPasswordModalOpen(true)}>
@@ -405,16 +411,6 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             <Power size={14} style={{ marginRight: '6px' }} />
             {driver.is_active ? 'Deactivate Driver' : 'Reactivate Driver'}
           </Button>
-
-          {!driver.is_active && (
-            <Button
-              variant="danger"
-              onClick={() => setIsDeleteModalOpen(true)}
-            >
-              <Trash2 size={14} style={{ marginRight: '6px' }} />
-              Archive / Delete
-            </Button>
-          )}
         </div>
       </div>
 
@@ -975,6 +971,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                     <th>Expiry Date</th>
                     <th>Verification Status</th>
                     <th>Verified By</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -990,6 +987,35 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                         </Badge>
                       </td>
                       <td style={{ fontSize: '12px', color: '#64748B' }}>{doc.verified_by_name || 'System'}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        {doc.file_url ? (
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={doc.file_name || undefined}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              color: '#16805D',
+                              backgroundColor: '#F0FDF4',
+                              border: '1px solid #BBF7D0',
+                              borderRadius: '6px',
+                              textDecoration: 'none',
+                            }}
+                            title={`Download ${doc.file_name || 'document'}`}
+                          >
+                            <Download size={12} />
+                            <span>Download</span>
+                          </a>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#94A3B8' }}>No file</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1403,15 +1429,14 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         }}
       />
 
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Archive Driver Record"
-        entityName={driver.name}
-        entityType="Driver Personnel"
-        entityIdentifier={driver.employee_id}
-        isActive={Boolean(driver.is_active)}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
+      <AssignVehicleModal
+        isOpen={isVehicleModalOpen}
+        driver={driver}
+        onClose={() => setIsVehicleModalOpen(false)}
+        onSuccess={(updated) => {
+          showToast(`Vehicle allocation updated for ${updated.name}`);
+          fetchDriverProfile();
+        }}
       />
     </div>
   );

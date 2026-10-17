@@ -16,13 +16,14 @@ import { SettingsPage } from '../features/settings/SettingsPage';
 import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 import { DriverDetailPage } from '../features/drivers/DriverDetailPage';
+import { VehicleDetailPage } from '../features/vehicles/VehicleDetailPage';
 
 import { VehiclesOverview } from '../features/vehicles/VehiclesOverview';
 import { RoutesOverview } from '../features/routes/RoutesOverview';
 import { AssignmentsOverview } from '../features/assignments/AssignmentsOverview';
 
 const MainContent: React.FC = () => {
-  const { path, activeTab, selectTab, shopId, driverId, isNotFound, isLogin, navigate } = useNavigation();
+  const { path, activeTab, selectTab, shopId, driverId, vehicleId, isNotFound, isLogin, navigate } = useNavigation();
   const { user, loading } = useAuth();
 
   // If unauthenticated and on a protected route, safely redirect to /login?redirect=...
@@ -76,6 +77,11 @@ const MainContent: React.FC = () => {
     // Dedicated Driver Details page when route is /drivers/:driverId or /admin/drivers/:driverId
     if (activeTab === 'drivers' && driverId) {
       return <DriverDetailPage driverId={driverId} />;
+    }
+
+    // Dedicated Vehicle Details page when route is /vehicles/:vehicleId or /admin/vehicles/:vehicleId
+    if (activeTab === 'vehicles' && vehicleId) {
+      return <VehicleDetailPage vehicleId={vehicleId} />;
     }
 
     switch (activeTab) {

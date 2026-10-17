@@ -1,4 +1,5 @@
 import { query } from '../config/database.js';
+import { generateVehicleId } from '../services/vehicle-id.service.js';
 
 export interface VehicleRecord {
   id: string;
@@ -157,13 +158,8 @@ export const vehicleRepository = {
     currentOdometerKm?: number;
     notes?: string;
   }): Promise<VehicleRecord> {
-    // Generate auto vehicle code if not provided
-    let vCode = data.vehicleCode?.trim().toUpperCase();
-    if (!vCode) {
-      const countRes = await query(`SELECT COUNT(*)::int as c FROM vehicles`);
-      const nextSeq = (countRes.rows[0]?.c || 0) + 1001;
-      vCode = `VEH-${nextSeq}`;
-    }
+    // Automatically generate backend unique Vehicle ID (e.g. VEH-20261017-A7K4)
+    const vCode = data.vehicleCode?.trim() ? data.vehicleCode.trim().toUpperCase() : await generateVehicleId();
 
     const res = await query(
       `INSERT INTO vehicles (
@@ -182,8 +178,8 @@ export const vehicleRepository = {
         data.capacityCrates || 60,
         data.fuelType || 'DIESEL',
         Boolean(data.isRefrigerated),
-        data.city || 'Pune',
-        data.state || 'Maharashtra',
+        data.city || null,
+        data.state || null,
         data.depot || 'Pune Central Cold Depot',
         data.status || 'AVAILABLE',
         data.currentOdometerKm || 0,

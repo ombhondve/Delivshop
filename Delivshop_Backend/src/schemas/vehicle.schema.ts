@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 export const createVehicleSchema = z.object({
   body: z.object({
-    vehicleCode: z.string().trim().max(50).optional(),
     registrationNumber: z
       .string()
       .trim()
@@ -15,9 +14,7 @@ export const createVehicleSchema = z.object({
     capacityCrates: z.number().int().min(0, 'Capacity crates cannot be negative').default(60),
     fuelType: z.enum(['DIESEL', 'ELECTRIC', 'CNG', 'PETROL']).default('DIESEL'),
     isRefrigerated: z.boolean().default(false),
-    city: z.string().trim().max(100).default('Pune'),
-    state: z.string().trim().max(100).default('Maharashtra'),
-    depot: z.string().trim().max(150).default('Pune Central Cold Depot'),
+    depot: z.string().trim().max(150).optional().default('Pune Central Cold Depot'),
     status: z.enum(['AVAILABLE', 'ASSIGNED', 'UNDER_MAINTENANCE', 'INACTIVE']).default('AVAILABLE'),
     currentOdometerKm: z.number().int().min(0).default(0),
     notes: z.string().trim().max(1000).optional().nullable(),
@@ -33,8 +30,6 @@ export const updateVehicleSchema = z.object({
     capacityCrates: z.number().int().min(0).optional(),
     fuelType: z.enum(['DIESEL', 'ELECTRIC', 'CNG', 'PETROL']).optional(),
     isRefrigerated: z.boolean().optional(),
-    city: z.string().trim().max(100).optional(),
-    state: z.string().trim().max(100).optional(),
     depot: z.string().trim().max(150).optional(),
     status: z.enum(['AVAILABLE', 'ASSIGNED', 'UNDER_MAINTENANCE', 'INACTIVE']).optional(),
     currentOdometerKm: z.number().int().min(0).optional(),

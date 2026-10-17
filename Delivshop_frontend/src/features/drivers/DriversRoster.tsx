@@ -27,11 +27,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { DriverUser, DriverRosterSummary } from '../../types';
-import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { AddDriverModal } from './AddDriverModal';
-import { EditDriverModal } from './EditDriverModal';
-import { AssignVehicleModal } from './AssignVehicleModal';
-import { ResetPasswordModal } from './ResetPasswordModal';
 import { formatDate } from '../../utils/formatters';
 import { useNavigation } from '../../context/NavigationContext';
 
@@ -57,14 +53,6 @@ export const DriversRoster: React.FC = () => {
   // Modals state
   const { navigate } = useNavigation();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [selectedDriver, setSelectedDriver] = useState<DriverUser | null>(null);
-
-  // Deletion modal state
-  const [driverToDelete, setDriverToDelete] = useState<DriverUser | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -101,49 +89,7 @@ export const DriversRoster: React.FC = () => {
     fetchRoster();
   }, [fetchRoster]);
 
-  const handleToggleDriverStatus = async (driver: DriverUser) => {
-    const nextIsActive = !driver.is_active;
 
-    // Safety check: Cannot deactivate if on active delivery run
-    if (!nextIsActive && (driver.active_deliveries || 0) > 0) {
-      showToast(`Cannot deactivate driver while ${driver.active_deliveries} active deliveries are in progress.`, 'error');
-      return;
-    }
-
-    try {
-      await api.deliveries.updateDriverStatus(
-        driver.id,
-        nextIsActive,
-        nextIsActive ? 'Driver activated by admin' : 'Driver deactivated from fleet'
-      );
-      showToast(`Driver ${driver.name} is now ${nextIsActive ? 'Active' : 'Inactive'}`);
-      fetchRoster();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to update driver status', 'error');
-    }
-  };
-
-  const handleDeleteInitiate = (driver: DriverUser) => {
-    if (driver.is_active) {
-      showToast('Driver must be deactivated before they can be deleted. Please deactivate this driver first.', 'error');
-      return;
-    }
-    setDriverToDelete(driver);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async (reason?: string) => {
-    if (!driverToDelete) return;
-    try {
-      const res = await api.deliveries.deleteDriver(driverToDelete.id, reason);
-      showToast(res.message || 'Driver removed from roster');
-      setIsDeleteModalOpen(false);
-      setDriverToDelete(null);
-      fetchRoster();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete driver', 'error');
-    }
-  };
 
   const handleExportRoster = () => {
     try {
@@ -499,15 +445,15 @@ export const DriversRoster: React.FC = () => {
             <table className="business-table">
               <thead>
                 <tr>
-                  <th style={{ width: '220px' }}>Driver</th>
-                  <th style={{ width: '130px' }}>Employee ID</th>
-                  <th style={{ width: '140px' }}>Phone</th>
-                  <th style={{ minWidth: '190px' }}>Assigned Vehicle</th>
-                  <th style={{ width: '120px' }}>Current Status</th>
-                  <th style={{ minWidth: '170px' }}>Current Assignment</th>
-                  <th style={{ width: '120px' }}>Today's Drops</th>
-                  <th style={{ width: '110px' }}>Account</th>
-                  <th style={{ width: '170px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '220px', minWidth: '200px' }}>Driver</th>
+                  <th style={{ width: '135px', minWidth: '125px', maxWidth: '145px' }}>Employee ID</th>
+                  <th style={{ width: '100px', minWidth: '90px', maxWidth: '105px' }}>Phone</th>
+                  <th style={{ width: '190px', minWidth: '175px', maxWidth: '205px' }}>Assigned Vehicle</th>
+                  <th style={{ width: '130px', minWidth: '125px', maxWidth: '145px' }}>Current Status</th>
+                  <th style={{ width: '170px', minWidth: '155px', maxWidth: '185px' }}>Current Assignment</th>
+                  <th style={{ width: '95px', minWidth: '85px', maxWidth: '100px', textAlign: 'center' }}>Today's Drops</th>
+                  <th style={{ width: '95px', minWidth: '90px', maxWidth: '105px' }}>Account</th>
+                  <th style={{ width: '160px', minWidth: '150px', maxWidth: '180px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -520,13 +466,9 @@ export const DriversRoster: React.FC = () => {
 
                   return (
                     <tr key={drv.id}>
-                      {/* Driver Name & Avatar */}
-                      <td>
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-                          onClick={() => navigate(`/admin/drivers/${drv.id}`)}
-                          title={`View ${drv.name}'s dedicated profile`}
-                        >
+                      {/* 1. Driver Name, Avatar & Email */}
+                      <td style={{ width: '220px', minWidth: '200px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div
                             style={{
                               width: '28px',
@@ -544,19 +486,40 @@ export const DriversRoster: React.FC = () => {
                           >
                             {initials}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '12.5px', color: '#16805D', textDecoration: 'underline', textDecorationColor: '#A7F3D0' }}>
+                          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                            <div
+                              onClick={() => navigate(`/admin/drivers/${drv.id}`)}
+                              style={{
+                                fontWeight: 600,
+                                fontSize: '12.5px',
+                                color: '#16805D',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                              title={drv.name}
+                            >
                               {drv.name}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            <div
+                              style={{
+                                fontSize: '11px',
+                                color: '#64748B',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                              title={drv.email}
+                            >
                               {drv.email}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Employee ID */}
-                      <td>
+                      {/* 2. Employee ID */}
+                      <td style={{ width: '135px', minWidth: '125px', maxWidth: '145px' }}>
                         <code
                           style={{
                             fontFamily: 'monospace',
@@ -567,213 +530,154 @@ export const DriversRoster: React.FC = () => {
                             padding: '2px 6px',
                             borderRadius: '4px',
                             border: '1px solid #BBF7D0',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {drv.employee_id || 'N/A'}
                         </code>
                       </td>
 
-                      {/* Phone */}
-                      <td>
-                        <div style={{ fontSize: '12.5px', color: '#334155', fontWeight: 500 }}>
+                      {/* 3. Phone */}
+                      <td style={{ width: '100px', minWidth: '90px', maxWidth: '105px' }}>
+                        <div
+                          style={{
+                            fontSize: '12px',
+                            color: '#334155',
+                            fontWeight: 500,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={drv.phone || 'No phone number'}
+                        >
                           {drv.phone || '—'}
                         </div>
                       </td>
 
-                      {/* Assigned Vehicle */}
-                      <td>
+                      {/* 4. Assigned Vehicle */}
+                      <td style={{ width: '190px', minWidth: '175px', maxWidth: '205px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Truck size={13} color="#64748B" />
-                          <span style={{ fontWeight: 600, fontSize: '12px', color: '#20342C' }}>
+                          <Truck size={13} color="#64748B" style={{ flexShrink: 0 }} />
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              fontSize: '12px',
+                              color: '#20342C',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
                             {drv.vehicle_number || 'Unallocated'}
                           </span>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748B', marginTop: '1px' }}>
+                        <div
+                          style={{
+                            fontSize: '11px',
+                            color: '#64748B',
+                            marginTop: '1px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
                           {drv.assigned_route || drv.vehicle_type || 'No route assigned'}
                         </div>
                       </td>
 
-                      {/* Operational Status */}
-                      <td>{getOperationalStatusBadge(drv)}</td>
+                      {/* 5. Current Status */}
+                      <td style={{ width: '130px', minWidth: '125px', maxWidth: '145px' }}>
+                        {getOperationalStatusBadge(drv)}
+                      </td>
 
-                      {/* Current Assignment */}
-                      <td>
+                      {/* 6. Current Assignment */}
+                      <td style={{ width: '170px', minWidth: '155px', maxWidth: '185px' }}>
                         {drv.current_order_number ? (
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '12px', color: '#0369A1' }}>
+                          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: '12px',
+                                color: '#0369A1',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
                               {drv.current_order_number}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            <div
+                              style={{
+                                fontSize: '11px',
+                                color: '#64748B',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
                               {drv.current_shop_name || 'En Route'}
                             </div>
                           </div>
                         ) : (
-                          <span style={{ fontSize: '11.5px', color: '#94A3B8' }}>
+                          <span style={{ fontSize: '11.5px', color: '#94A3B8', whiteSpace: 'nowrap' }}>
                             {drv.is_active ? 'Unassigned • Standby' : 'Inactive • Off Duty'}
                           </span>
                         )}
                       </td>
 
-                      {/* Today's Deliveries */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {/* 7. Today's Drops */}
+                      <td style={{ width: '95px', minWidth: '85px', maxWidth: '100px', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '3px' }}>
                           <span
                             style={{
                               fontVariantNumeric: 'tabular-nums',
                               fontWeight: 700,
-                              fontSize: '12.5px',
+                              fontSize: '13.5px',
                               color: (drv.today_deliveries || 0) > 0 ? '#16805D' : '#64748B',
                             }}
                           >
                             {drv.today_deliveries || 0}
                           </span>
-                          <span style={{ fontSize: '11px', color: '#64748B' }}>drops</span>
+                          <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 500 }}>drops</span>
                         </div>
                       </td>
 
-                      {/* Account Status Badge */}
-                      <td>
+                      {/* 8. Account */}
+                      <td style={{ width: '95px', minWidth: '90px', maxWidth: '105px' }}>
                         <Badge variant={drv.is_active ? 'success' : 'danger'}>
                           {drv.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </td>
 
-                      {/* Actions Group */}
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                          {/* View Details - Full Page Navigation */}
+                      {/* 9. Actions - Only Details Button */}
+                      <td style={{ width: '160px', minWidth: '150px', maxWidth: '180px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                           <button
                             type="button"
                             onClick={() => {
                               navigate(`/admin/drivers/${drv.id}`);
                             }}
                             className="btn btn-secondary btn-table-action"
-                            style={{ height: '26px', padding: '0 6px' }}
-                            title="View Full Driver Profile"
-                            aria-label={`View details for ${drv.name}`}
-                          >
-                            <Eye size={12} />
-                            <span>Details</span>
-                          </button>
-
-                          {/* Edit Driver */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedDriver(drv);
-                              setIsEditModalOpen(true);
-                            }}
-                            className="btn-icon-square"
-                            style={{ width: '26px', height: '26px' }}
-                            title="Edit Driver Profile"
-                            aria-label={`Edit ${drv.name}`}
-                          >
-                            <Pencil size={12} />
-                          </button>
-
-                          {/* Assign Vehicle */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedDriver(drv);
-                              setIsVehicleModalOpen(true);
-                            }}
-                            className="btn-icon-square"
-                            style={{ width: '26px', height: '26px' }}
-                            title="Assign Vehicle"
-                            aria-label={`Assign vehicle to ${drv.name}`}
-                          >
-                            <Truck size={12} />
-                          </button>
-
-                          {/* Reset Password */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedDriver(drv);
-                              setIsPasswordModalOpen(true);
-                            }}
-                            className="btn-icon-square"
-                            style={{ width: '26px', height: '26px' }}
-                            title="Reset Mobile Password"
-                            aria-label={`Reset password for ${drv.name}`}
-                          >
-                            <Key size={12} />
-                          </button>
-
-                          {/* Activate / Deactivate Toggle */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleDriverStatus(drv)}
                             style={{
-                              padding: '4px',
-                              borderRadius: '5px',
-                              border: '1px solid',
-                              borderColor: drv.is_active ? '#FDE68A' : '#BBF7D0',
-                              backgroundColor: drv.is_active ? '#FFFBEB' : '#F0FDF4',
-                              color: drv.is_active ? '#D97706' : '#16805D',
-                              cursor: 'pointer',
-                              width: '26px',
-                              height: '26px',
+                              height: '28px',
+                              padding: '0 12px',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
+                              gap: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              color: '#16805D',
+                              backgroundColor: '#F0FDF4',
+                              border: '1px solid #BBF7D0',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
                             }}
-                            title={drv.is_active ? 'Deactivate Driver' : 'Reactivate Driver'}
-                            aria-label={drv.is_active ? 'Deactivate Driver' : 'Reactivate Driver'}
+                            title={`View full details for ${drv.name}`}
+                            aria-label={`View full details for ${drv.name}`}
                           >
-                            <Power size={12} />
+                            <Eye size={13} />
+                            <span>Details</span>
                           </button>
-
-                          {/* Delete / Archive (Strict Deactivation-First Rule) */}
-                          {drv.is_active ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                showToast('Driver must be deactivated before they can be deleted.', 'error');
-                              }}
-                              style={{
-                                padding: '4px',
-                                borderRadius: '5px',
-                                border: '1px solid #E2E8F0',
-                                backgroundColor: '#F8FAFC',
-                                color: '#94A3B8',
-                                cursor: 'not-allowed',
-                                opacity: 0.6,
-                                width: '26px',
-                                height: '26px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                              title="Deactivate this driver before deleting"
-                              aria-label="Deactivate this driver before deleting"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteInitiate(drv)}
-                              style={{
-                                padding: '4px',
-                                borderRadius: '5px',
-                                border: '1px solid #FECACA',
-                                backgroundColor: '#FEF2F2',
-                                color: '#DC2626',
-                                cursor: 'pointer',
-                                width: '26px',
-                                height: '26px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                              title="Delete / Archive Inactive Driver"
-                              aria-label={`Delete inactive driver ${drv.name}`}
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -810,57 +714,6 @@ export const DriversRoster: React.FC = () => {
         }}
       />
 
-      <EditDriverModal
-        isOpen={isEditModalOpen}
-        driver={selectedDriver}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedDriver(null);
-        }}
-        onSuccess={(updated) => {
-          showToast(`Driver profile updated for ${updated.name}`);
-          fetchRoster();
-        }}
-      />
-
-      <AssignVehicleModal
-        isOpen={isVehicleModalOpen}
-        driver={selectedDriver}
-        onClose={() => {
-          setIsVehicleModalOpen(false);
-          setSelectedDriver(null);
-        }}
-        onSuccess={(updated) => {
-          showToast(`Vehicle allocated to ${updated.name}`);
-          fetchRoster();
-        }}
-      />
-
-      <ResetPasswordModal
-        isOpen={isPasswordModalOpen}
-        driver={selectedDriver}
-        onClose={() => {
-          setIsPasswordModalOpen(false);
-          setSelectedDriver(null);
-        }}
-        onSuccess={() => {
-          showToast('Driver mobile password reset successfully');
-        }}
-      />
-
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Delete Fleet Driver"
-        entityName={driverToDelete?.name || 'Driver'}
-        entityType="Driver Personnel"
-        entityIdentifier={driverToDelete?.employee_id}
-        isActive={Boolean(driverToDelete?.is_active)}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setDriverToDelete(null);
-        }}
-        onConfirm={handleConfirmDelete}
-      />
     </div>
   );
 };

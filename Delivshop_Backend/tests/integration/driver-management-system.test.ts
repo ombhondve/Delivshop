@@ -33,6 +33,17 @@ describe('DELIVSHOP Driver Management System - End-to-End Suite', () => {
       });
     });
 
+    // Clean up any previous test driver with same email
+    const existing = await dbPool.query("SELECT id FROM users WHERE email = 'ganesh.patil.test@delivshop.com'");
+    for (const row of existing.rows) {
+      await dbPool.query('DELETE FROM driver_attendance WHERE driver_id = $1', [row.id]);
+      await dbPool.query('DELETE FROM delivery_collections WHERE driver_id = $1', [row.id]);
+      await dbPool.query('DELETE FROM delivery_runs WHERE driver_id = $1', [row.id]);
+      await dbPool.query('DELETE FROM driver_documents WHERE driver_id = $1', [row.id]);
+      await dbPool.query('DELETE FROM driver_salary_configs WHERE driver_id = $1', [row.id]);
+      await dbPool.query('DELETE FROM users WHERE id = $1', [row.id]);
+    }
+
     // Query a test shop
     const shopRes = await dbPool.query('SELECT id FROM shops WHERE deleted_at IS NULL LIMIT 1');
     testShopId = shopRes.rows[0]?.id;
@@ -44,6 +55,8 @@ describe('DELIVSHOP Driver Management System - End-to-End Suite', () => {
       await dbPool.query('DELETE FROM driver_attendance WHERE driver_id = $1', [createdDriverId]);
       await dbPool.query('DELETE FROM delivery_collections WHERE driver_id = $1', [createdDriverId]);
       await dbPool.query('DELETE FROM delivery_runs WHERE driver_id = $1', [createdDriverId]);
+      await dbPool.query('DELETE FROM driver_documents WHERE driver_id = $1', [createdDriverId]);
+      await dbPool.query('DELETE FROM driver_salary_configs WHERE driver_id = $1', [createdDriverId]);
       await dbPool.query('DELETE FROM users WHERE id = $1', [createdDriverId]);
     }
     await new Promise<void>((resolve) => {
@@ -83,7 +96,7 @@ describe('DELIVSHOP Driver Management System - End-to-End Suite', () => {
     expect(res.status).toBe(201);
     const json = await res.json();
     expect(json.success).toBe(true);
-    expect(json.data.employee_id).toMatch(/^EMP-DRV-\d{4,}$/);
+    expect(json.data.employee_id).toMatch(/^EMP-\d{10}$/);
     expect(json.data.city).toBe('Pune');
     expect(json.data.state).toBe('Maharashtra');
     expect(json.data.license_class).toBe('LMV-COMMERCIAL');
