@@ -288,4 +288,136 @@ export const deliveryController = {
       next(err);
     }
   },
+
+  async completeDelivery(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driverId = req.user!.id;
+      const result = await deliveryService.completeDelivery(
+        {
+          deliveryId: req.params.deliveryId,
+          driverId,
+          status: req.body.status || 'DELIVERED',
+          recipientName: req.body.recipientName,
+          recipientPhone: req.body.recipientPhone,
+          deliveredCratesCount: req.body.deliveredCratesCount ? parseInt(req.body.deliveredCratesCount, 10) : 0,
+          returnedCratesCount: req.body.returnedCratesCount ? parseInt(req.body.returnedCratesCount, 10) : 0,
+          shortageReason: req.body.shortageReason,
+          collectedAmount: req.body.collectedAmount ? parseFloat(req.body.collectedAmount) : 0,
+          paymentMethod: req.body.paymentMethod,
+          transactionReference: req.body.transactionReference,
+          notes: req.body.notes,
+          proofOfDeliveryUrl: req.body.proofOfDeliveryUrl,
+          signatureUrl: req.body.signatureUrl,
+          latitude: req.body.latitude,
+          longitude: req.body.longitude,
+        },
+        req.ip
+      );
+      sendSuccess(res, result, 'Delivery completed and recorded successfully');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async recordVehicleInspection(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driverId = req.user!.id;
+      const inspection = await deliveryService.recordVehicleInspection(
+        {
+          vehicleId: req.body.vehicleId,
+          driverId,
+          runId: req.body.runId,
+          odometerKm: parseInt(req.body.odometerKm, 10),
+          fuelLevelPercent: req.body.fuelLevelPercent !== undefined ? parseInt(req.body.fuelLevelPercent, 10) : undefined,
+          refrigerationTempC: req.body.refrigerationTempC !== undefined ? parseFloat(req.body.refrigerationTempC) : undefined,
+          isTyresOk: req.body.isTyresOk !== false,
+          isLightsOk: req.body.isLightsOk !== false,
+          isBodyOk: req.body.isBodyOk !== false,
+          isRefrigerationOk: req.body.isRefrigerationOk !== false,
+          isSafetyKitOk: req.body.isSafetyKitOk !== false,
+          isDocsValid: req.body.isDocsValid !== false,
+          passed: req.body.passed !== false,
+          defectsReported: req.body.defectsReported,
+          photoUrl: req.body.photoUrl,
+        },
+        req.ip
+      );
+      sendSuccess(res, inspection, 'Vehicle pre-dispatch inspection recorded', 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getRecentVehicleInspections(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driverId = req.user?.role === 'DRIVER' ? req.user.id : (req.query.driverId as string);
+      const inspections = await deliveryService.getRecentVehicleInspections(driverId);
+      sendSuccess(res, inspections);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async recordIncident(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driverId = req.user!.id;
+      const incident = await deliveryService.recordIncident(
+        {
+          driverId,
+          runId: req.body.runId,
+          stopId: req.body.stopId,
+          shopId: req.body.shopId,
+          vehicleId: req.body.vehicleId,
+          category: req.body.category,
+          severity: req.body.severity,
+          title: req.body.title,
+          description: req.body.description,
+          evidenceUrl: req.body.evidenceUrl,
+          latitude: req.body.latitude,
+          longitude: req.body.longitude,
+        },
+        req.ip
+      );
+      sendSuccess(res, incident, 'Incident reported and assigned for review', 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getDriverIncidents(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driverId = req.user?.role === 'DRIVER' ? req.user.id : (req.query.driverId as string);
+      const incidents = await deliveryService.getDriverIncidents(driverId);
+      sendSuccess(res, incidents);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async recordReconciliation(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const driverId = req.user!.id;
+      const rec = await deliveryService.recordReconciliation(
+        {
+          runId: req.body.runId,
+          driverId,
+          totalStopsPlanned: parseInt(req.body.totalStopsPlanned || '0', 10),
+          totalStopsCompleted: parseInt(req.body.totalStopsCompleted || '0', 10),
+          totalStopsFailed: parseInt(req.body.totalStopsFailed || '0', 10),
+          totalCratesDispatched: parseInt(req.body.totalCratesDispatched || '0', 10),
+          totalCratesDelivered: parseInt(req.body.totalCratesDelivered || '0', 10),
+          totalCratesReturned: parseInt(req.body.totalCratesReturned || '0', 10),
+          totalCashExpected: parseFloat(req.body.totalCashExpected || '0'),
+          totalCashCollected: parseFloat(req.body.totalCashCollected || '0'),
+          totalUpiCollected: parseFloat(req.body.totalUpiCollected || '0'),
+          totalAmountDeposited: parseFloat(req.body.totalAmountDeposited || '0'),
+          notes: req.body.notes,
+        },
+        req.ip
+      );
+      sendSuccess(res, rec, 'Shift reconciliation submitted and shift concluded', 201);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

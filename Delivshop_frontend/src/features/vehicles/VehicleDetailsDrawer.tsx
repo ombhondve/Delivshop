@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  X,
   Truck,
   FileText,
   Wrench,
@@ -15,13 +14,22 @@ import {
   Thermometer,
   Gauge,
   Package,
+  Pencil,
+  Power,
+  ExternalLink,
+  ShieldCheck,
+  Download,
 } from 'lucide-react';
+import { Drawer, DrawerTab } from '../../components/common/Drawer';
+import { Badge } from '../../components/common/Badge';
+import { Button } from '../../components/common/Button';
 import { api } from '../../services/api/endpoints';
 import { Vehicle } from '../../types';
-import { Badge } from '../../components/common/Badge';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
 import { AddMaintenanceModal } from './AddMaintenanceModal';
+import { EditVehicleModal } from './EditVehicleModal';
 import { formatDate, formatCurrency } from '../../utils/formatters';
+import { useNavigation } from '../../context/NavigationContext';
 
 interface VehicleDetailsDrawerProps {
   vehicleId: string | null;
@@ -34,17 +42,19 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
   onClose,
   onVehicleUpdated,
 }) => {
+  const { navigate } = useNavigation();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'maintenance' | 'assignments'>('overview');
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   // Sub-modals
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
-  const fetchVehicleDetails = async () => {
+  const fetchVehicleDetails = useCallback(async () => {
     if (!vehicleId) return;
     try {
       setLoading(true);
@@ -57,15 +67,16 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [vehicleId]);
 
   useEffect(() => {
     if (vehicleId) {
       fetchVehicleDetails();
+      setActiveTab('overview');
     } else {
       setVehicle(null);
     }
-  }, [vehicleId]);
+  }, [vehicleId, fetchVehicleDetails]);
 
   if (!vehicleId) return null;
 
@@ -78,7 +89,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
       await fetchVehicleDetails();
       onVehicleUpdated();
     } catch (err: any) {
-      alert(err?.message || 'Failed to update vehicle status');
+      setError(err?.message || 'Failed to update vehicle status');
     } finally {
       setStatusUpdating(false);
     }
@@ -87,14 +98,14 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
-        return <Badge variant="success">Available</Badge>;
+        return <Badge variant="success">Available for Run</Badge>;
       case 'ASSIGNED':
-        return <Badge variant="navy">Assigned to Run</Badge>;
+        return <Badge variant="navy">Dispatched on Run</Badge>;
       case 'UNDER_MAINTENANCE':
         return <Badge variant="warning">In Workshop</Badge>;
       case 'INACTIVE':
       default:
-        return <Badge variant="neutral">Inactive</Badge>;
+        return <Badge variant="neutral">Inactive / Decommissioned</Badge>;
     }
   };
 
@@ -107,409 +118,589 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
       case 'EXPIRED':
         return <Badge variant="danger">Expired</Badge>;
       default:
-        return <Badge variant="neutral">Pending Verification</Badge>;
+        return <Badge variant="neutral">Pending Review</Badge>;
     }
   };
 
+  const drawerTabs: DrawerTab[] = [
+    { id: 'overview', label: 'Overview & Specs', icon: <Truck size={14} /> },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={14} />,
+      badge: vehicle?.documents?.length || 0,
+    },
+    {
+      id: 'maintenance',
+      label: 'Maintenance',
+      icon: <Wrench size={14} />,
+      badge: vehicle?.maintenance?.length || 0,
+    },
+    {
+      id: 'assignments',
+      label: 'Runs History',
+      icon: <Calendar size={14} />,
+      badge: vehicle?.assignments?.length || 0,
+    },
+  ];
+
   return (
     <>
-      <div className="drawer-backdrop" onClick={onClose} />
-      <div className="drawer-panel" style={{ width: '680px', maxWidth: '90vw' }}>
-        {/* Header */}
-        <div className="drawer-header" style={{ padding: '20px 24px', borderBottom: '1px solid #D6D3C8' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div className="modal-icon-badge" style={{ background: '#ECFDF5', color: '#0F172A', padding: '10px', borderRadius: '8px' }}>
-                <Truck size={24} />
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#0F172A' }}>
-                    {vehicle?.registration_number || 'Loading Vehicle...'}
-                  </h2>
-                  {vehicle && getStatusBadge(vehicle.status)}
-                </div>
-                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>
-                  Asset ID: <strong>{vehicle?.vehicle_code}</strong> • {vehicle?.make_model}
-                </p>
-              </div>
-            </div>
+      <Drawer
+        isOpen={Boolean(vehicleId)}
+        onClose={onClose}
+        maxWidth="760px"
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{vehicle?.registration_number || 'Loading Vehicle...'}</span>
+            {vehicle && getStatusBadge(vehicle.status)}
+          </div>
+        }
+        subtitle={
+          vehicle ? (
+            <span>
+              Asset Code: <strong>{vehicle.vehicle_code}</strong> • {vehicle.make_model} • {vehicle.depot}
+            </span>
+          ) : undefined
+        }
+        icon={<Truck size={20} />}
+        tabs={drawerTabs}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        headerActions={
+          vehicle && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary"
-                onClick={fetchVehicleDetails}
-                title="Refresh details"
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+                icon={<Pencil size={13} />}
               >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              </button>
-              <button type="button" className="btn-close" onClick={onClose}>
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Action Sub-bar */}
-          {vehicle && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed #D6D3C8' }}>
-              <div style={{ fontSize: '12px', color: '#64748B' }}>
-                Operational State:{' '}
-                <strong style={{ color: vehicle.is_active ? '#15803D' : '#94A3B8' }}>
-                  {vehicle.is_active ? 'Active Fleet Resource' : 'Decommissioned / Inactive'}
-                </strong>
-              </div>
-              <button
-                type="button"
-                className={`btn btn-xs ${vehicle.is_active ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                Edit Specs
+              </Button>
+              <Button
+                variant={vehicle.is_active ? 'secondary' : 'primary'}
+                size="sm"
                 onClick={handleStatusToggle}
-                disabled={statusUpdating}
+                loading={statusUpdating}
+                icon={<Power size={13} />}
               >
-                {statusUpdating ? 'Updating...' : vehicle.is_active ? 'Deactivate Vehicle' : 'Activate Vehicle'}
-              </button>
+                {vehicle.is_active ? 'Deactivate' : 'Activate'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  navigate(`/admin/vehicles/${vehicle.id}`);
+                }}
+                icon={<ExternalLink size={13} />}
+                title="Open full page record"
+              >
+                Full Page
+              </Button>
             </div>
-          )}
-
-          {/* Navigation Tabs */}
-          <div className="tab-nav" style={{ display: 'flex', gap: '8px', marginTop: '16px', borderBottom: 'none' }}>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-              onClick={() => setActiveTab('overview')}
-            >
-              Overview & Specs
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'documents' ? 'active' : ''}`}
-              onClick={() => setActiveTab('documents')}
-            >
-              Documents ({vehicle?.documents?.length || 0})
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'maintenance' ? 'active' : ''}`}
-              onClick={() => setActiveTab('maintenance')}
-            >
-              Maintenance ({vehicle?.maintenance?.length || 0})
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'assignments' ? 'active' : ''}`}
-              onClick={() => setActiveTab('assignments')}
-            >
-              Assignments History
-            </button>
+          )
+        }
+        metrics={
+          vehicle && (
+            <div className="drawer-metric-grid">
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Payload Capacity</div>
+                <div className="drawer-metric-value">{vehicle.capacity_kg} KG</div>
+              </div>
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Crate Capacity</div>
+                <div className="drawer-metric-value">{vehicle.capacity_crates} Crates</div>
+              </div>
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Odometer</div>
+                <div className="drawer-metric-value">
+                  {Number(vehicle.current_odometer_km || 0).toLocaleString('en-IN')} KM
+                </div>
+              </div>
+              <div className="drawer-metric-card">
+                <div className="drawer-metric-label">Cold-Chain Unit</div>
+                <div
+                  className="drawer-metric-value"
+                  style={{ color: vehicle.is_refrigerated ? 'var(--color-primary)' : 'var(--text-secondary)' }}
+                >
+                  {vehicle.is_refrigerated
+                    ? `${vehicle.temperature_min_c ?? -18}°C to ${vehicle.temperature_max_c ?? 4}°C`
+                    : 'Ambient Dry'}
+                </div>
+              </div>
+            </div>
+          )
+        }
+      >
+        {error && (
+          <div className="form-error-banner" style={{ marginBottom: '16px' }}>
+            <ShieldAlert size={16} />
+            <span>{error}</span>
           </div>
-        </div>
+        )}
 
-        {/* Content Body */}
-        <div className="drawer-body" style={{ padding: '24px', overflowY: 'auto', maxHeight: 'calc(100vh - 180px)' }}>
-          {error && (
-            <div className="form-error-banner" style={{ marginBottom: '16px' }}>
-              <ShieldAlert size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {loading && !vehicle ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
-              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px auto' }} />
-              <p>Loading vehicle profile & telemetry...</p>
-            </div>
-          ) : vehicle ? (
-            <>
-              {/* TAB 1: OVERVIEW & SPECS */}
-              {activeTab === 'overview' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {/* Active Delivery Run Banner if currently dispatched */}
-                  {vehicle.active_run_id && (
-                    <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Clock size={18} style={{ color: '#2563EB' }} />
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#1E3A8A' }}>
-                            Currently Assigned to Run {vehicle.active_run_code}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#3B82F6' }}>
-                            Assigned Driver: {vehicle.active_driver_name || 'Designated Fleet Personnel'}
-                          </div>
+        {loading && !vehicle ? (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-secondary)' }}>
+            <RefreshCw size={24} className="spin-icon" style={{ margin: '0 auto 12px auto' }} />
+            <p style={{ margin: 0, fontSize: '13.5px' }}>Loading vehicle profile & telemetry...</p>
+          </div>
+        ) : vehicle ? (
+          <>
+            {/* TAB 1: OVERVIEW & SPECS */}
+            {activeTab === 'overview' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                {/* Active Run Banner if dispatched */}
+                {vehicle.active_run_id && (
+                  <div
+                    style={{
+                      background: 'var(--color-primary-subtle)',
+                      border: '1px solid #A7F3D0',
+                      borderRadius: '8px',
+                      padding: '14px 18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Clock size={18} style={{ color: 'var(--color-primary)' }} />
+                      <div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          Currently Dispatched on Run {vehicle.active_run_code}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          Assigned Driver: <strong>{vehicle.active_driver_name || 'Designated Driver'}</strong>
+                          {vehicle.active_driver_phone && ` (${vehicle.active_driver_phone})`}
                         </div>
                       </div>
-                      <Badge variant="navy">Dispatched</Badge>
                     </div>
-                  )}
+                    <Badge variant="navy">In Transit</Badge>
+                  </div>
+                )}
 
-                  {/* Specifications Card */}
-                  <div className="card" style={{ padding: '18px', background: '#F0FDF4' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 14px 0', color: '#0F172A' }}>
-                      Technical Specifications & Load Rating
-                    </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', fontSize: '13px' }}>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Vehicle Classification</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.vehicle_type}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Propulsion / Fuel Type</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.fuel_type}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Payload Capacity (Gross)</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.capacity_kg.toLocaleString()} KG</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Dairy Crates Capacity</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.capacity_crates} standard crates</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Refrigeration Unit</span>
-                        <strong style={{ color: vehicle.is_refrigerated ? '#0284C7' : '#64748B' }}>
-                          {vehicle.is_refrigerated ? 'Active Temperature Controlled (Chiller)' : 'Ambient / Insulated Cargo'}
-                        </strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Current Odometer Reading</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.current_odometer_km?.toLocaleString()} KM</strong>
-                      </div>
-                    </div>
+                {/* Specs Card */}
+                <div
+                  style={{
+                    backgroundColor: 'var(--bg-hover)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    padding: '18px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Truck size={14} style={{ color: 'var(--color-primary)' }} />
+                    Asset Specifications & Ratings
                   </div>
 
-                  {/* Logistics Base */}
-                  <div className="card" style={{ padding: '18px', background: '#F0FDF4' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 14px 0', color: '#0F172A' }}>
-                      Operational Location & Home Depot
-                    </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', fontSize: '13px' }}>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Home Distribution Base</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.depot}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Operational City / State</span>
-                        <strong style={{ color: '#0F172A' }}>{vehicle.city}, {vehicle.state}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  {vehicle.notes && (
-                    <div className="card" style={{ padding: '16px', background: '#FFFFFF', border: '1px solid #D6D3C8' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', display: 'block', marginBottom: '6px' }}>
-                        Asset Equipment Notes
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: '14px',
+                      fontSize: '13px',
+                    }}
+                  >
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
+                        Vehicle Classification
                       </span>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#334155' }}>{vehicle.notes}</p>
+                      <strong style={{ color: 'var(--text-primary)' }}>{vehicle.vehicle_type}</strong>
+                    </div>
+
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
+                        Propulsion / Fuel Type
+                      </span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{vehicle.fuel_type}</strong>
+                    </div>
+
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
+                        Manufacturing Year
+                      </span>
+                      <strong style={{ color: 'var(--text-primary)' }}>
+                        {vehicle.manufacturing_year || 'Not recorded'}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
+                        Callsign / Handle
+                      </span>
+                      <strong style={{ color: 'var(--text-primary)' }}>
+                        {vehicle.nickname || 'None assigned'}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
+                        Base Operations Depot
+                      </span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{vehicle.depot}</strong>
+                    </div>
+
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
+                        Registered On
+                      </span>
+                      <strong style={{ color: 'var(--text-primary)' }}>
+                        {formatDate(vehicle.created_at || '')}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {vehicle.notes && (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid var(--border-color)',
+                      }}
+                    >
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block', marginBottom: '4px' }}>
+                        Operational Notes:
+                      </span>
+                      <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                        {vehicle.notes}
+                      </p>
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* TAB 2: DOCUMENTS */}
-              {activeTab === 'documents' && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Statutory Commercial Documents</h4>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary"
+                {/* Quick actions row */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDocModalOpen(true)}
+                    icon={<FileText size={14} />}
+                    style={{ flex: 1 }}
+                  >
+                    Upload Document
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMaintModalOpen(true)}
+                    icon={<Wrench size={14} />}
+                    style={{ flex: 1 }}
+                  >
+                    Log Maintenance
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: COMPLIANCE DOCUMENTS */}
+            {activeTab === 'documents' && (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '14px',
+                  }}
+                >
+                  <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    Regulatory compliance records for this asset
+                  </span>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setIsDocModalOpen(true)}
+                    icon={<Plus size={14} />}
+                  >
+                    Upload Document
+                  </Button>
+                </div>
+
+                {!vehicle.documents || vehicle.documents.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '36px 16px',
+                      backgroundColor: 'var(--bg-hover)',
+                      borderRadius: '8px',
+                      border: '1px dashed var(--border-color)',
+                    }}
+                  >
+                    <FileText size={32} style={{ margin: '0 auto 8px auto', opacity: 0.4 }} />
+                    <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      No compliance documents uploaded yet.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setIsDocModalOpen(true)}
                     >
-                      <Plus size={14} /> Add Document
-                    </button>
+                      Attach RC or Insurance
+                    </Button>
                   </div>
-
-                  {(!vehicle.documents || vehicle.documents.length === 0) ? (
-                    <div style={{ textAlign: 'center', padding: '30px', background: '#F0FDF4', borderRadius: '8px', color: '#64748B' }}>
-                      <FileText size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
-                      <p style={{ margin: 0, fontSize: '13px' }}>No documents uploaded yet for this vehicle asset.</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {vehicle.documents.map((doc) => (
-                        <div
-                          key={doc.id}
-                          style={{
-                            padding: '14px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #D6D3C8',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <strong style={{ fontSize: '13px', color: '#0F172A' }}>
-                                {doc.document_type === 'RC'
-                                  ? 'Registration Certificate (RC)'
-                                  : doc.document_type === 'INSURANCE'
-                                  ? 'Motor Insurance Policy'
-                                  : doc.document_type === 'PUC'
-                                  ? 'Pollution Under Control (PUC)'
-                                  : doc.document_type === 'FITNESS'
-                                  ? 'Commercial Fitness Certificate'
-                                  : 'Carrier Permit'}
-                              </strong>
-                              {getDocBadge(doc.verification_status)}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-                              Doc No: <strong>{doc.document_number}</strong>
-                              {doc.expiry_date && (
-                                <span style={{ marginLeft: '12px' }}>
-                                  Expires: <strong style={{ color: doc.verification_status === 'EXPIRED' ? '#DC2626' : '#0F172A' }}>{formatDate(doc.expiry_date)}</strong>
-                                </span>
-                              )}
-                              {doc.verifier_name && (
-                                <span style={{ marginLeft: '12px' }}>
-                                  Verified by: {doc.verifier_name}
-                                </span>
-                              )}
-                            </div>
-                            {doc.notes && (
-                              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#64748B' }}>
-                                Notes: {doc.notes}
-                              </p>
-                            )}
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {vehicle.documents.map((doc: any) => (
+                      <div
+                        key={doc.id}
+                        style={{
+                          padding: '12px 16px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                              {doc.document_type}
+                            </strong>
+                            {getDocBadge(doc.verification_status)}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '12px',
+                              color: 'var(--text-secondary)',
+                              marginTop: '3px',
+                              fontFamily: 'monospace',
+                            }}
+                          >
+                            Ref: {doc.document_number}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            Expires: <strong>{doc.expiry_date ? formatDate(doc.expiry_date) : 'Permanent'}</strong>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {/* TAB 3: MAINTENANCE */}
-              {activeTab === 'maintenance' && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Fleet Maintenance Logs</h4>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary"
+                        {doc.storage_path || doc.file_url ? (
+                          <span style={{ fontSize: '11.5px', color: 'var(--color-primary)', fontWeight: 600 }}>
+                            Attached
+                          </span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: MAINTENANCE LOGBOOK */}
+            {activeTab === 'maintenance' && (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '14px',
+                  }}
+                >
+                  <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    Authorized garage inspection & service history
+                  </span>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setIsMaintModalOpen(true)}
+                    icon={<Plus size={14} />}
+                  >
+                    Log Service Entry
+                  </Button>
+                </div>
+
+                {!vehicle.maintenance || vehicle.maintenance.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '36px 16px',
+                      backgroundColor: 'var(--bg-hover)',
+                      borderRadius: '8px',
+                      border: '1px dashed var(--border-color)',
+                    }}
+                  >
+                    <Wrench size={32} style={{ margin: '0 auto 8px auto', opacity: 0.4 }} />
+                    <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      No service or maintenance records on file.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setIsMaintModalOpen(true)}
                     >
-                      <Plus size={14} /> Record Service
-                    </button>
+                      Record First Service
+                    </Button>
                   </div>
-
-                  {(!vehicle.maintenance || vehicle.maintenance.length === 0) ? (
-                    <div style={{ textAlign: 'center', padding: '30px', background: '#F0FDF4', borderRadius: '8px', color: '#64748B' }}>
-                      <Wrench size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
-                      <p style={{ margin: 0, fontSize: '13px' }}>No maintenance records logged for this vehicle.</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {vehicle.maintenance.map((m) => (
-                        <div
-                          key={m.id}
-                          style={{
-                            padding: '14px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #D6D3C8',
-                            borderRadius: '8px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <strong style={{ fontSize: '13px', color: '#0F172A' }}>{m.service_type}</strong>
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#15803D' }}>
-                              {formatCurrency(m.cost)}
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {vehicle.maintenance.map((m: any) => (
+                      <div
+                        key={m.id}
+                        style={{
+                          padding: '12px 16px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                              {m.service_type}
+                            </strong>
+                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                              ({formatDate(m.service_date)})
                             </span>
                           </div>
-                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-                            Service Date: <strong>{formatDate(m.service_date)}</strong> • Odometer:{' '}
-                            <strong>{m.odometer_km?.toLocaleString()} KM</strong>
-                            {m.service_center && <span> • Workshop: {m.service_center}</span>}
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                            {m.service_center || 'Authorized Service Workshop'} •{' '}
+                            <strong>{Number(m.odometer_km || 0).toLocaleString('en-IN')} KM</strong>
                           </div>
-                          {m.description && (
-                            <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#334155' }}>
-                              {m.description}
-                            </p>
-                          )}
-                          {m.next_service_date && (
-                            <div style={{ marginTop: '6px', fontSize: '11px', color: '#0369A1' }}>
-                              Next Service Scheduled: <strong>{formatDate(m.next_service_date)}</strong>
-                            </div>
-                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {/* TAB 4: ASSIGNMENTS HISTORY */}
-              {activeTab === 'assignments' && (
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 16px 0' }}>
-                    Historical Delivery Runs Dispatched
-                  </h4>
-                  {(!vehicle.assignments || vehicle.assignments.length === 0) ? (
-                    <div style={{ textAlign: 'center', padding: '30px', background: '#F0FDF4', borderRadius: '8px', color: '#64748B' }}>
-                      <Calendar size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
-                      <p style={{ margin: 0, fontSize: '13px' }}>No operational delivery runs recorded yet.</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {vehicle.assignments.map((run: any) => (
-                        <div
-                          key={run.id}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #D6D3C8',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <strong style={{ fontSize: '13px', color: '#0F172A' }}>{run.run_code}</strong>
-                              <Badge variant={run.status === 'COMPLETED' ? 'success' : run.status === 'IN_PROGRESS' ? 'navy' : 'neutral'}>
-                                {run.status}
-                              </Badge>
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-                              Route: <strong>{run.route_name}</strong> • Driver: <strong>{run.driver_name}</strong> ({run.driver_employee_id})
-                            </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                            {formatCurrency(Number(m.cost) || 0)}
                           </div>
-                          <div style={{ textAlign: 'right', fontSize: '12px', color: '#64748B' }}>
-                            <div>Date: <strong>{formatDate(run.delivery_date)}</strong></div>
-                            <div style={{ fontSize: '11px' }}>{run.completed_stops_count}/{run.planned_stops_count} stops</div>
+                          {m.next_service_date && (
+                            <div style={{ fontSize: '11px', color: '#B45309' }}>
+                              Next due: {formatDate(m.next_service_date)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 4: ASSIGNMENTS HISTORY */}
+            {activeTab === 'assignments' && (
+              <div>
+                <h4 style={{ fontSize: '13.5px', fontWeight: 700, margin: '0 0 14px 0', color: 'var(--text-primary)' }}>
+                  Delivery Runs Dispatched
+                </h4>
+                {!vehicle.assignments || vehicle.assignments.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '36px 16px',
+                      backgroundColor: 'var(--bg-hover)',
+                      borderRadius: '8px',
+                      border: '1px dashed var(--border-color)',
+                    }}
+                  >
+                    <Calendar size={32} style={{ margin: '0 auto 8px auto', opacity: 0.4 }} />
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      No operational delivery runs recorded yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {vehicle.assignments.map((run: any) => (
+                      <div
+                        key={run.id}
+                        style={{
+                          padding: '12px 16px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                              {run.run_code}
+                            </strong>
+                            <Badge
+                              variant={
+                                run.status === 'COMPLETED'
+                                  ? 'success'
+                                  : run.status === 'IN_PROGRESS'
+                                  ? 'navy'
+                                  : 'neutral'
+                              }
+                            >
+                              {run.status}
+                            </Badge>
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                            Route: <strong>{run.route_name}</strong> • Driver: <strong>{run.driver_name}</strong>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          ) : null}
-        </div>
-      </div>
+                        <div style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          <div>{formatDate(run.delivery_date)}</div>
+                          <div style={{ fontSize: '11px' }}>
+                            {run.completed_stops_count}/{run.planned_stops_count} stops
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        ) : null}
+      </Drawer>
 
       {/* Sub Modals */}
       {vehicle && (
         <>
+          <EditVehicleModal
+            isOpen={isEditModalOpen}
+            vehicle={vehicle}
+            onClose={() => setIsEditModalOpen(false)}
+            onVehicleUpdated={() => {
+              fetchVehicleDetails();
+              onVehicleUpdated();
+            }}
+          />
           <AddVehicleDocumentModal
             isOpen={isDocModalOpen}
             vehicleId={vehicle.id}
             registrationNumber={vehicle.registration_number}
             onClose={() => setIsDocModalOpen(false)}
-            onDocumentAdded={fetchVehicleDetails}
+            onDocumentAdded={() => {
+              fetchVehicleDetails();
+              onVehicleUpdated();
+            }}
           />
           <AddMaintenanceModal
             isOpen={isMaintModalOpen}
             vehicleId={vehicle.id}
             registrationNumber={vehicle.registration_number}
-            currentOdometerKm={vehicle.current_odometer_km}
+            currentOdometerKm={vehicle.current_odometer_km || 0}
             onClose={() => setIsMaintModalOpen(false)}
-            onMaintenanceAdded={fetchVehicleDetails}
+            onMaintenanceAdded={() => {
+              fetchVehicleDetails();
+              onVehicleUpdated();
+            }}
           />
         </>
       )}
     </>
   );
 };
-

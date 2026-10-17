@@ -1,20 +1,33 @@
-import { query } from '../config/database.js';
+import { query, dbPool } from '../config/database.js';
 
 export const deliveryRepository = {
   async findById(deliveryId: string): Promise<any | null> {
     const res = await query(
       `SELECT d.*, 
-              o.order_number, o.total, o.delivery_address,
+              o.order_number, o.total, o.delivery_address, o.shop_id,
               s.name as shop_name, s.address as shop_address, s.area as shop_area, s.city as shop_city,
               s.latitude as shop_latitude, s.longitude as shop_longitude, s.is_location_verified,
               s.delivery_contact_name, s.delivery_contact_phone, s.delivery_instructions
        FROM deliveries d 
        JOIN orders o ON d.order_id = o.id 
        JOIN shops s ON o.shop_id = s.id 
-       WHERE d.id = $1 LIMIT 1`,
+       WHERE (d.id = $1 OR o.shop_id = $1 OR d.order_id = $1)
+       ORDER BY d.created_at DESC LIMIT 1`,
       [deliveryId]
     );
-    return res.rows[0] || null;
+    if (!res.rows[0]) return null;
+    const delivery = res.rows[0];
+
+    const itemsRes = await query(
+      `SELECT oi.id, oi.product_id, oi.quantity, oi.unit_price, oi.total_price,
+              p.name as product_name, p.sku, p.category, p.base_unit, p.pack_size
+       FROM order_items oi
+       JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = $1`,
+      [delivery.order_id]
+    );
+    delivery.items = itemsRes.rows;
+    return delivery;
   },
 
   async findAssignedToDriver(driverId: string): Promise<any[]> {
@@ -698,5 +711,378 @@ export const deliveryRepository = {
       [driverId]
     );
     return res.rows;
+  },
+
+  async completeDelivery(params: {
+    deliveryId: string;
+    driverId: string;
+    status: 'DELIVERED' | 'FAILED';
+    recipientName?: string;
+    recipientPhone?: string;
+    deliveredCratesCount?: number;
+    returnedCratesCount?: number;
+    shortageReason?: string;
+    collectedAmount?: number;
+    paymentMethod?: string;
+    transactionReference?: string;
+    notes?: string;
+    proofOfDeliveryUrl?: string;
+    signatureUrl?: string;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<any> {
+    const client = await dbPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const delivRes = await client.query(
+        `SELECT d.*, o.shop_id, o.order_number, o.total 
+         FROM deliveries d 
+         JOIN orders o ON d.order_id = o.id 
+         WHERE (d.id = $1 OR o.shop_id = $1 OR d.order_id = $1)
+         ORDER BY d.created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [params.deliveryId]
+      );
+      if (!delivRes.rows[0]) {
+        throw new Error('Delivery not found');
+      }
+      const deliv = delivRes.rows[0];
+
+      const updateRes = await client.query(
+        `UPDATE deliveries 
+         SET status = $1,
+             delivered_at = NOW(),
+             recipient_name = COALESCE($2, recipient_name),
+             recipient_phone = COALESCE($3, recipient_phone),
+             delivered_crates_count = COALESCE($4, delivered_crates_count),
+             returned_crates_count = COALESCE($5, returned_crates_count),
+             shortage_reason = COALESCE($6, shortage_reason),
+             collected_amount = COALESCE($7, collected_amount),
+             payment_method = COALESCE($8, payment_method),
+             proof_of_delivery_url = COALESCE($9, proof_of_delivery_url),
+             signature_url = COALESCE($10, signature_url),
+             current_latitude = COALESCE($11, current_latitude),
+             current_longitude = COALESCE($12, current_longitude),
+             notes = COALESCE($13, notes),
+             updated_at = NOW()
+         WHERE id = $14
+         RETURNING *`,
+        [
+          params.status,
+          params.recipientName || null,
+          params.recipientPhone || null,
+          params.deliveredCratesCount ?? 0,
+          params.returnedCratesCount ?? 0,
+          params.shortageReason || null,
+          params.collectedAmount ?? 0,
+          params.paymentMethod || 'CASH',
+          params.proofOfDeliveryUrl || null,
+          params.signatureUrl || null,
+          params.latitude ?? null,
+          params.longitude ?? null,
+          params.notes || null,
+          deliv.id,
+        ]
+      );
+
+      // Update Order Status
+      await client.query(
+        `UPDATE orders 
+         SET status = $1, updated_at = NOW() 
+         WHERE id = $2`,
+        [params.status === 'DELIVERED' ? 'DELIVERED' : 'FAILED', deliv.order_id]
+      );
+
+      // Record payment collection if collectedAmount > 0
+      let collectionRecord = null;
+      if (params.collectedAmount && params.collectedAmount > 0) {
+        const activeRunRes = await client.query(
+          `SELECT id FROM delivery_runs 
+           WHERE driver_id = $1 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS') 
+           ORDER BY created_at DESC LIMIT 1`,
+          [params.driverId]
+        );
+        const runId = activeRunRes.rows[0]?.id || deliv.id;
+        const receiptNumber = `RCP-${Date.now().toString()}-${Math.floor(Math.random() * 900 + 100)}`;
+
+        const colRes = await client.query(
+          `INSERT INTO delivery_collections (
+             receipt_number, run_id, shop_id, driver_id, amount,
+             payment_method, transaction_reference, notes, status, collected_at
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'COLLECTED', NOW())
+           RETURNING *`,
+          [
+            receiptNumber,
+            runId,
+            deliv.shop_id,
+            params.driverId,
+            params.collectedAmount,
+            params.paymentMethod || 'CASH',
+            params.transactionReference || null,
+            params.notes || 'Recorded via mobile driver delivery workflow',
+          ]
+        );
+        collectionRecord = colRes.rows[0];
+      }
+
+      // Check if delivery stop is in an active delivery run
+      const stopUpdateRes = await client.query(
+        `UPDATE delivery_run_stops
+         SET status = $1,
+             delivery_time = NOW(),
+             delivered_crates_count = COALESCE($2, delivered_crates_count),
+             returned_crates_count = COALESCE($3, returned_crates_count),
+             collected_amount = COALESCE($4, collected_amount),
+             payment_method = COALESCE($5, payment_method),
+             shortage_reason = COALESCE($6, shortage_reason),
+             proof_of_delivery_url = COALESCE($7, proof_of_delivery_url),
+             notes = COALESCE($8, notes)
+         WHERE shop_id = $9
+           AND run_id IN (
+             SELECT id FROM delivery_runs WHERE driver_id = $10 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS')
+           )
+         RETURNING run_id`,
+        [
+          params.status === 'DELIVERED' ? 'DELIVERED' : 'FAILED',
+          params.deliveredCratesCount ?? 0,
+          params.returnedCratesCount ?? 0,
+          params.collectedAmount ?? 0,
+          params.paymentMethod || 'CASH',
+          params.shortageReason || null,
+          params.proofOfDeliveryUrl || null,
+          params.notes || null,
+          deliv.shop_id,
+          params.driverId,
+        ]
+      );
+
+      if (stopUpdateRes.rows.length > 0 && params.status === 'DELIVERED') {
+        const runId = stopUpdateRes.rows[0].run_id;
+        await client.query(
+          `UPDATE delivery_runs
+           SET completed_stops_count = (
+             SELECT COUNT(*)::int FROM delivery_run_stops WHERE run_id = $1 AND status = 'DELIVERED'
+           ),
+           updated_at = NOW()
+           WHERE id = $1`,
+          [runId]
+        );
+      }
+
+      await client.query('COMMIT');
+      return {
+        delivery: updateRes.rows[0],
+        collection: collectionRecord,
+      };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async recordVehicleInspection(params: {
+    vehicleId: string;
+    driverId: string;
+    runId?: string;
+    odometerKm: number;
+    fuelLevelPercent?: number;
+    refrigerationTempC?: number;
+    isTyresOk: boolean;
+    isLightsOk: boolean;
+    isBodyOk: boolean;
+    isRefrigerationOk: boolean;
+    isSafetyKitOk: boolean;
+    isDocsValid: boolean;
+    passed: boolean;
+    defectsReported?: string;
+    photoUrl?: string;
+  }): Promise<any> {
+    const inspectionCode = `INSP-${Date.now().toString()}-${Math.floor(Math.random() * 900 + 100)}`;
+    const res = await query(
+      `INSERT INTO vehicle_inspections (
+         inspection_code, vehicle_id, driver_id, run_id, odometer_km,
+         fuel_level_percent, refrigeration_temp_c, is_tyres_ok, is_lights_ok,
+         is_body_ok, is_refrigeration_ok, is_safety_kit_ok, is_docs_valid,
+         passed, defects_reported, photo_url
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+       RETURNING *`,
+      [
+        inspectionCode,
+        params.vehicleId,
+        params.driverId,
+        params.runId || null,
+        params.odometerKm,
+        params.fuelLevelPercent ?? null,
+        params.refrigerationTempC ?? null,
+        params.isTyresOk,
+        params.isLightsOk,
+        params.isBodyOk,
+        params.isRefrigerationOk,
+        params.isSafetyKitOk,
+        params.isDocsValid,
+        params.passed,
+        params.defectsReported || null,
+        params.photoUrl || null,
+      ]
+    );
+
+    await query(
+      `UPDATE vehicles SET current_odometer_km = $1 WHERE id = $2`,
+      [params.odometerKm, params.vehicleId]
+    );
+
+    return res.rows[0];
+  },
+
+  async getRecentVehicleInspections(driverId: string): Promise<any[]> {
+    const res = await query(
+      `SELECT vi.*, v.registration_number, v.make_model, v.vehicle_type
+       FROM vehicle_inspections vi
+       JOIN vehicles v ON vi.vehicle_id = v.id
+       WHERE vi.driver_id = $1
+       ORDER BY vi.created_at DESC
+       LIMIT 10`,
+      [driverId]
+    );
+    return res.rows;
+  },
+
+  async recordIncident(params: {
+    driverId: string;
+    runId?: string;
+    stopId?: string;
+    shopId?: string;
+    vehicleId?: string;
+    category: string;
+    severity?: string;
+    title: string;
+    description: string;
+    evidenceUrl?: string;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<any> {
+    const incidentNumber = `INC-${Date.now().toString()}-${Math.floor(Math.random() * 900 + 100)}`;
+    const res = await query(
+      `INSERT INTO driver_incidents (
+         incident_number, driver_id, run_id, stop_id, shop_id, vehicle_id,
+         category, severity, title, description, evidence_url, latitude, longitude
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING *`,
+      [
+        incidentNumber,
+        params.driverId,
+        params.runId || null,
+        params.stopId || null,
+        params.shopId || null,
+        params.vehicleId || null,
+        params.category,
+        params.severity || 'MEDIUM',
+        params.title,
+        params.description,
+        params.evidenceUrl || null,
+        params.latitude ?? null,
+        params.longitude ?? null,
+      ]
+    );
+    return res.rows[0];
+  },
+
+  async getDriverIncidents(driverId: string): Promise<any[]> {
+    const res = await query(
+      `SELECT di.*, s.name as shop_name, v.registration_number as vehicle_registration
+       FROM driver_incidents di
+       LEFT JOIN shops s ON di.shop_id = s.id
+       LEFT JOIN vehicles v ON di.vehicle_id = v.id
+       WHERE di.driver_id = $1
+       ORDER BY di.created_at DESC
+       LIMIT 50`,
+      [driverId]
+    );
+    return res.rows;
+  },
+
+  async recordReconciliation(params: {
+    runId: string;
+    driverId: string;
+    totalStopsPlanned: number;
+    totalStopsCompleted: number;
+    totalStopsFailed: number;
+    totalCratesDispatched: number;
+    totalCratesDelivered: number;
+    totalCratesReturned: number;
+    totalCashExpected: number;
+    totalCashCollected: number;
+    totalUpiCollected: number;
+    totalAmountDeposited: number;
+    notes?: string;
+  }): Promise<any> {
+    const client = await dbPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const reconciliationCode = `REC-${Date.now().toString()}-${Math.floor(Math.random() * 900 + 100)}`;
+      const variance = (params.totalCashCollected + params.totalUpiCollected) - (params.totalAmountDeposited + params.totalUpiCollected);
+
+      const recRes = await client.query(
+        `INSERT INTO delivery_reconciliations (
+           reconciliation_code, run_id, driver_id, total_stops_planned, total_stops_completed,
+           total_stops_failed, total_crates_dispatched, total_crates_delivered, total_crates_returned,
+           total_cash_expected, total_cash_collected, total_upi_collected, total_amount_deposited,
+           variance, status, notes
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'SUBMITTED', $15)
+         RETURNING *`,
+        [
+          reconciliationCode,
+          params.runId,
+          params.driverId,
+          params.totalStopsPlanned,
+          params.totalStopsCompleted,
+          params.totalStopsFailed,
+          params.totalCratesDispatched,
+          params.totalCratesDelivered,
+          params.totalCratesReturned,
+          params.totalCashExpected,
+          params.totalCashCollected,
+          params.totalUpiCollected,
+          params.totalAmountDeposited,
+          variance,
+          params.notes || null,
+        ]
+      );
+
+      // Complete the delivery run
+      await client.query(
+        `UPDATE delivery_runs 
+         SET status = 'COMPLETED', completion_time = NOW(), updated_at = NOW() 
+         WHERE id = $1`,
+        [params.runId]
+      );
+
+      // Auto check-out driver attendance if present today
+      await client.query(
+        `UPDATE driver_attendance 
+         SET check_out_time = NOW(), 
+             notes = COALESCE(notes || ' | Shift closed after reconciliation', 'Shift closed after reconciliation'),
+             updated_at = NOW() 
+         WHERE driver_id = $1 AND attendance_date = CURRENT_DATE AND check_out_time IS NULL`,
+        [params.driverId]
+      );
+
+      await client.query('COMMIT');
+      return recRes.rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   },
 };

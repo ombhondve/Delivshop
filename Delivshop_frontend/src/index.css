@@ -1223,13 +1223,25 @@ code {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
-.input-label {
+.input-label,
+.form-label {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-label.required::after,
+.input-label.required::after {
+  content: '*';
+  color: var(--color-danger);
+  margin-left: 2px;
+  font-weight: 700;
 }
 
 .required-asterisk {
@@ -1238,7 +1250,9 @@ code {
 }
 
 .input-field,
-select.input-field {
+select.input-field,
+.form-control,
+select.form-control {
   height: var(--control-height);
   padding: 0 14px;
   background-color: #FFFFFF;
@@ -1250,36 +1264,200 @@ select.input-field {
   font-family: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
+  width: 100%;
+}
+
+textarea.input-field,
+textarea.form-control {
+  min-height: 80px;
+  padding: 10px 14px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
 }
 
 .input-field:focus,
-select.input-field:focus {
+select.input-field:focus,
+textarea.input-field:focus,
+.form-control:focus,
+select.form-control:focus,
+textarea.form-control:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
 }
 
-.input-field::placeholder {
+.input-field::placeholder,
+.form-control::placeholder {
   color: var(--text-muted);
 }
 
-.input-field:disabled {
+.input-field:disabled,
+.form-control:disabled {
   background-color: var(--bg-muted);
   cursor: not-allowed;
   color: var(--text-secondary);
 }
 
-.input-error {
+.input-error,
+.form-control.is-invalid {
   border-color: var(--color-danger) !important;
 }
 
-.input-error-text {
-  font-size: 12px;
+.input-error-text,
+.invalid-feedback {
+  font-size: 11.5px;
   color: var(--color-danger);
+  margin-top: 2px;
 }
 
-.input-helper-text {
-  font-size: 12px;
+.input-helper-text,
+.form-text-hint {
+  font-size: 11.5px;
   color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* Form Semantic Sections & Enterprise Grid Layouts */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.form-section + .form-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.form-section-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Feature Toggle Card (e.g. Refrigeration / Cold Chain) */
+.form-toggle-card {
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-hover);
+  transition: all 0.2s ease;
+}
+
+.form-toggle-card.is-active {
+  background-color: #ECFDF5;
+  border-color: #A7F3D0;
+  box-shadow: 0 1px 3px rgba(4, 120, 87, 0.08);
+}
+
+.form-toggle-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  margin: 0;
+  user-select: none;
+}
+
+.form-toggle-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+}
+
+/* Dropzone & Document Upload Cards */
+.file-dropzone {
+  border: 2px dashed var(--border-input);
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  text-align: center;
+  background-color: var(--bg-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.file-dropzone:hover,
+.file-dropzone.is-dragover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-subtle);
+}
+
+.file-dropzone-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.file-preview-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* ==========================================================================

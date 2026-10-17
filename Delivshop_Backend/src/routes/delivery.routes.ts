@@ -218,6 +218,42 @@ router.delete(
   deliveryController.deleteDriver
 );
 
+// Driver Operational Routes (Inspections, Incidents, Reconciliation)
+router.post(
+  '/inspection',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  deliveryController.recordVehicleInspection
+);
+
+router.get(
+  '/inspection/history',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN', 'SUPPLIER'),
+  deliveryController.getRecentVehicleInspections
+);
+
+router.post(
+  '/incidents',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  deliveryController.recordIncident
+);
+
+router.get(
+  '/incidents',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN', 'SUPPLIER'),
+  deliveryController.getDriverIncidents
+);
+
+router.post(
+  '/reconciliation',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  deliveryController.recordReconciliation
+);
+
 router.post(
   '/assign',
   authenticate,
@@ -240,6 +276,14 @@ router.patch(
   requireDriverDeliveryAssignment,
   validateRequest(updateDeliveryStatusSchema),
   deliveryController.updateStatus
+);
+
+router.post(
+  '/:deliveryId/complete',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  requireDriverDeliveryAssignment,
+  deliveryController.completeDelivery
 );
 
 export default router;

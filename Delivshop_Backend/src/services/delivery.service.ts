@@ -670,4 +670,82 @@ export const deliveryService = {
       recentAttendance,
     };
   },
+
+  async completeDelivery(params: any, ipAddress?: string) {
+    const result = await deliveryRepository.completeDelivery(params);
+    await auditService.log({
+      actorId: params.driverId,
+      action: 'DELIVERY_COMPLETED',
+      entityType: 'delivery',
+      entityId: params.deliveryId,
+      details: {
+        status: params.status,
+        deliveredCrates: params.deliveredCratesCount,
+        returnedCrates: params.returnedCratesCount,
+        collectedAmount: params.collectedAmount,
+      },
+      ipAddress,
+    });
+    return result;
+  },
+
+  async recordVehicleInspection(params: any, ipAddress?: string) {
+    const inspection = await deliveryRepository.recordVehicleInspection(params);
+    await auditService.log({
+      actorId: params.driverId,
+      action: 'VEHICLE_INSPECTION_RECORDED',
+      entityType: 'vehicle_inspection',
+      entityId: inspection.id,
+      details: {
+        vehicleId: params.vehicleId,
+        passed: params.passed,
+        odometerKm: params.odometerKm,
+      },
+      ipAddress,
+    });
+    return inspection;
+  },
+
+  async getRecentVehicleInspections(driverId: string) {
+    return deliveryRepository.getRecentVehicleInspections(driverId);
+  },
+
+  async recordIncident(params: any, ipAddress?: string) {
+    const incident = await deliveryRepository.recordIncident(params);
+    await auditService.log({
+      actorId: params.driverId,
+      action: 'DRIVER_INCIDENT_REPORTED',
+      entityType: 'driver_incident',
+      entityId: incident.id,
+      details: {
+        category: params.category,
+        severity: params.severity,
+        title: params.title,
+      },
+      ipAddress,
+    });
+    return incident;
+  },
+
+  async getDriverIncidents(driverId: string) {
+    return deliveryRepository.getDriverIncidents(driverId);
+  },
+
+  async recordReconciliation(params: any, ipAddress?: string) {
+    const reconciliation = await deliveryRepository.recordReconciliation(params);
+    await auditService.log({
+      actorId: params.driverId,
+      action: 'SHIFT_RECONCILIATION_COMPLETED',
+      entityType: 'delivery_reconciliation',
+      entityId: reconciliation.id,
+      details: {
+        runId: params.runId,
+        totalStopsCompleted: params.totalStopsCompleted,
+        totalCratesDelivered: params.totalCratesDelivered,
+        totalCashCollected: params.totalCashCollected,
+      },
+      ipAddress,
+    });
+    return reconciliation;
+  },
 };

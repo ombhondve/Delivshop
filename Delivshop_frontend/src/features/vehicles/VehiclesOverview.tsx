@@ -25,16 +25,19 @@ import {
   MapPin,
   Radio,
   AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { Modal } from '../../components/common/Modal';
 import { api } from '../../services/api/endpoints';
 import { Vehicle, VehicleSummary } from '../../types';
 import { AddVehicleModal } from './AddVehicleModal';
 import { EditVehicleModal } from './EditVehicleModal';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
 import { AddMaintenanceModal } from './AddMaintenanceModal';
+import { VehicleDetailsDrawer } from './VehicleDetailsDrawer';
 import { useNavigation } from '../../context/NavigationContext';
 
 export const VehiclesOverview: React.FC = () => {
@@ -77,6 +80,9 @@ export const VehiclesOverview: React.FC = () => {
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [docVehicle, setDocVehicle] = useState<Vehicle | null>(null);
   const [maintVehicle, setMaintVehicle] = useState<Vehicle | null>(null);
+  const [previewVehicleId, setPreviewVehicleId] = useState<string | null>(null);
+  const [statusConfirmVehicle, setStatusConfirmVehicle] = useState<Vehicle | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -84,6 +90,19 @@ export const VehiclesOverview: React.FC = () => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
   };
+
+  // Close action menus when clicking outside
+  useEffect(() => {
+    if (!actionMenuOpenId) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.vehicle-action-menu-container')) {
+        setActionMenuOpenId(null);
+      }
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, [actionMenuOpenId]);
 
   // Debounce search term
   useEffect(() => {
@@ -212,17 +231,29 @@ export const VehiclesOverview: React.FC = () => {
     }
   };
 
-  // Quick status toggle
-  const handleToggleStatus = async (v: Vehicle) => {
-    const nextStatus = v.is_active ? 'INACTIVE' : 'AVAILABLE';
+  // Quick status toggle with confirmation
+  const handleToggleStatus = (v: Vehicle) => {
+    setActionMenuOpenId(null);
+    setStatusConfirmVehicle(v);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!statusConfirmVehicle) return;
+    const nextStatus = statusConfirmVehicle.is_active ? 'INACTIVE' : 'AVAILABLE';
     try {
-      await api.vehicles.updateStatus(v.id, nextStatus);
-      showToast(`Vehicle ${v.registration_number} status changed to ${nextStatus === 'AVAILABLE' ? 'Active' : 'Inactive'}`);
+      setStatusUpdating(true);
+      await api.vehicles.updateStatus(statusConfirmVehicle.id, nextStatus);
+      showToast(
+        `Vehicle ${statusConfirmVehicle.registration_number} status changed to ${
+          nextStatus === 'AVAILABLE' ? 'Active' : 'Inactive'
+        }`
+      );
+      setStatusConfirmVehicle(null);
       fetchVehicles();
     } catch (err: any) {
       showToast(err?.message || 'Failed to change vehicle status', 'error');
     } finally {
-      setActionMenuOpenId(null);
+      setStatusUpdating(false);
     }
   };
 
@@ -948,11 +979,11 @@ export const VehiclesOverview: React.FC = () => {
                     </td>
 
                     {/* 7. Actions */}
-                    <td style={{ width: '140px', minWidth: '130px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                    <td style={{ width: '150px', minWidth: '140px', textAlign: 'right' }}>
+                      <div className="vehicle-action-menu-container" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
                         <button
                           type="button"
-                          onClick={() => navigate(`/admin/vehicles/${v.id}`)}
+                          onClick={() => setPreviewVehicleId(v.id)}
                           className="btn btn-secondary btn-table-action"
                           style={{
                             height: '28px',
@@ -968,11 +999,11 @@ export const VehiclesOverview: React.FC = () => {
                             borderRadius: '6px',
                             cursor: 'pointer',
                           }}
-                          title={`View full details for ${v.registration_number}`}
-                          aria-label={`View full details for ${v.registration_number}`}
+                          title={`Quick view drawer for ${v.registration_number}`}
+                          aria-label={`Quick view drawer for ${v.registration_number}`}
                         >
                           <Eye size={13} />
-                          <span>Details</span>
+                          <span>Preview</span>
                         </button>
 
                         {/* Overflow contextual menu toggle */}
@@ -987,23 +1018,46 @@ export const VehiclesOverview: React.FC = () => {
                           <MoreVertical size={13} />
                         </button>
 
-                        {/* Dropdown Menu */}
+                        {/* Standardized Dropdown Menu */}
                         {actionMenuOpenId === v.id && (
                           <div
                             style={{
                               position: 'absolute',
                               right: 0,
                               top: '32px',
-                              zIndex: 100,
+                              zIndex: 1050,
                               backgroundColor: '#FFFFFF',
                               borderRadius: '8px',
-                              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
                               border: '1px solid var(--border-color)',
-                              minWidth: '180px',
-                              padding: '4px 0',
+                              minWidth: '200px',
+                              padding: '6px 0',
                               textAlign: 'left',
                             }}
                           >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActionMenuOpenId(null);
+                                setPreviewVehicleId(v.id);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                width: '100%',
+                                padding: '8px 14px',
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                              }}
+                              className="hover:bg-slate-50"
+                            >
+                              <Eye size={13} style={{ color: 'var(--color-primary)' }} /> Quick Preview (Drawer)
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => {
@@ -1015,7 +1069,7 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '8px 14px',
                                 fontSize: '12px',
                                 color: 'var(--text-primary)',
                                 background: 'none',
@@ -1024,7 +1078,7 @@ export const VehiclesOverview: React.FC = () => {
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <Eye size={13} style={{ color: 'var(--color-primary)' }} /> View Asset Details
+                              <ExternalLink size={13} style={{ color: 'var(--color-primary)' }} /> Open Full Record
                             </button>
 
                             <button
@@ -1038,7 +1092,7 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '8px 14px',
                                 fontSize: '12px',
                                 color: 'var(--text-primary)',
                                 background: 'none',
@@ -1061,7 +1115,7 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '8px 14px',
                                 fontSize: '12px',
                                 color: 'var(--text-primary)',
                                 background: 'none',
@@ -1084,7 +1138,7 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '8px 14px',
                                 fontSize: '12px',
                                 color: 'var(--text-primary)',
                                 background: 'none',
@@ -1106,7 +1160,7 @@ export const VehiclesOverview: React.FC = () => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '8px 14px',
                                 fontSize: '12px',
                                 color: v.is_active ? 'var(--color-danger)' : 'var(--color-success)',
                                 background: 'none',
@@ -1116,7 +1170,7 @@ export const VehiclesOverview: React.FC = () => {
                               className="hover:bg-slate-50"
                             >
                               <Power size={13} />
-                              {v.is_active ? 'Deactivate Vehicle' : 'Activate Vehicle'}
+                              {v.is_active ? 'Deactivate Vehicle...' : 'Activate Vehicle...'}
                             </button>
                           </div>
                         )}
@@ -1192,6 +1246,9 @@ export const VehiclesOverview: React.FC = () => {
           showToast('Vehicle asset registered to fleet registry');
           fetchVehicles();
         }}
+        onUploadDocumentForVehicle={(v) => {
+          setDocVehicle(v);
+        }}
       />
 
       {/* Edit Vehicle Modal */}
@@ -1237,6 +1294,57 @@ export const VehiclesOverview: React.FC = () => {
             fetchVehicles();
           }}
         />
+      )}
+
+      {/* Quick Details Drawer */}
+      <VehicleDetailsDrawer
+        vehicleId={previewVehicleId}
+        onClose={() => setPreviewVehicleId(null)}
+        onVehicleUpdated={fetchVehicles}
+      />
+
+      {/* Deactivate / Activate Confirmation Modal */}
+      {statusConfirmVehicle && (
+        <Modal
+          isOpen={Boolean(statusConfirmVehicle)}
+          onClose={() => setStatusConfirmVehicle(null)}
+          title={statusConfirmVehicle.is_active ? 'Deactivate Vehicle Asset?' : 'Activate Vehicle Asset?'}
+          subtitle={`Operational status confirmation for ${statusConfirmVehicle.registration_number} (${statusConfirmVehicle.vehicle_code})`}
+          icon={<Power size={20} />}
+          size="sm"
+          footer={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', width: '100%' }}>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setStatusConfirmVehicle(null)}
+                disabled={statusUpdating}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={statusConfirmVehicle.is_active ? 'danger' : 'primary'}
+                size="md"
+                onClick={handleConfirmStatusChange}
+                loading={statusUpdating}
+              >
+                {statusConfirmVehicle.is_active ? 'Confirm Deactivation' : 'Confirm Activation'}
+              </Button>
+            </div>
+          }
+        >
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            {statusConfirmVehicle.is_active ? (
+              <p style={{ margin: 0 }}>
+                Deactivating <strong style={{ color: 'var(--text-primary)' }}>{statusConfirmVehicle.registration_number}</strong> will mark it as unavailable and immediately prevent new delivery runs from being dispatched with it.
+              </p>
+            ) : (
+              <p style={{ margin: 0 }}>
+                Activating <strong style={{ color: 'var(--text-primary)' }}>{statusConfirmVehicle.registration_number}</strong> will restore its active fleet standing, making it eligible for route allocation once mandatory compliance documents are verified.
+              </p>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Truck, ShieldAlert, CheckCircle2, Thermometer, ShieldCheck } from 'lucide-react';
+import {
+  Truck,
+  ShieldAlert,
+  Thermometer,
+  ShieldCheck,
+  Save,
+} from 'lucide-react';
+import { Modal } from '../../components/common/Modal';
+import { Button } from '../../components/common/Button';
 import { api } from '../../services/api/endpoints';
 import { Vehicle } from '../../types';
 
@@ -49,8 +57,14 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
         capacityCrates: vehicle.capacity_crates || 60,
         fuelType: (vehicle.fuel_type as any) || 'DIESEL',
         isRefrigerated: Boolean(vehicle.is_refrigerated),
-        temperatureMinC: vehicle.temperature_min_c !== undefined && vehicle.temperature_min_c !== null ? Number(vehicle.temperature_min_c) : -18.0,
-        temperatureMaxC: vehicle.temperature_max_c !== undefined && vehicle.temperature_max_c !== null ? Number(vehicle.temperature_max_c) : 4.0,
+        temperatureMinC:
+          vehicle.temperature_min_c !== undefined && vehicle.temperature_min_c !== null
+            ? Number(vehicle.temperature_min_c)
+            : -18.0,
+        temperatureMaxC:
+          vehicle.temperature_max_c !== undefined && vehicle.temperature_max_c !== null
+            ? Number(vehicle.temperature_max_c)
+            : 4.0,
         depot: vehicle.depot || 'Pune Central Cold Depot',
         currentOdometerKm: vehicle.current_odometer_km || 0,
         status:
@@ -98,7 +112,8 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
         notes: formData.notes.trim() || undefined,
       });
 
-      onVehicleUpdated(res.data);
+      const updated = res.data || res;
+      onVehicleUpdated(updated);
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to update vehicle asset');
@@ -108,391 +123,303 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.45)',
-        backdropFilter: 'blur(3px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1100,
-        padding: '16px',
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !loading) onClose();
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '12px',
-          width: '100%',
-          maxWidth: '680px',
-          maxHeight: '92vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #D6D3C8',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #D6D3C8',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            backgroundColor: '#F8FAFC',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                backgroundColor: '#E0F2FE',
-                color: '#0284C7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Truck size={20} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#0F172A' }}>
-                Edit Vehicle Asset: {vehicle.registration_number}
-              </h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>
-                Asset Code: <code style={{ fontWeight: 600, color: '#0369A1' }}>{vehicle.vehicle_code}</code> (System-Controlled)
-              </p>
-            </div>
-          </div>
-          <button
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Vehicle Asset"
+      subtitle={`Update fleet asset specifications for ${vehicle.registration_number} (${vehicle.vehicle_code})`}
+      icon={<Truck size={20} />}
+      size="lg"
+      footer={
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', width: '100%' }}>
+          <Button
             type="button"
-            className="btn-close"
+            variant="secondary"
+            size="md"
             onClick={onClose}
             disabled={loading}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
           >
-            <X size={18} />
-          </button>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            onClick={handleSubmit}
+            loading={loading}
+            icon={<Save size={16} />}
+          >
+            Save Vehicle Specifications
+          </Button>
+        </div>
+      }
+    >
+      {error && (
+        <div className="form-error-banner" style={{ marginBottom: '18px' }}>
+          <ShieldAlert size={18} style={{ flexShrink: 0 }} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Section 1: Basic Information */}
+        <div className="form-section">
+          <div className="form-section-header">
+            <span className="form-section-icon">
+              <Truck size={13} />
+            </span>
+            <span>Asset Identification & Classification</span>
+          </div>
+
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label required">Registration Number</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. MH-12-DV-4421"
+                value={formData.registrationNumber}
+                onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value.toUpperCase() })}
+                required
+              />
+              <span className="form-text-hint">RTO registration code (auto-uppercased)</span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label required">Make & Model</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. Tata Ace Gold EV or Bolero Maxi"
+                value={formData.makeModel}
+                onChange={(e) => setFormData({ ...formData, makeModel: e.target.value })}
+                required
+              />
+              <span className="form-text-hint">Manufacturer & chassis variant</span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Vehicle Callsign / Nickname</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. Cold Runner 1 or Chilled Alpha"
+                value={formData.nickname}
+                onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+              />
+              <span className="form-text-hint">Radio handle or depot callsign (optional)</span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Manufacturing Year</label>
+              <input
+                type="number"
+                className="input-field"
+                min={1995}
+                max={2030}
+                value={formData.manufacturingYear}
+                onChange={(e) => setFormData({ ...formData, manufacturingYear: Number(e.target.value) })}
+              />
+              <span className="form-text-hint">Year of commercial production</span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label required">Classification</label>
+              <select
+                className="input-field"
+                value={formData.vehicleType}
+                onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+              >
+                <option value="Refrigerated Van (1.5 Ton)">Refrigerated Van (1.5 Ton)</option>
+                <option value="Insulated Delivery Van">Insulated Delivery Van</option>
+                <option value="Electric Cargo Van">Electric Cargo Van</option>
+                <option value="Refrigerated Milk Tanker">Refrigerated Milk Tanker</option>
+                <option value="Heavy Commercial Chiller (3 Ton)">Heavy Commercial Chiller (3 Ton)</option>
+              </select>
+              <span className="form-text-hint">Fleet route categorization</span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label required">Fuel / Propulsion Type</label>
+              <select
+                className="input-field"
+                value={formData.fuelType}
+                onChange={(e) => setFormData({ ...formData, fuelType: e.target.value as any })}
+              >
+                <option value="DIESEL">Diesel</option>
+                <option value="ELECTRIC">Electric (EV)</option>
+                <option value="CNG">Compressed Natural Gas (CNG)</option>
+                <option value="PETROL">Petrol</option>
+              </select>
+              <span className="form-text-hint">Propulsion powertrain</span>
+            </div>
+          </div>
         </div>
 
-        {error && (
-          <div
-            style={{
-              margin: '14px 20px 0 20px',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              backgroundColor: '#FEF2F2',
-              border: '1px solid #FECACA',
-              color: '#DC2626',
-              fontSize: '12.5px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <ShieldAlert size={16} style={{ flexShrink: 0 }} />
-            <span>{error}</span>
+        {/* Section 2: Capacity & Cold-Chain Controls */}
+        <div className="form-section">
+          <div className="form-section-header">
+            <span className="form-section-icon">
+              <Thermometer size={13} />
+            </span>
+            <span>Capacity & Cold-Chain Controls</span>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '18px 20px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {/* Section 1: Basic Information */}
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Truck size={14} style={{ color: '#0284C7' }} /> Basic Asset Information
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Registration Number <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.registrationNumber}
-                    onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Make & Model <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.makeModel}
-                    onChange={(e) => setFormData({ ...formData, makeModel: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Callsign / Nickname
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.nickname}
-                    onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Manufacturing Year
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={1995}
-                    max={2030}
-                    value={formData.manufacturingYear}
-                    onChange={(e) => setFormData({ ...formData, manufacturingYear: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Classification <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <select
-                    className="form-control"
-                    value={formData.vehicleType}
-                    onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                  >
-                    <option value="Refrigerated Van (1.5 Ton)">Refrigerated Van (1.5 Ton)</option>
-                    <option value="Insulated Delivery Van">Insulated Delivery Van</option>
-                    <option value="Electric Cargo Van">Electric Cargo Van</option>
-                    <option value="Refrigerated Milk Tanker">Refrigerated Milk Tanker</option>
-                    <option value="Heavy Commercial Chiller (3 Ton)">Heavy Commercial Chiller (3 Ton)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Fuel / Propulsion Type <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <select
-                    className="form-control"
-                    value={formData.fuelType}
-                    onChange={(e) => setFormData({ ...formData, fuelType: e.target.value as any })}
-                  >
-                    <option value="DIESEL">Diesel</option>
-                    <option value="ELECTRIC">Electric (EV)</option>
-                    <option value="CNG">Compressed Natural Gas (CNG)</option>
-                    <option value="PETROL">Petrol</option>
-                  </select>
-                </div>
-              </div>
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label required">Payload Limit (KG)</label>
+              <input
+                type="number"
+                className="input-field"
+                min={100}
+                max={15000}
+                step={50}
+                value={formData.capacityKg}
+                onChange={(e) => setFormData({ ...formData, capacityKg: Number(e.target.value) })}
+                required
+              />
+              <span className="form-text-hint">Maximum gross cargo weight</span>
             </div>
 
-            {/* Section 2: Capacity & Cold-Chain */}
-            <div style={{ paddingTop: '14px', borderTop: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Thermometer size={14} style={{ color: '#0284C7' }} /> Capacity & Cold-Chain Specifications
+            <div className="form-group">
+              <label className="form-label required">Standard Milk Crate Capacity</label>
+              <input
+                type="number"
+                className="input-field"
+                min={1}
+                max={600}
+                value={formData.capacityCrates}
+                onChange={(e) => setFormData({ ...formData, capacityCrates: Number(e.target.value) })}
+                required
+              />
+              <span className="form-text-hint">Standard 12-pouch dairy crate slots</span>
+            </div>
+          </div>
+
+          {/* Refrigeration Toggle & Temperature Range */}
+          <div className={`form-toggle-card ${formData.isRefrigerated ? 'is-active' : ''}`} style={{ marginTop: '4px' }}>
+            <label className="form-toggle-label">
+              <input
+                type="checkbox"
+                className="form-toggle-checkbox"
+                checked={formData.isRefrigerated}
+                onChange={(e) => setFormData({ ...formData, isRefrigerated: e.target.checked })}
+              />
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>
+                  Cold-Chain Chiller Unit Installed
+                </span>
+                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  Enables dispatch eligibility for temperature-sensitive dairy deliveries (milk pouches, curd, paneer, and butter)
+                </p>
               </div>
+            </label>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Payload Limit (KG) <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={100}
-                    max={15000}
-                    value={formData.capacityKg}
-                    onChange={(e) => setFormData({ ...formData, capacityKg: Number(e.target.value) })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Milk Crate Capacity <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={0}
-                    max={600}
-                    value={formData.capacityCrates}
-                    onChange={(e) => setFormData({ ...formData, capacityCrates: Number(e.target.value) })}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Refrigeration Toggle & Temperature Range */}
+            {formData.isRefrigerated && (
               <div
                 style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '14px',
                   marginTop: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '8px',
-                  backgroundColor: formData.isRefrigerated ? '#F0F9FF' : '#F8FAFC',
-                  border: `1px solid ${formData.isRefrigerated ? '#BAE6FD' : '#D6D3C8'}`,
+                  paddingTop: '12px',
+                  borderTop: '1px solid #A7F3D0',
                 }}
               >
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0 }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isRefrigerated}
-                    onChange={(e) => setFormData({ ...formData, isRefrigerated: e.target.checked })}
-                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  <div>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
-                      Cold-Chain Chiller Unit Active
-                    </span>
-                    <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748B' }}>
-                      Required for cold dairy cargo assignment dispatch
-                    </p>
-                  </div>
-                </label>
-
-                {formData.isRefrigerated && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #BAE6FD' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#0369A1', marginBottom: '2px' }}>
-                        Min Target Temp (°C)
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        step={0.5}
-                        value={formData.temperatureMinC}
-                        onChange={(e) => setFormData({ ...formData, temperatureMinC: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#0369A1', marginBottom: '2px' }}>
-                        Max Target Temp (°C)
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        step={0.5}
-                        value={formData.temperatureMaxC}
-                        onChange={(e) => setFormData({ ...formData, temperatureMaxC: Number(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Section 3: Depot, Odometer, Status */}
-            <div style={{ paddingTop: '14px', borderTop: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ShieldCheck size={14} style={{ color: '#0284C7' }} /> Deployment & Operations
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Home Base Depot <span style={{ color: '#DC2626' }}>*</span>
-                  </label>
-                  <select
-                    className="form-control"
-                    value={formData.depot}
-                    onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
-                  >
-                    <option value="Pune Central Cold Depot">Pune Central Cold Depot</option>
-                    <option value="Kothrud Regional Distribution Point">Kothrud Regional Point</option>
-                    <option value="Hadapsar Bulk Wholesale Facility">Hadapsar Wholesale Facility</option>
-                    <option value="Viman Nagar Hub">Viman Nagar Hub</option>
-                    <option value="Aundh Regional Center">Aundh Regional Center</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Current Odometer (KM)
+                <div className="form-group">
+                  <label className="form-label" style={{ color: 'var(--color-primary)' }}>
+                    Min Target Temp (°C)
                   </label>
                   <input
                     type="number"
-                    className="form-control"
-                    min={0}
-                    value={formData.currentOdometerKm}
-                    onChange={(e) => setFormData({ ...formData, currentOdometerKm: Number(e.target.value) })}
+                    className="input-field"
+                    step={0.5}
+                    value={formData.temperatureMinC}
+                    onChange={(e) => setFormData({ ...formData, temperatureMinC: Number(e.target.value) })}
                   />
+                  <span className="form-text-hint">Freezer floor limit (e.g. -18°C)</span>
                 </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Operational Status <span style={{ color: '#DC2626' }}>*</span>
+                <div className="form-group">
+                  <label className="form-label" style={{ color: 'var(--color-primary)' }}>
+                    Max Target Temp (°C)
                   </label>
-                  <select
-                    className="form-control"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  >
-                    <option value="AVAILABLE">Available for Dispatch</option>
-                    <option value="ASSIGNED">Assigned to Run</option>
-                    <option value="UNDER_MAINTENANCE">Under Inspection / Repairs</option>
-                    <option value="INACTIVE">Inactive / Decommissioned</option>
-                  </select>
+                  <input
+                    type="number"
+                    className="input-field"
+                    step={0.5}
+                    value={formData.temperatureMaxC}
+                    onChange={(e) => setFormData({ ...formData, temperatureMaxC: Number(e.target.value) })}
+                  />
+                  <span className="form-text-hint">Chiller ceiling limit (e.g. 4°C)</span>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
 
-              <div style={{ marginTop: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Operational Notes & Remarks
-                </label>
-                <textarea
-                  className="form-control"
-                  rows={2}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                />
-              </div>
+        {/* Section 3: Depot, Odometer & Status */}
+        <div className="form-section">
+          <div className="form-section-header">
+            <span className="form-section-icon">
+              <ShieldCheck size={13} />
+            </span>
+            <span>Deployment & Operational Status</span>
+          </div>
+
+          <div className="form-grid-3">
+            <div className="form-group">
+              <label className="form-label required">Home Base Depot</label>
+              <select
+                className="input-field"
+                value={formData.depot}
+                onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
+              >
+                <option value="Pune Central Cold Depot">Pune Central Cold Depot</option>
+                <option value="Shivajinagar Hub">Shivajinagar Hub</option>
+                <option value="Hadapsar Distribution Center">Hadapsar Distribution Center</option>
+                <option value="Kothrud Quick-Hub">Kothrud Quick-Hub</option>
+                <option value="Pimpri Industrial Hub">Pimpri Industrial Hub</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Current Odometer (KM)</label>
+              <input
+                type="number"
+                className="input-field"
+                min={0}
+                value={formData.currentOdometerKm}
+                onChange={(e) => setFormData({ ...formData, currentOdometerKm: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label required">Fleet Status</label>
+              <select
+                className="input-field"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              >
+                <option value="AVAILABLE">Available for Run</option>
+                <option value="ASSIGNED">Assigned to Run</option>
+                <option value="UNDER_MAINTENANCE">Under Workshop Inspection</option>
+                <option value="INACTIVE">Decommissioned / Inactive</option>
+              </select>
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: '20px',
-              paddingTop: '16px',
-              borderTop: '1px solid #D6D3C8',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '10px',
-            }}
-          >
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              {loading ? 'Saving Changes...' : 'Save Vehicle Changes'}
-            </button>
+          <div className="form-group" style={{ marginTop: '4px' }}>
+            <label className="form-label">Operational Notes & Remarks</label>
+            <textarea
+              className="input-field"
+              rows={2}
+              placeholder="Optional vehicle remarks, maintenance instructions, telemetry device IDs..."
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Modal>
   );
 };
-

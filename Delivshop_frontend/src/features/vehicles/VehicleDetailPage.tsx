@@ -26,11 +26,14 @@ import {
   Activity,
   History,
   Info,
+  Eye,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Vehicle } from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
+import { Modal } from '../../components/common/Modal';
+import { Button } from '../../components/common/Button';
 import { useNavigation } from '../../context/NavigationContext';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
 import { AddMaintenanceModal } from './AddMaintenanceModal';
@@ -58,7 +61,11 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  const [confirmDeleteDocId, setConfirmDeleteDocId] = useState<string | null>(null);
+  const [docToDelete, setDocToDelete] = useState<any | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState(false);
+  const [docPreview, setDocPreview] = useState<any | null>(null);
+  const [selectedMaintenance, setSelectedMaintenance] = useState<any | null>(null);
+  const [confirmStatusToggleOpen, setConfirmStatusToggleOpen] = useState(false);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
@@ -102,6 +109,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
       showToast(
         `Vehicle ${vehicle.registration_number} status updated to ${nextStatus === 'AVAILABLE' ? 'Active' : 'Decommissioned'}`
       );
+      setConfirmStatusToggleOpen(false);
       await fetchVehicleDetails();
     } catch (err: any) {
       showToast(err?.message || 'Failed to update vehicle status', 'error');
@@ -113,12 +121,15 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
   const handleDeleteDocument = async (docId: string) => {
     if (!vehicle) return;
     try {
+      setDeletingDoc(true);
       await api.vehicles.deleteDocument(vehicle.id, docId);
-      showToast('Compliance document removed');
-      setConfirmDeleteDocId(null);
+      showToast('Compliance document removed from vehicle record');
+      setDocToDelete(null);
       await fetchVehicleDetails();
     } catch (err: any) {
       showToast(err?.message || 'Failed to delete document', 'error');
+    } finally {
+      setDeletingDoc(false);
     }
   };
 
@@ -477,7 +488,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <button
               type="button"
               className={`btn ${vehicle?.is_active ? 'btn-outline-danger' : 'btn-outline-success'}`}
-              onClick={handleStatusToggle}
+              onClick={() => setConfirmStatusToggleOpen(true)}
               disabled={statusUpdating}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
@@ -1122,81 +1133,76 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                         {getDocBadge(doc.verification_status)}
                       </td>
                       <td style={{ padding: '12px 18px' }}>
-                        {doc.storage_path || doc.file_url ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadDocument(doc.id, doc.file_name)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#047857',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              textDecoration: 'underline',
-                              padding: 0,
-                            }}
-                          >
-                            <Download size={13} /> {doc.file_name || 'Download File'}
-                          </button>
-                        ) : (
-                          <span style={{ color: '#94A3B8', fontSize: '12px' }}>No file attached</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 18px', textAlign: 'right' }}>
-                        {confirmDeleteDocId === doc.id ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '11px', color: '#DC2626' }}>Delete?</span>
+                        {doc.storage_path || doc.file_url || doc.file_data ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                             <button
                               type="button"
-                              onClick={() => handleDeleteDocument(doc.id)}
+                              onClick={() => setDocPreview(doc)}
                               style={{
-                                backgroundColor: '#DC2626',
-                                color: '#FFFFFF',
+                                background: 'none',
                                 border: 'none',
-                                borderRadius: '4px',
-                                padding: '2px 6px',
-                                fontSize: '11px',
+                                color: 'var(--color-primary)',
                                 cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '12.5px',
+                                fontWeight: 600,
+                                textDecoration: 'underline',
+                                padding: 0,
                               }}
                             >
-                              Yes
+                              <Eye size={13} />
+                              <span>{doc.file_name || 'View Certificate'}</span>
                             </button>
                             <button
                               type="button"
-                              onClick={() => setConfirmDeleteDocId(null)}
+                              onClick={() => handleDownloadDocument(doc.id, doc.file_name)}
                               style={{
-                                backgroundColor: '#D6D3C8',
-                                color: '#475569',
+                                background: 'none',
                                 border: 'none',
-                                borderRadius: '4px',
-                                padding: '2px 6px',
-                                fontSize: '11px',
+                                color: 'var(--text-secondary)',
                                 cursor: 'pointer',
+                                padding: '2px',
+                                display: 'inline-flex',
                               }}
+                              title="Download certificate"
                             >
-                              No
+                              <Download size={13} />
                             </button>
                           </div>
                         ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No file attached</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
                           <button
                             type="button"
-                            onClick={() => setConfirmDeleteDocId(doc.id)}
+                            onClick={() => setDocPreview(doc)}
+                            className="btn btn-secondary btn-xs"
+                            style={{ height: '26px', padding: '0 8px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Inspect document record"
+                          >
+                            <Eye size={12} /> Inspect
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDocToDelete(doc)}
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: '#94A3B8',
+                              color: 'var(--text-secondary)',
                               cursor: 'pointer',
                               padding: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
                             }}
-                            title="Delete document"
+                            title="Delete compliance document"
                           >
                             <Trash2 size={14} className="hover:text-red-600" />
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1266,6 +1272,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Service Center</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Cost</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Next Due</th>
+                    <th style={{ padding: '12px 18px', color: '#475569', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1293,6 +1300,17 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                       </td>
                       <td style={{ padding: '12px 18px', color: '#B45309', fontWeight: 600 }}>
                         {m.next_service_date ? formatDate(m.next_service_date) : '—'}
+                      </td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMaintenance(m)}
+                          className="btn btn-secondary btn-xs"
+                          style={{ height: '26px', padding: '0 8px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="View service record details"
+                        >
+                          <Eye size={12} /> Inspect
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1437,6 +1455,268 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               fetchVehicleDetails();
             }}
           />
+
+          {/* Delete Document Confirmation Modal */}
+          {docToDelete && (
+            <Modal
+              isOpen={Boolean(docToDelete)}
+              onClose={() => setDocToDelete(null)}
+              title="Delete Compliance Document?"
+              subtitle={`Permanently remove record from ${vehicle.registration_number}`}
+              icon={<Trash2 size={20} />}
+              size="sm"
+              footer={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', width: '100%' }}>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => setDocToDelete(null)}
+                    disabled={deletingDoc}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="md"
+                    onClick={() => handleDeleteDocument(docToDelete.id)}
+                    loading={deletingDoc}
+                  >
+                    Delete Document
+                  </Button>
+                </div>
+              }
+            >
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Are you sure you want to permanently remove document{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{docToDelete.document_type}</strong> (
+                <code style={{ fontFamily: 'monospace' }}>{docToDelete.document_number}</code>)? This action will remove the attached certificate and cannot be undone.
+              </p>
+            </Modal>
+          )}
+
+          {/* Document Inspection & Preview Modal */}
+          {docPreview && (
+            <Modal
+              isOpen={Boolean(docPreview)}
+              onClose={() => setDocPreview(null)}
+              title={`Compliance Certificate: ${docPreview.document_type}`}
+              subtitle={`Reference: ${docPreview.document_number} • ${vehicle.registration_number}`}
+              icon={<FileText size={20} />}
+              size="lg"
+              footer={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div>
+                    {docPreview.expiry_date && (
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        Expiry: <strong>{formatDate(docPreview.expiry_date)}</strong>
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    {(docPreview.storage_path || docPreview.file_url) && (
+                      <Button
+                        variant="outline"
+                        size="md"
+                        onClick={() => handleDownloadDocument(docPreview.id, docPreview.file_name)}
+                        icon={<Download size={14} />}
+                      >
+                        Download File
+                      </Button>
+                    )}
+                    <Button variant="secondary" size="md" onClick={() => setDocPreview(null)}>
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              }
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '12px',
+                    padding: '12px',
+                    backgroundColor: 'var(--bg-hover)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '12.5px',
+                  }}
+                >
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Status</span>
+                    {getDocBadge(docPreview.verification_status)}
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Issue Date</span>
+                    <strong>{docPreview.issue_date ? formatDate(docPreview.issue_date) : 'Not specified'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Expiry Date</span>
+                    <strong>{docPreview.expiry_date ? formatDate(docPreview.expiry_date) : 'Permanent'}</strong>
+                  </div>
+                </div>
+
+                {/* Document display preview */}
+                {docPreview.file_data ? (
+                  docPreview.mime_type?.startsWith('image/') || docPreview.file_data.startsWith('data:image/') ? (
+                    <div style={{ textAlign: 'center', maxHeight: '450px', overflow: 'auto', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <img
+                        src={docPreview.file_data}
+                        alt={docPreview.file_name || 'Certificate'}
+                        style={{ maxWidth: '100%', height: 'auto', display: 'inline-block' }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '40px', backgroundColor: 'var(--bg-muted)', borderRadius: '8px' }}>
+                      <FileText size={48} style={{ color: 'var(--color-primary)', margin: '0 auto 12px auto' }} />
+                      <div style={{ fontSize: '14px', fontWeight: 600 }}>{docPreview.file_name || 'PDF Document Attachment'}</div>
+                      <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '6px 0 16px 0' }}>
+                        Click download below to view this certificate in your system viewer.
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '36px', backgroundColor: 'var(--bg-muted)', borderRadius: '8px' }}>
+                    <FileText size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 10px auto' }} />
+                    <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                      No digitized certificate image file attached to this reference record.
+                    </div>
+                  </div>
+                )}
+
+                {docPreview.notes && (
+                  <div>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Auditor Remarks:
+                    </span>
+                    <p style={{ fontSize: '13px', margin: 0, padding: '8px 12px', backgroundColor: 'var(--bg-hover)', borderRadius: '6px' }}>
+                      {docPreview.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Modal>
+          )}
+
+          {/* Maintenance Entry Details Modal */}
+          {selectedMaintenance && (
+            <Modal
+              isOpen={Boolean(selectedMaintenance)}
+              onClose={() => setSelectedMaintenance(null)}
+              title="Fleet Maintenance Inspection"
+              subtitle={`Service log from ${formatDate(selectedMaintenance.service_date)} • ${vehicle.registration_number}`}
+              icon={<Wrench size={20} />}
+              size="md"
+              footer={
+                <Button variant="secondary" size="md" onClick={() => setSelectedMaintenance(null)}>
+                  Close Log
+                </Button>
+              }
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '14px',
+                    padding: '14px',
+                    backgroundColor: 'var(--bg-hover)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '13px',
+                  }}
+                >
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>Service Type</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{selectedMaintenance.service_type}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>Service Cost</span>
+                    <strong style={{ color: 'var(--color-primary)', fontSize: '15px' }}>
+                      {formatCurrency(Number(selectedMaintenance.cost) || 0)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>Odometer Reading</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>
+                      {Number(selectedMaintenance.odometer_km || 0).toLocaleString('en-IN')} KM
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>Next Due Date</span>
+                    <strong style={{ color: selectedMaintenance.next_service_date ? '#B45309' : 'var(--text-secondary)' }}>
+                      {selectedMaintenance.next_service_date ? formatDate(selectedMaintenance.next_service_date) : 'None scheduled'}
+                    </strong>
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    Service Center / Garage
+                  </span>
+                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {selectedMaintenance.service_center || 'Authorized Commercial Facility'}
+                  </div>
+                </div>
+
+                {selectedMaintenance.description && (
+                  <div>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Replaced Parts & Work Details:
+                    </span>
+                    <p style={{ fontSize: '13px', margin: 0, padding: '10px 14px', backgroundColor: 'var(--bg-muted)', borderRadius: '6px', lineHeight: 1.5 }}>
+                      {selectedMaintenance.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Modal>
+          )}
+
+          {/* Status Change Confirmation Modal */}
+          {confirmStatusToggleOpen && (
+            <Modal
+              isOpen={confirmStatusToggleOpen}
+              onClose={() => setConfirmStatusToggleOpen(false)}
+              title={vehicle.is_active ? 'Deactivate Vehicle Asset?' : 'Activate Vehicle Asset?'}
+              subtitle={`Operational status confirmation for ${vehicle.registration_number}`}
+              icon={<Power size={20} />}
+              size="sm"
+              footer={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', width: '100%' }}>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => setConfirmStatusToggleOpen(false)}
+                    disabled={statusUpdating}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant={vehicle.is_active ? 'danger' : 'primary'}
+                    size="md"
+                    onClick={handleStatusToggle}
+                    loading={statusUpdating}
+                  >
+                    {vehicle.is_active ? 'Confirm Deactivation' : 'Confirm Activation'}
+                  </Button>
+                </div>
+              }
+            >
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                {vehicle.is_active ? (
+                  <>
+                    Deactivating <strong style={{ color: 'var(--text-primary)' }}>{vehicle.registration_number}</strong> will mark it as decommissioned and prevent it from being allocated to any new delivery runs.
+                  </>
+                ) : (
+                  <>
+                    Activating <strong style={{ color: 'var(--text-primary)' }}>{vehicle.registration_number}</strong> will restore its active fleet standing, making it eligible for dispatch assignment once mandatory documents are verified.
+                  </>
+                )}
+              </p>
+            </Modal>
+          )}
         </>
       )}
     </div>

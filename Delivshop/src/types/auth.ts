@@ -8,6 +8,14 @@ export interface User {
   phone?: string;
   shopId?: string;
   driverId?: string;
+  employeeId?: string;
+  employee_id?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  assignedRoute?: string;
+  licenseNumber?: string;
+  accountStatus?: string;
+  employmentStatus?: string;
   createdAt?: string;
 }
 
