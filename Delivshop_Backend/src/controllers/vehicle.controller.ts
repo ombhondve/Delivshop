@@ -205,10 +205,11 @@ export const vehicleController = {
     try {
       const { id } = req.params;
       const { reason } = req.body || {};
-      await vehicleService.deleteVehicle(id, req.user?.id, reason, req.ip);
+      const result = await vehicleService.deleteVehicle(id, req.user?.id, reason, req.ip);
       res.json({
         success: true,
-        message: 'Vehicle successfully archived from fleet',
+        message: result.message,
+        data: result,
       });
     } catch (err) {
       next(err);

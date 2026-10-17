@@ -11,6 +11,7 @@ import {
   Linking,
   Alert,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -214,7 +215,12 @@ export default function DriverDeliveriesTabScreen() {
 
       {/* Filter Tabs */}
       <View style={styles.filterBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled={true}
+          contentContainerStyle={styles.filterScroll}
+        >
           {(['ALL', 'CURRENT', 'UPCOMING', 'COMPLETED', 'EXCEPTIONS'] as FilterTab[]).map((tab) => {
             const isSelected = activeFilter === tab;
             return (
@@ -240,11 +246,13 @@ export default function DriverDeliveriesTabScreen() {
         </View>
       ) : (
         <FlatList
+          style={styles.listContainer}
           data={filteredDeliveries}
           keyExtractor={(item) => item.id}
           renderItem={renderDeliveryCard}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -324,9 +332,13 @@ const styles = StyleSheet.create({
   filterPillTextActive: {
     color: DelivColors.white,
   },
+  listContainer: {
+    flex: 1,
+  },
   listContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === 'ios' ? 110 : 96,
+    flexGrow: 1,
   },
   card: {
     backgroundColor: DelivColors.white,

@@ -11,7 +11,7 @@ export type DairyCategory =
   | 'Other Dairy Products'
   | string;
 
-export type StockFilterStatus = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
+export type StockFilterStatus = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON' | 'ARCHIVED';
 
 export type MovementType =
   | 'OPENING_STOCK'

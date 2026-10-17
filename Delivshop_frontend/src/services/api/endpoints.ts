@@ -32,6 +32,8 @@ import {
   StockReceiptPayload,
   StockAdjustmentPayload,
   InventoryFilterQuery,
+  OrderVolumeSummaryResponse,
+  OrderDispatchRecord,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -557,6 +559,13 @@ export const api = {
       });
     },
 
+    async delete(id: string, reason?: string): Promise<{ success: boolean; message: string; softDeleted?: boolean }> {
+      return apiClient<{ success: boolean; message: string; softDeleted?: boolean }>(`vehicles/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
+    },
+
     async getDispatchEligibility(id: string, options?: { targetDate?: string; requiresRefrigeration?: boolean; excludeRunId?: string }): Promise<any> {
       const query = new URLSearchParams();
       if (options?.targetDate) query.set('targetDate', options.targetDate);
@@ -574,13 +583,6 @@ export const api = {
       return apiClient<any>(`vehicles/${id}/maintenance`, {
         method: 'POST',
         body: JSON.stringify(payload),
-      });
-    },
-
-    async delete(id: string, reason?: string): Promise<any> {
-      return apiClient<any>(`vehicles/${id}`, {
-        method: 'DELETE',
-        body: JSON.stringify({ reason }),
       });
     },
   },
@@ -727,6 +729,95 @@ export const api = {
       return apiClient<any>(`assignments/${id}`, {
         method: 'DELETE',
         body: JSON.stringify(options || {}),
+      });
+    },
+  },
+
+  orders: {
+    async list(params: {
+      status?: string;
+      search?: string;
+      shopId?: string;
+      driverId?: string;
+      routeId?: string;
+      date?: string;
+      page?: number;
+      limit?: number;
+    } = {}): Promise<{ orders: OrderDispatchRecord[]; total: number; page: number; limit: number }> {
+      const query = new URLSearchParams();
+      if (params.status) query.set('status', params.status);
+      if (params.search) query.set('search', params.search);
+      if (params.shopId) query.set('shopId', params.shopId);
+      if (params.driverId) query.set('driverId', params.driverId);
+      if (params.routeId) query.set('routeId', params.routeId);
+      if (params.date) query.set('date', params.date);
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+
+      const qs = query.toString();
+      return apiClient<{ orders: OrderDispatchRecord[]; total: number; page: number; limit: number }>(`orders${qs ? `?${qs}` : ''}`);
+    },
+
+    async get(orderId: string): Promise<any> {
+      return apiClient<any>(`orders/${orderId}`);
+    },
+
+    async getVolumeSummary(params: {
+      status?: string;
+      deliveryDate?: string;
+      date?: string;
+      shopId?: string;
+      productId?: string;
+      packagingSize?: string;
+    } = {}): Promise<OrderVolumeSummaryResponse> {
+      const query = new URLSearchParams();
+      if (params.status) query.set('status', params.status);
+      if (params.deliveryDate) query.set('deliveryDate', params.deliveryDate);
+      if (params.date) query.set('date', params.date);
+      if (params.shopId) query.set('shopId', params.shopId);
+      if (params.productId) query.set('productId', params.productId);
+      if (params.packagingSize) query.set('packagingSize', params.packagingSize);
+
+      const qs = query.toString();
+      return apiClient<OrderVolumeSummaryResponse>(`orders/volume-summary${qs ? `?${qs}` : ''}`);
+    },
+
+    async exportVolumeSummary(params: {
+      status?: string;
+      deliveryDate?: string;
+      date?: string;
+      shopId?: string;
+      productId?: string;
+      packagingSize?: string;
+    } = {}): Promise<string> {
+      const query = new URLSearchParams();
+      if (params.status) query.set('status', params.status);
+      if (params.deliveryDate) query.set('deliveryDate', params.deliveryDate);
+      if (params.date) query.set('date', params.date);
+      if (params.shopId) query.set('shopId', params.shopId);
+      if (params.productId) query.set('productId', params.productId);
+      if (params.packagingSize) query.set('packagingSize', params.packagingSize);
+
+      const qs = query.toString();
+      const token = tokenStore.get();
+      const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+      const url = `${API_BASE_URL.replace(/\/$/, '')}/orders/volume-summary/export${qs ? `?${qs}` : ''}`;
+
+      const res = await fetch(url, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to export summary: ${res.statusText}`);
+      }
+      return res.text();
+    },
+
+    async updateStatus(orderId: string, status: string, notes?: string): Promise<any> {
+      return apiClient<any>(`orders/${orderId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, notes }),
       });
     },
   },

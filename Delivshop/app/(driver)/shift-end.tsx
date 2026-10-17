@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -92,10 +94,20 @@ export default function ShiftEndScreen() {
   const remaining = Math.max(0, planned - completed);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <DriverHeader title="Complete Daily Shift" showBack />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
         {/* Banner */}
         <View style={styles.bannerCard}>
           <View style={styles.bannerIconWrap}>
@@ -188,7 +200,8 @@ export default function ShiftEndScreen() {
             </View>
           )}
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -198,9 +211,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 50,
+    flexGrow: 1,
   },
   centerContainer: {
     flex: 1,

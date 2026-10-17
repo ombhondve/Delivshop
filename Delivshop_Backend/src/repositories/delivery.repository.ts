@@ -450,50 +450,6 @@ export const deliveryRepository = {
     return res.rows[0] || null;
   },
 
-  async checkDriverDependencies(driverId: string): Promise<{
-    activeDeliveriesCount: number;
-    historicalDeliveriesCount: number;
-    activeRunsCount: number;
-  }> {
-    const activeRes = await query<{ count: string }>(
-      `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1 AND status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED')`,
-      [driverId]
-    );
-    const histRes = await query<{ count: string }>(
-      `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1`,
-      [driverId]
-    );
-    const runsRes = await query<{ count: string }>(
-      `SELECT COUNT(*)::text as count FROM delivery_runs WHERE driver_id = $1 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS')`,
-      [driverId]
-    );
-
-    return {
-      activeDeliveriesCount: parseInt(activeRes.rows[0]?.count || '0', 10),
-      historicalDeliveriesCount: parseInt(histRes.rows[0]?.count || '0', 10),
-      activeRunsCount: parseInt(runsRes.rows[0]?.count || '0', 10),
-    };
-  },
-
-  async deleteDriver(driverId: string, actorId?: string, reason?: string): Promise<{ softDeleted: boolean }> {
-    const deps = await this.checkDriverDependencies(driverId);
-    if (deps.historicalDeliveriesCount === 0) {
-      await query(`DELETE FROM users WHERE id = $1 AND role = 'DRIVER'`, [driverId]);
-      return { softDeleted: false };
-    } else {
-      await query(
-        `UPDATE users
-         SET deleted_at = NOW(),
-             deleted_by = $2,
-             deletion_reason = $3,
-             is_active = false
-         WHERE id = $1 AND role = 'DRIVER'`,
-        [driverId, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
-      );
-      return { softDeleted: true };
-    }
-  },
-
   async getSalaryConfig(driverId: string): Promise<any | null> {
     const res = await query(
       `SELECT * FROM driver_salary_configs WHERE driver_id = $1 AND is_current = TRUE ORDER BY created_at DESC LIMIT 1`,
@@ -1083,6 +1039,123 @@ export const deliveryRepository = {
       throw err;
     } finally {
       client.release();
+    }
+  },
+
+  async checkDriverDependencies(driverId: string): Promise<{
+    activeDeliveriesCount: number;
+    activeRunsCount: number;
+    historicalDeliveriesCount: number;
+    historicalRunsCount: number;
+    inspectionsCount: number;
+    collectionsCount: number;
+    payrollCount: number;
+    reconciliationsCount: number;
+    hasHistoricalRecords: boolean;
+    canPhysicalDelete: boolean;
+  }> {
+    const activeDelRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1 AND status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED')`,
+      [driverId]
+    );
+    const activeRunsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_runs WHERE driver_id = $1 AND status IN ('ASSIGNED', 'IN_PROGRESS', 'STARTED', 'ACTIVE')`,
+      [driverId]
+    );
+    const histDelRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM deliveries WHERE driver_id = $1`,
+      [driverId]
+    );
+    const histRunsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_runs WHERE driver_id = $1`,
+      [driverId]
+    );
+    const inspectRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM vehicle_inspections WHERE driver_id = $1`,
+      [driverId]
+    );
+    const collRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_collections WHERE driver_id = $1`,
+      [driverId]
+    );
+    const payrollRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM driver_payroll_records WHERE driver_id = $1`,
+      [driverId]
+    );
+    const recRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_reconciliations WHERE driver_id = $1`,
+      [driverId]
+    );
+
+    const activeDeliveriesCount = parseInt(activeDelRes.rows[0]?.count || '0', 10);
+    const activeRunsCount = parseInt(activeRunsRes.rows[0]?.count || '0', 10);
+    const historicalDeliveriesCount = parseInt(histDelRes.rows[0]?.count || '0', 10);
+    const historicalRunsCount = parseInt(histRunsRes.rows[0]?.count || '0', 10);
+    const inspectionsCount = parseInt(inspectRes.rows[0]?.count || '0', 10);
+    const collectionsCount = parseInt(collRes.rows[0]?.count || '0', 10);
+    const payrollCount = parseInt(payrollRes.rows[0]?.count || '0', 10);
+    const reconciliationsCount = parseInt(recRes.rows[0]?.count || '0', 10);
+
+    const hasHistoricalRecords =
+      historicalDeliveriesCount > 0 ||
+      historicalRunsCount > 0 ||
+      inspectionsCount > 0 ||
+      collectionsCount > 0 ||
+      payrollCount > 0 ||
+      reconciliationsCount > 0;
+
+    const canPhysicalDelete =
+      !hasHistoricalRecords && activeDeliveriesCount === 0 && activeRunsCount === 0;
+
+    return {
+      activeDeliveriesCount,
+      activeRunsCount,
+      historicalDeliveriesCount,
+      historicalRunsCount,
+      inspectionsCount,
+      collectionsCount,
+      payrollCount,
+      reconciliationsCount,
+      hasHistoricalRecords,
+      canPhysicalDelete,
+    };
+  },
+
+  async deleteDriver(
+    driverId: string,
+    actorId?: string,
+    reason?: string
+  ): Promise<{ softDeleted: boolean }> {
+    const deps = await this.checkDriverDependencies(driverId);
+
+    if (deps.canPhysicalDelete) {
+      const client = await dbPool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM driver_documents WHERE driver_id = $1', [driverId]);
+        await client.query('DELETE FROM driver_attendance WHERE driver_id = $1', [driverId]);
+        await client.query('DELETE FROM driver_salary_configs WHERE driver_id = $1', [driverId]);
+        await client.query('DELETE FROM users WHERE id = $1', [driverId]);
+        await client.query('COMMIT');
+        return { softDeleted: false };
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    } else {
+      await query(
+        `UPDATE users
+         SET deleted_at = NOW(),
+             deleted_by = $2,
+             deletion_reason = $3,
+             is_active = FALSE,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [driverId, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
+      );
+      return { softDeleted: true };
     }
   },
 };

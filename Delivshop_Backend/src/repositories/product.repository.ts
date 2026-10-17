@@ -87,7 +87,8 @@ export const productRepository = {
     const limit = Math.min(100, Math.max(1, params.limit || 10));
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = ['p.deleted_at IS NULL'];
+    const isArchived = (params.status as string) === 'ARCHIVED' || (params.stockStatus as string) === 'ARCHIVED';
+    const conditions: string[] = [isArchived ? 'p.deleted_at IS NOT NULL' : 'p.deleted_at IS NULL'];
     const values: any[] = [];
     let paramIdx = 1;
 

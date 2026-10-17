@@ -40,6 +40,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { EditDriverModal } from './EditDriverModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { DriverSalaryModal } from './DriverSalaryModal';
@@ -74,6 +75,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Status toggle confirmation
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
@@ -403,6 +405,19 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           >
             <Power size={14} style={{ marginRight: '6px' }} />
             {driver.is_active ? 'Deactivate Driver' : 'Reactivate Driver'}
+          </Button>
+
+          <Button
+            variant="secondary"
+            onClick={() => setIsDeleteModalOpen(true)}
+            style={{
+              borderColor: '#FCA5A5',
+              backgroundColor: '#FEF2F2',
+              color: '#DC2626',
+            }}
+          >
+            <Trash2 size={14} style={{ marginRight: '6px' }} />
+            Delete Driver
           </Button>
         </div>
       </div>
@@ -1421,6 +1436,41 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           fetchDriverProfile();
         }}
       />
+
+      {/* Delete Driver Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          title="Delete Driver Record"
+          entityType="Driver"
+          entityName={driver.name}
+          entityIdentifier={driver.employee_id}
+          isActive={Boolean(driver.is_active)}
+          details={[
+            { label: 'Driver Name', value: driver.name },
+            { label: 'Employee ID', value: driver.employee_id || 'N/A' },
+            { label: 'Current Account Status', value: driver.is_active ? 'Active' : 'Inactive' },
+            {
+              label: 'Active Assignments',
+              value: (driver.active_deliveries || 0) > 0 ? `${driver.active_deliveries} active deliveries` : 'None (Available)',
+            },
+          ]}
+          blockingReason={
+            (driver.active_deliveries || 0) > 0
+              ? `Driver currently has ${driver.active_deliveries} active deliveries assigned. Deliveries must be completed or reassigned before deleting.`
+              : null
+          }
+          customWarning="Drivers with historical dispatches, completed deliveries, payment collections, or payroll records will be safely archived and deactivated to maintain statutory audit and compliance records. Drivers with zero historical records will be permanently purged."
+          onDeactivateRequested={handleToggleStatus}
+          onConfirm={async (reason) => {
+            const res = await api.deliveries.deleteDriver(driver.id, reason);
+            showToast(res?.message || 'Driver deleted / archived successfully');
+            setIsDeleteModalOpen(false);
+            navigate('/admin/drivers');
+          }}
+        />
+      )}
     </div>
   );
 };

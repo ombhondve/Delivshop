@@ -19,6 +19,8 @@ export interface DeleteConfirmModalProps {
   isActive: boolean;
   onDeactivateRequested?: () => void;
   customWarning?: string;
+  details?: { label: string; value: React.ReactNode }[];
+  blockingReason?: string | null;
 }
 
 export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
@@ -32,6 +34,8 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   isActive,
   onDeactivateRequested,
   customWarning,
+  details,
+  blockingReason,
 }) => {
   const [reason, setReason] = useState('');
   const [confirmed, setConfirmed] = useState(false);
@@ -50,6 +54,10 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (blockingReason) {
+      setErrorMessage(blockingReason);
+      return;
+    }
     if (isActive) {
       setErrorMessage(`Deactivate this ${entityType.toLowerCase()} before deleting it.`);
       return;
@@ -198,10 +206,42 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
                 Identifier: <code style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{entityIdentifier}</code>
               </div>
             )}
+            {details && details.length > 0 && (
+              <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', borderTop: '1px solid #E2E8F0', paddingTop: '10px' }}>
+                {details.map((d, i) => (
+                  <div key={i} style={{ fontSize: '12px' }}>
+                    <span style={{ color: '#64748B' }}>{d.label}: </span>
+                    <strong style={{ color: '#0F172A' }}>{d.value}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Active Record Restriction Alert (Rule 1 & Rule 2 Enforcement) */}
-          {isActive ? (
+          {/* Blocking Dependencies Alert */}
+          {blockingReason ? (
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '10px',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                marginBottom: '18px',
+                display: 'flex',
+                gap: '12px',
+              }}
+            >
+              <AlertTriangle size={20} style={{ color: '#DC2626', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#991B1B' }}>
+                  Deletion Blocked by Dependencies
+                </div>
+                <div style={{ fontSize: '12.5px', color: '#B91C1C', marginTop: '4px', lineHeight: 1.45 }}>
+                  {blockingReason}
+                </div>
+              </div>
+            </div>
+          ) : isActive ? (
             <div
               style={{
                 padding: '14px 16px',
@@ -375,7 +415,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             </Button>
             <button
               type="submit"
-              disabled={isActive || !confirmed || isSubmitting}
+              disabled={isActive || !confirmed || isSubmitting || Boolean(blockingReason)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -385,10 +425,10 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
                 fontWeight: 600,
                 borderRadius: '8px',
                 border: 'none',
-                cursor: isActive || !confirmed || isSubmitting ? 'not-allowed' : 'pointer',
-                backgroundColor: isActive || !confirmed ? '#A7AE9F' : '#DC2626',
+                cursor: isActive || !confirmed || isSubmitting || Boolean(blockingReason) ? 'not-allowed' : 'pointer',
+                backgroundColor: isActive || !confirmed || Boolean(blockingReason) ? '#A7AE9F' : '#DC2626',
                 color: '#FFFFFF',
-                boxShadow: isActive || !confirmed ? 'none' : '0 2px 4px rgba(220, 38, 38, 0.25)',
+                boxShadow: isActive || !confirmed || Boolean(blockingReason) ? 'none' : '0 2px 4px rgba(220, 38, 38, 0.25)',
                 transition: 'all 0.15s ease',
               }}
             >

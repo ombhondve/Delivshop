@@ -10,6 +10,8 @@ import {
   Alert,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -167,7 +169,7 @@ export default function DispatchDetailsScreen() {
   const nextStop = stops.find((s) => s.status === 'PENDING' || s.status === 'ARRIVED');
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <DriverHeader
         title={dispatch.run_code}
         subtitle={dispatch.route_name || 'Assigned Route'}
@@ -175,8 +177,11 @@ export default function DispatchDetailsScreen() {
       />
 
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -311,7 +316,10 @@ export default function DispatchDetailsScreen() {
         animationType="slide"
         onRequestClose={() => setSkipModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Document Stop Exception</Text>
@@ -320,7 +328,12 @@ export default function DispatchDetailsScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.modalBody}>
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollBody}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+            >
               <Text style={styles.modalSub}>
                 Stop #{selectedStop?.stop_sequence}: {selectedStop?.shop_name}
               </Text>
@@ -379,9 +392,9 @@ export default function DispatchDetailsScreen() {
                   <Text style={styles.confirmSkipBtnText}>Record Audit Exception & Skip</Text>
                 )}
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -392,9 +405,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 48,
+    flexGrow: 1,
   },
   centerContainer: {
     flex: 1,
@@ -571,7 +588,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    paddingBottom: 36,
+    paddingBottom: 24,
+    maxHeight: '85%',
+    flexShrink: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -584,8 +603,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: DelivColors.deepEmerald,
   },
-  modalBody: {
+  modalScrollView: {
+    flexShrink: 1,
+  },
+  modalScrollBody: {
     gap: 10,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   modalSub: {
     fontSize: 13,

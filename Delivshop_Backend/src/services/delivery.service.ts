@@ -452,7 +452,7 @@ export const deliveryService = {
     if (deps.activeDeliveriesCount > 0 || deps.activeRunsCount > 0) {
       throw new AppError(
         `Cannot delete driver because they are currently assigned to ${deps.activeDeliveriesCount} active delivery task(s) and ${deps.activeRunsCount} active run(s). Reassign or complete those first.`,
-        400
+        409
       );
     }
 

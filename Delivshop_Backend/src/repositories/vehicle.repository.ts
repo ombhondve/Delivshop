@@ -799,18 +799,43 @@ export const vehicleRepository = {
   async checkDependencies(vehicleId: string): Promise<{
     activeRunsCount: number;
     historicalRunsCount: number;
+    inspectionsCount: number;
+    maintenanceCount: number;
+    hasHistoricalRecords: boolean;
+    canPhysicalDelete: boolean;
   }> {
     const activeRes = await query<{ count: string }>(
-      `SELECT COUNT(*)::text as count FROM delivery_runs WHERE vehicle_id = $1 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS')`,
+      `SELECT COUNT(*)::text as count FROM delivery_runs WHERE vehicle_id = $1 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS', 'STARTED', 'ACTIVE')`,
       [vehicleId]
     );
     const histRes = await query<{ count: string }>(
       `SELECT COUNT(*)::text as count FROM delivery_runs WHERE vehicle_id = $1`,
       [vehicleId]
     );
+    const inspectRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM vehicle_inspections WHERE vehicle_id = $1`,
+      [vehicleId]
+    );
+    const maintRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM vehicle_maintenance WHERE vehicle_id = $1`,
+      [vehicleId]
+    );
+
+    const activeRunsCount = parseInt(activeRes.rows[0]?.count || '0', 10);
+    const historicalRunsCount = parseInt(histRes.rows[0]?.count || '0', 10);
+    const inspectionsCount = parseInt(inspectRes.rows[0]?.count || '0', 10);
+    const maintenanceCount = parseInt(maintRes.rows[0]?.count || '0', 10);
+
+    const hasHistoricalRecords = historicalRunsCount > 0 || inspectionsCount > 0 || maintenanceCount > 0;
+    const canPhysicalDelete = !hasHistoricalRecords && activeRunsCount === 0;
+
     return {
-      activeRunsCount: parseInt(activeRes.rows[0]?.count || '0', 10),
-      historicalRunsCount: parseInt(histRes.rows[0]?.count || '0', 10),
+      activeRunsCount,
+      historicalRunsCount,
+      inspectionsCount,
+      maintenanceCount,
+      hasHistoricalRecords,
+      canPhysicalDelete,
     };
   },
 
@@ -821,10 +846,18 @@ export const vehicleRepository = {
            deleted_by = $2,
            deletion_reason = $3,
            is_active = FALSE,
-           status = 'INACTIVE'
+           status = 'INACTIVE',
+           updated_at = NOW()
        WHERE id = $1`,
       [vehicleId, actorId || null, reason || 'Archived via administrative vehicle deactivation']
     );
+    return true;
+  },
+
+  async permanentDelete(vehicleId: string): Promise<boolean> {
+    await query('DELETE FROM vehicle_documents WHERE vehicle_id = $1', [vehicleId]);
+    await query('DELETE FROM vehicle_maintenance WHERE vehicle_id = $1', [vehicleId]);
+    await query('DELETE FROM vehicles WHERE id = $1', [vehicleId]);
     return true;
   },
 };

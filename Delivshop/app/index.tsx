@@ -35,8 +35,10 @@ export default function DelivshopLandingScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Brand Header */}
         <View style={styles.brandHeader}>
@@ -157,7 +159,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 24 : 16,
     paddingBottom: 40,

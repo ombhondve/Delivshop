@@ -8,6 +8,8 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -152,14 +154,24 @@ export default function ReconciliationScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <DriverHeader
         title="Shift Reconciliation"
         subtitle={activeRun?.run_code ? `Run #${activeRun.run_code}` : 'End-of-Day Handover'}
         showBack
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
         {/* Banner */}
         <View style={styles.bannerCard}>
           <Ionicons name="shield-checkmark" size={28} color={DelivColors.lightEmerald} />
@@ -339,7 +351,8 @@ export default function ReconciliationScreen() {
             </>
           )}
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <ConfirmModal
         visible={confirmModalVisible}
@@ -363,6 +376,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -377,8 +393,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 50,
     gap: 14,
+    flexGrow: 1,
   },
   bannerCard: {
     backgroundColor: DelivColors.deepEmerald,

@@ -9,6 +9,8 @@ import {
   Alert,
   TextInput,
   Switch,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -155,10 +157,20 @@ export default function VehicleInspectionScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <DriverHeader title="Vehicle Pre-Dispatch Checklist" showBack />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
         {/* Vehicle Identity Box */}
         <View style={styles.vehicleHeaderCard}>
           <View style={styles.vehicleIconWrap}>
@@ -345,7 +357,8 @@ export default function VehicleInspectionScreen() {
             </Text>
           )}
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -355,9 +368,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 50,
+    flexGrow: 1,
   },
   centerContainer: {
     flex: 1,

@@ -57,7 +57,7 @@ const DAIRY_CATEGORIES = [
   'Other Dairy Products',
 ];
 
-type StockTab = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
+type StockTab = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON' | 'ARCHIVED';
 
 export const ProductCatalog: React.FC = () => {
   const { navigate } = useNavigation();
@@ -459,6 +459,7 @@ export const ProductCatalog: React.FC = () => {
             { id: 'LOW_STOCK', label: 'Low Stock' },
             { id: 'OUT_OF_STOCK', label: 'Out of Stock' },
             { id: 'EXPIRING_SOON', label: 'Expiring Soon (< 7 Days)' },
+            { id: 'ARCHIVED', label: 'Archived / Deleted' },
           ] as { id: StockTab; label: string }[]
         ).map((tab) => {
           const isSelected = activeTab === tab.id;

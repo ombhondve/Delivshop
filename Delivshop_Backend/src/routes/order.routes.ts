@@ -18,6 +18,27 @@ router.post(
 );
 
 router.get(
+  '/',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER', 'SHOP', 'DRIVER'),
+  orderController.listOrders
+);
+
+router.get(
+  '/volume-summary',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  orderController.getVolumeSummary
+);
+
+router.get(
+  '/volume-summary/export',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  orderController.exportVolumeSummaryCsv
+);
+
+router.get(
   '/:orderId',
   authenticate,
   authorizeRoles('SHOP', 'ADMIN', 'DRIVER', 'SUPPLIER'),

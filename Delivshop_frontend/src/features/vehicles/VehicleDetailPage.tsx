@@ -34,6 +34,7 @@ import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { useNavigation } from '../../context/NavigationContext';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
 import { AddMaintenanceModal } from './AddMaintenanceModal';
@@ -66,6 +67,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
   const [docPreview, setDocPreview] = useState<any | null>(null);
   const [selectedMaintenance, setSelectedMaintenance] = useState<any | null>(null);
   const [confirmStatusToggleOpen, setConfirmStatusToggleOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
@@ -494,6 +496,22 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             >
               <Power size={15} />
               {statusUpdating ? 'Updating...' : vehicle?.is_active ? 'Deactivate Vehicle' : 'Activate Vehicle'}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-outline-danger"
+              onClick={() => setIsDeleteModalOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderColor: '#FCA5A5',
+                color: '#DC2626',
+                backgroundColor: '#FEF2F2',
+              }}
+            >
+              <Trash2 size={15} /> Delete Vehicle
             </button>
           </div>
         </div>
@@ -1716,6 +1734,40 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 )}
               </p>
             </Modal>
+          )}
+
+          {/* Delete Vehicle Confirmation Modal */}
+          {isDeleteModalOpen && (
+            <DeleteConfirmModal
+              isOpen={isDeleteModalOpen}
+              onClose={() => setIsDeleteModalOpen(false)}
+              title="Delete Vehicle Asset"
+              entityType="Vehicle"
+              entityName={vehicle.registration_number}
+              entityIdentifier={vehicle.vehicle_code}
+              isActive={Boolean(vehicle.is_active)}
+              details={[
+                { label: 'Registration Number', value: vehicle.registration_number },
+                { label: 'Asset Code', value: vehicle.vehicle_code },
+                { label: 'Vehicle Type', value: vehicle.vehicle_type },
+                { label: 'Operational Status', value: vehicle.status },
+              ]}
+              blockingReason={
+                vehicle.status === 'ASSIGNED' || Boolean(vehicle.active_run_id)
+                  ? `Vehicle is currently assigned to an active delivery run (${vehicle.active_run_code || 'In Progress'}). You must reassign or complete all active dispatches before deleting.`
+                  : null
+              }
+              customWarning="Vehicles with historical runs, inspections, or maintenance logs will be securely archived and deactivated to retain complete compliance records. Unused vehicle assets without historical records will be permanently purged."
+              onDeactivateRequested={() => {
+                setConfirmStatusToggleOpen(true);
+              }}
+              onConfirm={async (reason) => {
+                await api.vehicles.delete(vehicle.id, reason);
+                showToast('Vehicle deleted / archived successfully');
+                setIsDeleteModalOpen(false);
+                navigate('/admin/vehicles');
+              }}
+            />
           )}
         </>
       )}

@@ -268,7 +268,15 @@ export const shopService = {
     if (deps.openOrdersCount > 0) {
       throw new AppError(
         `Cannot delete shop because it has ${deps.openOrdersCount} active/open order(s). Please fulfill or cancel these orders before deleting.`,
-        400
+        409
+      );
+    }
+
+    // Dependency check: Cannot delete shop with active delivery run stops
+    if (deps.activeRunStopsCount > 0) {
+      throw new AppError(
+        `Cannot delete shop because it is currently assigned to ${deps.activeRunStopsCount} active delivery run stop(s). Please complete or reassign those runs before deleting.`,
+        409
       );
     }
 
@@ -276,7 +284,7 @@ export const shopService = {
     if (deps.hasOutstandingBalance) {
       throw new AppError(
         `Cannot delete shop with an outstanding financial balance of ₹${deps.outstandingBalance.toFixed(2)}. Please settle the account balance before deleting.`,
-        400
+        409
       );
     }
 

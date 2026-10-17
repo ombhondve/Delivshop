@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ClipboardList,
   Search,
@@ -10,135 +10,390 @@ import {
   AlertCircle,
   X,
   Download,
+  Milk,
+  Boxes,
+  RefreshCw,
+  AlertTriangle,
+  Package,
+  Bell,
+  Check,
+  XCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { OrderVolumeSummaryModal } from './OrderVolumeSummaryModal';
+import { api } from '../../services/api/endpoints';
+import { OrderDispatchRecord } from '../../types';
 
-interface OrderItem {
+interface DisplayOrderItem {
   sku: string;
   name: string;
-  orderedCrates: number;
-  deliveredCrates: number;
+  category: string;
+  packSize: string;
+  packageSize: string;
+  packagingType: string;
+  isLiquid: boolean;
+  orderedPackages: number;
+  orderedCrates: number | null;
+  deliveredCrates: number | null;
+  deliveredPackages: number;
+  volumeLitres: number | null;
+  weightKg: number | null;
   unitPrice: number;
   total: number;
+  isCrateCapacityKnown: boolean;
 }
 
-interface OrderRecord {
+interface DisplayOrderRecord {
   id: string;
   orderNumber: string;
   shopId: string;
   shopName: string;
   route: string;
   driver: string;
-  status: 'PENDING_CONFIRMATION' | 'DISPATCH_PREPARED' | 'IN_TRANSIT' | 'DELIVERED' | 'DISPUTED';
+  status: 'PENDING_CONFIRMATION' | 'DISPATCH_PREPARED' | 'IN_TRANSIT' | 'DELIVERED' | 'DISPUTED' | 'CANCELLED' | string;
   totalAmount: number;
   paidAmount: number;
+  totalVolumeLitres: number;
   cratesCount: number;
+  packagesCount: number;
+  hasUnknownCrates: boolean;
   createdAt: string;
   deliveredAt?: string;
-  items: OrderItem[];
+  items: DisplayOrderItem[];
   notes?: string;
+  itemsSummaryText?: string;
+  isNew?: boolean;
 }
 
-export const OrdersList: React.FC = () => {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<OrderRecord | null>(null);
+// Fallback data preserving standard dispatch orders if backend is loading or unavailable
+const FALLBACK_DISPATCH_ORDERS: DisplayOrderRecord[] = [
+  {
+    id: 'ord_101',
+    orderNumber: 'DS-26-8891',
+    shopId: 'SH-8821',
+    shopName: 'Krishna Dairy & Provisions',
+    route: 'Route A (Shivajinagar)',
+    driver: 'Ramesh Powar',
+    status: 'DELIVERED',
+    totalAmount: 14850,
+    paidAmount: 14850,
+    totalVolumeLitres: 216,
+    cratesCount: 20,
+    packagesCount: 336,
+    hasUnknownCrates: false,
+    createdAt: '2026-10-14T03:15:00Z',
+    deliveredAt: '2026-10-14T06:45:00Z',
+    itemsSummaryText: '18 milk crates (312 pkts) • 2 curd crates',
+    items: [
+      { sku: 'MILK-COW-1L', name: 'Fresh Whole Cow Milk (1L Pouch)', category: 'Milk', packSize: '1L Pouch', packageSize: '1 L', packagingType: 'Pouch', isLiquid: true, orderedPackages: 120, orderedCrates: 10, deliveredCrates: 10, deliveredPackages: 120, volumeLitres: 120, weightKg: null, unitPrice: 68, total: 8160, isCrateCapacityKnown: true },
+      { sku: 'MILK-TONED-500', name: 'Standardized Toned Milk (500ml)', category: 'Milk', packSize: '500ml Pouch', packageSize: '500 ml', packagingType: 'Pouch', isLiquid: true, orderedPackages: 192, orderedCrates: 8, deliveredCrates: 8, deliveredPackages: 192, volumeLitres: 96, weightKg: null, unitPrice: 28, total: 5376, isCrateCapacityKnown: true },
+      { sku: 'CURD-500G', name: 'Traditional Set Curd / Dahi (500g)', category: 'Curd', packSize: '500g Cup', packageSize: '500 g', packagingType: 'Cup', isLiquid: false, orderedPackages: 24, orderedCrates: 2, deliveredCrates: 2, deliveredPackages: 24, volumeLitres: null, weightKg: 12, unitPrice: 60, total: 1440, isCrateCapacityKnown: true },
+    ],
+    notes: 'Delivered and verified by shop pin signature.',
+  },
+  {
+    id: 'ord_102',
+    orderNumber: 'DS-26-8892',
+    shopId: 'SH-7740',
+    shopName: 'Anand Supermarket & Milk Depot',
+    route: 'Route B (Kothrud)',
+    driver: 'Sunil Shinde',
+    status: 'IN_TRANSIT',
+    totalAmount: 22400,
+    paidAmount: 15000,
+    totalVolumeLitres: 312,
+    cratesCount: 26,
+    packagesCount: 432,
+    hasUnknownCrates: false,
+    createdAt: '2026-10-14T03:20:00Z',
+    itemsSummaryText: '26 milk crates (432 pkts)',
+    items: [
+      { sku: 'MILK-COW-1L', name: 'Fresh Whole Cow Milk (1L Pouch)', category: 'Milk', packSize: '1L Pouch', packageSize: '1 L', packagingType: 'Pouch', isLiquid: true, orderedPackages: 192, orderedCrates: 16, deliveredCrates: 16, deliveredPackages: 192, volumeLitres: 192, weightKg: null, unitPrice: 68, total: 13056, isCrateCapacityKnown: true },
+      { sku: 'MILK-TONED-500', name: 'Standardized Toned Milk (500ml)', category: 'Milk', packSize: '500ml Pouch', packageSize: '500 ml', packagingType: 'Pouch', isLiquid: true, orderedPackages: 240, orderedCrates: 10, deliveredCrates: 10, deliveredPackages: 240, volumeLitres: 120, weightKg: null, unitPrice: 26, total: 6240, isCrateCapacityKnown: true },
+    ],
+    notes: 'Driver approaching Kothrud depot. ETA 15 mins.',
+  },
+  {
+    id: 'ord_103',
+    orderNumber: 'DS-26-8893',
+    shopId: 'SH-9104',
+    shopName: 'Shree Ganesh Dairy Farm',
+    route: 'Route C (Hadapsar)',
+    driver: 'Amit Patil',
+    status: 'DELIVERED',
+    totalAmount: 8600,
+    paidAmount: 8600,
+    totalVolumeLitres: 96,
+    cratesCount: 10,
+    packagesCount: 136,
+    hasUnknownCrates: false,
+    createdAt: '2026-10-14T03:00:00Z',
+    deliveredAt: '2026-10-14T06:10:00Z',
+    itemsSummaryText: '8 buffalo milk crates (96 pkts) • 2 paneer crates',
+    items: [
+      { sku: 'MILK-BUF-1L', name: 'Premium Buffalo Milk (1L Pouch)', category: 'Milk', packSize: '1L Pouch', packageSize: '1 L', packagingType: 'Pouch', isLiquid: true, orderedPackages: 96, orderedCrates: 8, deliveredCrates: 8, deliveredPackages: 96, volumeLitres: 96, weightKg: null, unitPrice: 74, total: 7104, isCrateCapacityKnown: true },
+      { sku: 'PANEER-200G', name: 'Fresh Malai Paneer (200g Pack)', category: 'Paneer', packSize: '200g Pack', packageSize: '200 g', packagingType: 'Pack', isLiquid: false, orderedPackages: 40, orderedCrates: 2, deliveredCrates: 2, deliveredPackages: 40, volumeLitres: null, weightKg: 8, unitPrice: 92, total: 3680, isCrateCapacityKnown: true },
+    ],
+    notes: 'Delivered early morning drop.',
+  },
+  {
+    id: 'ord_104',
+    orderNumber: 'DS-26-8894',
+    shopId: 'SH-5512',
+    shopName: 'Mahesh Retail Store',
+    route: 'Route D (Pimpri)',
+    driver: 'Ganesh Deshmukh',
+    status: 'DISPUTED',
+    totalAmount: 19200,
+    paidAmount: 0,
+    totalVolumeLitres: 264,
+    cratesCount: 22,
+    packagesCount: 360,
+    hasUnknownCrates: false,
+    createdAt: '2026-10-14T03:30:00Z',
+    itemsSummaryText: '22 milk crates (360 pkts)',
+    items: [
+      { sku: 'MILK-COW-1L', name: 'Fresh Whole Cow Milk (1L Pouch)', category: 'Milk', packSize: '1L Pouch', packageSize: '1 L', packagingType: 'Pouch', isLiquid: true, orderedPackages: 168, orderedCrates: 14, deliveredCrates: 12, deliveredPackages: 144, volumeLitres: 168, weightKg: null, unitPrice: 68, total: 9792, isCrateCapacityKnown: true },
+      { sku: 'MILK-TONED-500', name: 'Standardized Toned Milk (500ml)', category: 'Milk', packSize: '500ml Pouch', packageSize: '500 ml', packagingType: 'Pouch', isLiquid: true, orderedPackages: 192, orderedCrates: 8, deliveredCrates: 8, deliveredPackages: 192, volumeLitres: 96, weightKg: null, unitPrice: 28, total: 5376, isCrateCapacityKnown: true },
+    ],
+    notes: 'Shop reported 2 crates leaking on arrival. Awaiting supervisor inspection.',
+  },
+  {
+    id: 'ord_105',
+    orderNumber: 'DS-26-8895',
+    shopId: 'SH-6320',
+    shopName: 'Om Sai Dairy Corner',
+    route: 'Route A (Shivajinagar)',
+    driver: 'Ramesh Powar',
+    status: 'DISPATCH_PREPARED',
+    totalAmount: 6750,
+    paidAmount: 6750,
+    totalVolumeLitres: 108,
+    cratesCount: 9,
+    packagesCount: 216,
+    hasUnknownCrates: false,
+    createdAt: '2026-10-14T04:00:00Z',
+    itemsSummaryText: '9 milk crates (216 pkts)',
+    items: [
+      { sku: 'MILK-TONED-500', name: 'Standardized Toned Milk (500ml)', category: 'Milk', packSize: '500ml Pouch', packageSize: '500 ml', packagingType: 'Pouch', isLiquid: true, orderedPackages: 216, orderedCrates: 9, deliveredCrates: 0, deliveredPackages: 0, volumeLitres: 108, weightKg: null, unitPrice: 26, total: 5616, isCrateCapacityKnown: true },
+    ],
+    notes: 'Loaded in cold storage bay #3. Scheduled for next dispatch wave.',
+  },
+];
 
-  const orders: OrderRecord[] = [
-    {
-      id: 'ord_101',
-      orderNumber: 'DS-26-8891',
-      shopId: 'SH-8821',
-      shopName: 'Krishna Dairy & Provisions',
-      route: 'Route A (Shivajinagar)',
-      driver: 'Ramesh Powar',
-      status: 'DELIVERED',
-      totalAmount: 14850,
-      paidAmount: 14850,
-      cratesCount: 18,
-      createdAt: '2026-10-14T03:15:00Z',
-      deliveredAt: '2026-10-14T06:45:00Z',
-      items: [
-        { sku: 'MLK-FCM-1L', name: 'Full Cream Milk 1L', orderedCrates: 10, deliveredCrates: 10, unitPrice: 816, total: 8160 },
-        { sku: 'MLK-COW-500', name: 'Cow Fresh Milk 500ml', orderedCrates: 8, deliveredCrates: 8, unitPrice: 672, total: 5376 },
-        { sku: 'DAH-CURD-400', name: 'Set Dahi 400g', orderedCrates: 2, deliveredCrates: 2, unitPrice: 720, total: 1440 },
-      ],
-    },
-    {
-      id: 'ord_102',
-      orderNumber: 'DS-26-8892',
-      shopId: 'SH-7740',
-      shopName: 'Anand Supermarket & Milk Depot',
-      route: 'Route B (Kothrud)',
-      driver: 'Sunil Shinde',
-      status: 'IN_TRANSIT',
-      totalAmount: 22400,
-      paidAmount: 15000,
-      cratesCount: 26,
-      createdAt: '2026-10-14T03:20:00Z',
-      items: [
-        { sku: 'MLK-FCM-1L', name: 'Full Cream Milk 1L', orderedCrates: 16, deliveredCrates: 16, unitPrice: 816, total: 13056 },
-        { sku: 'MLK-TON-500', name: 'Toned Homogenized Milk 500ml', orderedCrates: 10, deliveredCrates: 10, unitPrice: 624, total: 6240 },
-      ],
-      notes: 'Driver approaching Kothrud depot. ETA 15 mins.',
-    },
-    {
-      id: 'ord_103',
-      orderNumber: 'DS-26-8893',
-      shopId: 'SH-9104',
-      shopName: 'Shree Ganesh Dairy Farm',
-      route: 'Route C (Hadapsar)',
-      driver: 'Amit Patil',
-      status: 'DELIVERED',
-      totalAmount: 8600,
-      paidAmount: 8600,
-      cratesCount: 12,
-      createdAt: '2026-10-14T03:00:00Z',
-      deliveredAt: '2026-10-14T06:10:00Z',
-      items: [
-        { sku: 'MLK-BUF-1L', name: 'Premium Buffalo Milk 1L', orderedCrates: 8, deliveredCrates: 8, unitPrice: 888, total: 7104 },
-        { sku: 'PAN-MAL-200', name: 'Malai Paneer 200g', orderedCrates: 2, deliveredCrates: 2, unitPrice: 1840, total: 3680 },
-      ],
-    },
-    {
-      id: 'ord_104',
-      orderNumber: 'DS-26-8894',
-      shopId: 'SH-5512',
-      shopName: 'Mahesh Retail Store',
-      route: 'Route D (Pimpri)',
-      driver: 'Ganesh Deshmukh',
-      status: 'DISPUTED',
-      totalAmount: 19200,
-      paidAmount: 0,
-      cratesCount: 22,
-      createdAt: '2026-10-14T03:30:00Z',
-      items: [
-        { sku: 'MLK-FCM-1L', name: 'Full Cream Milk 1L', orderedCrates: 14, deliveredCrates: 12, unitPrice: 816, total: 9792 },
-        { sku: 'MLK-COW-500', name: 'Cow Fresh Milk 500ml', orderedCrates: 8, deliveredCrates: 8, unitPrice: 672, total: 5376 },
-      ],
-      notes: 'Shop reported 2 crates leaking on arrival. Awaiting supervisor inspection.',
-    },
-    {
-      id: 'ord_105',
-      orderNumber: 'DS-26-8895',
-      shopId: 'SH-6320',
-      shopName: 'Om Sai Dairy Corner',
-      route: 'Route A (Shivajinagar)',
-      driver: 'Ramesh Powar',
-      status: 'DISPATCH_PREPARED',
-      totalAmount: 6750,
-      paidAmount: 6750,
-      cratesCount: 9,
-      createdAt: '2026-10-14T04:00:00Z',
-      items: [
-        { sku: 'MLK-TON-500', name: 'Toned Homogenized Milk 500ml', orderedCrates: 9, deliveredCrates: 0, unitPrice: 624, total: 5616 },
-      ],
-      notes: 'Loaded in cold storage bay #3. Scheduled for next dispatch wave.',
-    },
-  ];
+export const OrdersList: React.FC = () => {
+  const [orders, setOrders] = useState<DisplayOrderRecord[]>(FALLBACK_DISPATCH_ORDERS);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [selectedOrder, setSelectedOrder] = useState<DisplayOrderRecord | null>(null);
+  const [isVolumeSummaryOpen, setIsVolumeSummaryOpen] = useState<boolean>(false);
+  const [newOrderNotice, setNewOrderNotice] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  // Track known order IDs to detect newly arrived shop orders
+  const knownOrderIdsRef = useRef<Set<string>>(new Set(FALLBACK_DISPATCH_ORDERS.map((o) => o.id)));
+
+  const fetchOrders = useCallback(async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
+    else setIsRefreshing(true);
+
+    try {
+      let apiStatus = statusFilter || undefined;
+      if (statusFilter === 'PENDING_CONFIRMATION') apiStatus = 'PENDING';
+      else if (statusFilter === 'DISPATCH_PREPARED') apiStatus = 'PREPARING';
+
+      const res = await api.orders.list({
+        status: apiStatus,
+        search: search || undefined,
+        limit: 100,
+      });
+
+      if (res && Array.isArray(res.orders) && res.orders.length > 0) {
+        let newlyFound = 0;
+
+        const mappedOrders: DisplayOrderRecord[] = res.orders.map((o: OrderDispatchRecord) => {
+          const isNewlyArrived = !knownOrderIdsRef.current.has(o.id);
+          if (isNewlyArrived) newlyFound++;
+
+          let liquidVol = 0;
+          let milkCrates = 0;
+          let solidCrates = 0;
+          let totalPkts = 0;
+          let hasUnknown = false;
+
+          const items: DisplayOrderItem[] = (o.items || []).map((it) => {
+            const isLiquid = Boolean(
+              it.baseUnit?.toLowerCase() === 'litre' ||
+              it.baseUnit?.toLowerCase() === 'ml' ||
+              ['milk', 'buttermilk', 'chaas', 'lassi'].includes(it.category?.toLowerCase() || '')
+            );
+
+            const qty = Number(it.quantity) || 0;
+            totalPkts += qty;
+
+            const itemVol = isLiquid
+              ? (it.volumeLitres != null && Number(it.volumeLitres) > 0 ? Number(it.volumeLitres) : (it.calculatedVolumeLitres || 0))
+              : null;
+
+            if (isLiquid && itemVol != null) {
+              liquidVol += itemVol;
+            }
+
+            const itemWeightKg = !isLiquid ? (it.calculatedWeightKg || 0) : null;
+            const crates = it.cratesCount != null && Number(it.cratesCount) > 0
+              ? Number(it.cratesCount)
+              : (it.calculatedCrates != null ? it.calculatedCrates : null);
+
+            if (crates != null) {
+              if (isLiquid) {
+                milkCrates += crates;
+              } else {
+                solidCrates += crates;
+              }
+            } else {
+              hasUnknown = true;
+            }
+
+            return {
+              sku: it.sku || 'SKU-NA',
+              name: it.name || 'Dairy Product',
+              category: it.category || 'Dairy',
+              packSize: it.packSize || it.packageSize || '1 unit',
+              packageSize: it.packageSize || it.packSize || '1 unit',
+              packagingType: it.packagingType || 'Pouch',
+              isLiquid,
+              orderedPackages: qty,
+              orderedCrates: crates,
+              deliveredCrates: it.deliveredQuantity != null && it.unitsPerPack ? Number((it.deliveredQuantity / it.unitsPerPack).toFixed(1)) : crates,
+              deliveredPackages: it.deliveredQuantity || qty,
+              volumeLitres: itemVol,
+              weightKg: itemWeightKg,
+              unitPrice: Number(it.unitPrice) || 0,
+              total: Number(it.totalPrice) || 0,
+              isCrateCapacityKnown: it.isCrateCapacityKnown !== false,
+            };
+          });
+
+          const totalVol = o.total_volume_litres != null && Number(o.total_volume_litres) > 0
+            ? Number(o.total_volume_litres)
+            : liquidVol;
+
+          let itemsSummary = '';
+          if (milkCrates > 0) {
+            itemsSummary += `${milkCrates} milk crates`;
+          }
+          if (solidCrates > 0) {
+            itemsSummary += `${itemsSummary ? ' • ' : ''}${solidCrates} solid crates`;
+          }
+          if (totalPkts > 0) {
+            itemsSummary += ` (${totalPkts} pkts)`;
+          }
+
+          let mappedStatus = o.status;
+          if (o.status === 'DELIVERED') mappedStatus = 'DELIVERED';
+          else if (o.status === 'IN_TRANSIT') mappedStatus = 'IN_TRANSIT';
+          else if (o.status === 'PREPARING') mappedStatus = 'DISPATCH_PREPARED';
+          else if (o.status === 'CONFIRMED' && o.delivery_status === 'FAILED') mappedStatus = 'DISPUTED';
+          else if (o.status === 'CONFIRMED') mappedStatus = 'CONFIRMED';
+          else if (o.status === 'PENDING') mappedStatus = 'PENDING_CONFIRMATION';
+          else if (o.status === 'CANCELLED') mappedStatus = 'CANCELLED';
+
+          return {
+            id: o.id,
+            orderNumber: o.order_number,
+            shopId: o.shop_code || 'SH-NA',
+            shopName: o.shop_name,
+            route: o.route_name || 'City Route',
+            driver: o.driver_name || 'Unassigned',
+            status: mappedStatus,
+            totalAmount: Number(o.total) || 0,
+            paidAmount: Number(o.total) || 0,
+            totalVolumeLitres: totalVol,
+            cratesCount: Number(o.total_crates_count) || (milkCrates + solidCrates),
+            packagesCount: Number(o.total_packages_count) || totalPkts,
+            hasUnknownCrates: hasUnknown || Boolean(o.has_unknown_crates),
+            createdAt: o.created_at,
+            deliveredAt: o.delivered_at,
+            items,
+            notes: o.notes,
+            itemsSummaryText: itemsSummary,
+            isNew: isNewlyArrived,
+          };
+        });
+
+        // Update known order IDs
+        res.orders.forEach((o) => knownOrderIdsRef.current.add(o.id));
+
+        if (newlyFound > 0 && isBackground) {
+          setNewOrderNotice(`🔔 ${newlyFound} new shop order${newlyFound === 1 ? '' : 's'} arrived from mobile customer app!`);
+        }
+
+        setOrders(mappedOrders);
+      }
+    } catch (err) {
+      if (!isBackground) {
+        console.warn('[OrdersList] Backend listing fallback used:', err);
+      }
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [search, statusFilter]);
+
+  // Initial load
+  useEffect(() => {
+    fetchOrders(false);
+  }, [fetchOrders]);
+
+  // 4. Controlled Background Polling for Auto-Refresh (every 6 seconds when tab is active)
+  useEffect(() => {
+    let intervalId: any = null;
+
+    const poll = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return; // Pause polling when tab is inactive
+      }
+      await fetchOrders(true);
+    };
+
+    intervalId = setInterval(poll, 6000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        poll();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchOrders]);
+
+  // 5. Admin Status Review Workflow (Approve, Reject, Dispatch)
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string, notes?: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      await api.orders.updateStatus(orderId, newStatus, notes);
+      await fetchOrders(false);
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+      }
+    } catch (err: any) {
+      console.error('[OrdersList] Status update error:', err);
+      alert('Failed to update order status: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
 
   const filtered = orders.filter((o) => {
     const matchSearch =
@@ -150,7 +405,13 @@ export const OrdersList: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
-  const getStatusBadge = (status: OrderRecord['status']) => {
+  const formatVolumeLitres = (litres: number | null | undefined): string => {
+    if (litres == null || isNaN(litres)) return '0 L';
+    const rounded = Number(litres.toFixed(2));
+    return `${rounded.toLocaleString('en-IN', { maximumFractionDigits: 2 })} L`;
+  };
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'DELIVERED':
         return <Badge variant="success">Delivered</Badge>;
@@ -158,31 +419,118 @@ export const OrdersList: React.FC = () => {
         return <Badge variant="info">In Transit</Badge>;
       case 'DISPATCH_PREPARED':
         return <Badge variant="neutral">Bay Prepared</Badge>;
+      case 'CONFIRMED':
+        return <Badge variant="navy">Confirmed</Badge>;
       case 'PENDING_CONFIRMATION':
-        return <Badge variant="warning">Pending Confirmation</Badge>;
+      case 'PENDING':
+        return <Badge variant="warning">Pending Review</Badge>;
       case 'DISPUTED':
-        return <Badge variant="danger">Discrepancy Reported</Badge>;
+        return <Badge variant="danger">Discrepancy</Badge>;
+      case 'CANCELLED':
+        return <Badge variant="danger">Cancelled</Badge>;
+      default:
+        return <Badge variant="neutral">{status}</Badge>;
     }
   };
+
+  // KPI Calculations
+  const deliveredCount = orders.filter((o) => o.status === 'DELIVERED').length;
+  const inTransitCount = orders.filter((o) => o.status === 'IN_TRANSIT').length;
+  const inTransitLitres = orders
+    .filter((o) => o.status === 'IN_TRANSIT')
+    .reduce((sum, o) => sum + o.totalVolumeLitres, 0);
+  const pendingCount = orders.filter((o) => o.status === 'PENDING_CONFIRMATION' || o.status === 'PENDING').length;
+  const disputedCount = orders.filter((o) => o.status === 'DISPUTED').length;
 
   return (
     <div className="page-container">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h2 className="page-title">Milk Orders & Dispatch Lifecycle</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 className="page-title">Milk Orders & Dispatch Lifecycle</h2>
+            {isRefreshing && (
+              <span style={{ fontSize: '11px', color: '#047857', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <RefreshCw size={11} className="spin" /> Syncing live
+              </span>
+            )}
+          </div>
           <p className="page-desc">
-            Track daily milk orders from shop placement to cold crate packing, driver transit, and shop confirmation
+            Track daily milk orders from shop mobile placement to cold crate packing, approval, driver transit, and confirmation
           </p>
         </div>
-        <div className="page-header-actions">
-          <Button variant="secondary" icon={<Download size={15} />}>
-            Export Delivery Manifest
+        <div className="page-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Prominent Order Volume Summary Button (Emerald & Ivory) */}
+          <Button
+            variant="primary"
+            icon={<Milk size={16} />}
+            onClick={() => setIsVolumeSummaryOpen(true)}
+            id="btn-order-volume-summary"
+            style={{
+              backgroundColor: '#047857',
+              borderColor: '#047857',
+              fontWeight: 700,
+              boxShadow: '0 2px 4px rgba(4, 120, 87, 0.2)',
+            }}
+          >
+            Order Volume Summary
+          </Button>
+
+          <Button
+            variant="secondary"
+            icon={<Download size={15} />}
+            onClick={() => setIsVolumeSummaryOpen(true)}
+          >
+            Export Manifest
           </Button>
         </div>
       </div>
 
-      {/* KPI Overview */}
+      {/* 4. Live Incoming Order Notification Banner */}
+      {newOrderNotice && (
+        <div
+          style={{
+            backgroundColor: '#ECFDF5',
+            border: '1px solid #A7F3D0',
+            borderRadius: '8px',
+            padding: '10px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#064E3B',
+            animation: 'fadeIn 0.3s ease-in-out',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
+            <Bell size={16} style={{ color: '#047857' }} />
+            <span>{newOrderNotice}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setStatusFilter('PENDING_CONFIRMATION');
+                setNewOrderNotice(null);
+              }}
+              style={{ fontSize: '11.5px', padding: '3px 8px', height: '26px' }}
+            >
+              Filter Pending
+            </Button>
+            <button
+              type="button"
+              onClick={() => setNewOrderNotice(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#047857' }}
+              aria-label="Dismiss banner"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* KPI Overview Cards */}
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#DCFCE7', color: '#059669' }}>
@@ -190,7 +538,7 @@ export const OrdersList: React.FC = () => {
           </div>
           <div className="metric-info">
             <span className="metric-title">Delivered Orders</span>
-            <span className="metric-value">2 Completed</span>
+            <span className="metric-value">{deliveredCount} Completed</span>
             <span className="metric-trend" style={{ color: '#059669' }}>Confirmed by shop pin</span>
           </div>
         </div>
@@ -201,8 +549,21 @@ export const OrdersList: React.FC = () => {
           </div>
           <div className="metric-info">
             <span className="metric-title">Active In Transit</span>
-            <span className="metric-value">1 Vehicle Run</span>
-            <span className="metric-trend" style={{ color: '#0369A1' }}>26 crates on vehicle</span>
+            <span className="metric-value">{inTransitCount} Vehicle Run</span>
+            <span className="metric-trend" style={{ color: '#0369A1' }}>
+              {formatVolumeLitres(inTransitLitres)} on vehicle
+            </span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>
+            <Package size={18} />
+          </div>
+          <div className="metric-info">
+            <span className="metric-title">Pending Shop Orders</span>
+            <span className="metric-value">{pendingCount} Awaiting Review</span>
+            <span className="metric-trend" style={{ color: '#D97706' }}>Placed via Shop App</span>
           </div>
         </div>
 
@@ -212,7 +573,7 @@ export const OrdersList: React.FC = () => {
           </div>
           <div className="metric-info">
             <span className="metric-title">Disputed / Shortage</span>
-            <span className="metric-value">1 Order</span>
+            <span className="metric-value">{disputedCount} Order{disputedCount === 1 ? '' : 's'}</span>
             <span className="metric-trend" style={{ color: '#B91C1C' }}>Leaking crates reported</span>
           </div>
         </div>
@@ -243,20 +604,33 @@ export const OrdersList: React.FC = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filter by order status"
             >
-              <option value="">All Statuses</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="IN_TRANSIT">In Transit</option>
+              <option value="">All Statuses ({orders.length})</option>
+              <option value="PENDING_CONFIRMATION">Pending Review ({pendingCount})</option>
+              <option value="CONFIRMED">Confirmed Orders</option>
               <option value="DISPATCH_PREPARED">Bay Prepared</option>
-              <option value="DISPUTED">Disputed</option>
+              <option value="IN_TRANSIT">In Transit ({inTransitCount})</option>
+              <option value="DELIVERED">Delivered ({deliveredCount})</option>
+              <option value="DISPUTED">Disputed ({disputedCount})</option>
+              <option value="CANCELLED">Cancelled / Rejected</option>
             </select>
           </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw size={13} className={loading ? 'spin' : ''} />}
+            onClick={() => fetchOrders(false)}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
         </div>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders Dispatch Manifest Table */}
       <Card
         title="Live Dispatch Manifest"
-        subtitle={`Showing ${filtered.length} orders for current shift`}
+        subtitle={`Showing ${filtered.length} shop orders with accurate liquid volume (L) conversions`}
         noPadding
       >
         <div className="business-table-container">
@@ -266,7 +640,8 @@ export const OrdersList: React.FC = () => {
                 <th>Order #</th>
                 <th>Merchant Store</th>
                 <th>Assigned Route & Driver</th>
-                <th>Crate Volume</th>
+                {/* 1. RENAMED COLUMN: Crate Volume -> Total Volume (L) */}
+                <th>Total Volume (L)</th>
                 <th>Total Value</th>
                 <th>Order Placed</th>
                 <th>Status</th>
@@ -274,62 +649,123 @@ export const OrdersList: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((o) => (
-                <tr key={o.id}>
-                  <td>
-                    <code style={{ fontWeight: 700, fontSize: '12.5px' }}>{o.orderNumber}</code>
-                  </td>
-                  <td>
-                    <div className="font-semibold text-primary">{o.shopName}</div>
-                    <div className="text-secondary text-xs">{o.shopId}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{o.driver}</div>
-                    <div style={{ fontSize: '12px', color: '#64748B' }}>{o.route}</div>
-                  </td>
-                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    <span style={{ fontWeight: 600 }}>{o.cratesCount}</span> crates
-                  </td>
-                  <td className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {formatCurrency(o.totalAmount)}
-                  </td>
-                  <td style={{ fontSize: '12px', color: '#64748B' }}>
-                    {formatDate(o.createdAt)}
-                  </td>
-                  <td>{getStatusBadge(o.status)}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setSelectedOrder(o)}
-                      icon={<Eye size={13} />}
-                    >
-                      View Details
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((o) => {
+                const isPending = o.status === 'PENDING_CONFIRMATION' || o.status === 'PENDING';
+                return (
+                  <tr
+                    key={o.id}
+                    style={{
+                      backgroundColor: o.isNew ? '#F0FDF4' : undefined,
+                      transition: 'background-color 0.5s ease',
+                    }}
+                  >
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <code style={{ fontWeight: 700, fontSize: '12.5px' }}>{o.orderNumber}</code>
+                        {o.isNew && (
+                          <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#059669', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px' }}>
+                            NEW
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="font-semibold text-primary">{o.shopName}</div>
+                      <div className="text-secondary text-xs">{o.shopId}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{o.driver}</div>
+                      <div style={{ fontSize: '12px', color: '#64748B' }}>{o.route}</div>
+                    </td>
+
+                    {/* 1. LIQUID VOLUME IN LITRES DISPLAY */}
+                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <div style={{ fontWeight: 700, color: '#047857', fontSize: '13.5px' }}>
+                        {formatVolumeLitres(o.totalVolumeLitres)}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        {o.cratesCount} crates • {o.packagesCount} pkts
+                      </div>
+                      {o.hasUnknownCrates && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                            fontSize: '10.5px',
+                            color: '#B45309',
+                            backgroundColor: '#FEF3C7',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            marginTop: '2px',
+                          }}
+                        >
+                          <AlertTriangle size={10} />
+                          Partial crate config
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {formatCurrency(o.totalAmount)}
+                    </td>
+                    <td style={{ fontSize: '12px', color: '#64748B' }}>
+                      {formatDate(o.createdAt)}
+                    </td>
+                    <td>{getStatusBadge(o.status)}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {isPending ? (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setSelectedOrder(o)}
+                          style={{
+                            backgroundColor: '#047857',
+                            borderColor: '#047857',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                          }}
+                          icon={<Eye size={13} />}
+                        >
+                          Review Order
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setSelectedOrder(o)}
+                          icon={<Eye size={13} />}
+                        >
+                          View Details
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </Card>
 
-      {/* Order Detail Modal */}
+      {/* Order Detail & Approval Modal */}
       {selectedOrder && (
         <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div
             className="modal-container"
-            style={{ maxWidth: '650px', width: '92%' }}
+            style={{ maxWidth: '750px', width: '92%' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <div>
-                <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>Order {selectedOrder.orderNumber}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 className="modal-title" style={{ margin: 0 }}>
+                    Order {selectedOrder.orderNumber}
+                  </h3>
                   {getStatusBadge(selectedOrder.status)}
-                </h3>
-                <p className="modal-desc">
-                  Merchant: {selectedOrder.shopName} ({selectedOrder.shopId})
+                </div>
+                <p className="modal-desc" style={{ marginTop: '2px' }}>
+                  Merchant: {selectedOrder.shopName} ({selectedOrder.shopId}) • Placed {formatDate(selectedOrder.createdAt)}
                 </p>
               </div>
               <button
@@ -343,11 +779,86 @@ export const OrdersList: React.FC = () => {
             </div>
 
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Route & Driver Details */}
+              {/* Review Order Notification if Pending */}
+              {(selectedOrder.status === 'PENDING_CONFIRMATION' || selectedOrder.status === 'PENDING') && (
+                <div
+                  style={{
+                    backgroundColor: '#FEF3C7',
+                    border: '1px solid #FCD34D',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ color: '#92400E', fontSize: '13px' }}>
+                    <strong>Action Required:</strong> This replenishment order was placed by the shop customer and is pending administrator confirmation before crate packing.
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'CONFIRMED')}
+                      disabled={updatingOrderId === selectedOrder.id}
+                      icon={<Check size={13} />}
+                      style={{ backgroundColor: '#047857', borderColor: '#047857' }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to reject this shop replenishment order?')) {
+                          handleUpdateOrderStatus(selectedOrder.id, 'CANCELLED', 'Rejected by administrator during dispatch review');
+                        }
+                      }}
+                      disabled={updatingOrderId === selectedOrder.id}
+                      icon={<XCircle size={13} />}
+                      style={{ color: '#B91C1C', borderColor: '#FECACA' }}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Next Lifecycle Step if Confirmed */}
+              {selectedOrder.status === 'CONFIRMED' && (
+                <div
+                  style={{
+                    backgroundColor: '#ECFDF5',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span style={{ fontSize: '12.5px', color: '#064E3B' }}>
+                    <strong>Order Confirmed:</strong> Ready to allocate cold storage and prepare crates for loading.
+                  </span>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'PREPARING')}
+                    disabled={updatingOrderId === selectedOrder.id}
+                    icon={<ArrowRight size={13} />}
+                    style={{ backgroundColor: '#047857', borderColor: '#047857', fontSize: '12px' }}
+                  >
+                    Prepare for Dispatch
+                  </Button>
+                </div>
+              )}
+
+              {/* Route & Driver Details & Liquid Volume Breakdown */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                   gap: '12px',
                   backgroundColor: '#FFFFFF',
                   padding: '14px',
@@ -372,11 +883,19 @@ export const OrdersList: React.FC = () => {
                   </div>
                 </div>
                 <div>
+                  <span style={{ fontSize: '11px', color: '#047857', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Ordered Liquid Volume
+                  </span>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#047857' }}>
+                    {formatVolumeLitres(selectedOrder.totalVolumeLitres)}
+                  </div>
+                </div>
+                <div>
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
                     Total Crates
                   </span>
                   <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {selectedOrder.cratesCount} Crates
+                    {selectedOrder.cratesCount} Crates ({selectedOrder.packagesCount} pkts)
                   </div>
                 </div>
               </div>
@@ -384,52 +903,69 @@ export const OrdersList: React.FC = () => {
               {/* Items Breakdown Table */}
               <div>
                 <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  Crate Allocation Breakdown
+                  Product Allocation & Packaging Conversion Breakdown
                 </h4>
-                <table className="business-table" style={{ fontSize: '13px' }}>
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>Ordered</th>
-                      <th>Delivered</th>
-                      <th>Crate Rate</th>
-                      <th style={{ textAlign: 'right' }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedOrder.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{item.name}</div>
-                          <code style={{ fontSize: '11px' }}>{item.sku}</code>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="business-table" style={{ fontSize: '12.5px' }}>
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Packaging</th>
+                        <th>Ordered Packages</th>
+                        <th>Liquid Volume (L)</th>
+                        <th>Crates</th>
+                        <th>Rate</th>
+                        <th style={{ textAlign: 'right' }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{item.name}</div>
+                            <code style={{ fontSize: '11px' }}>{item.sku}</code>
+                          </td>
+                          <td>
+                            {item.packageSize} {item.packagingType}
+                          </td>
+                          <td style={{ fontWeight: 600 }}>
+                            {item.orderedPackages} pkts
+                          </td>
+                          <td style={{ fontWeight: 700, color: item.isLiquid ? '#047857' : '#64748B' }}>
+                            {item.isLiquid ? (
+                              formatVolumeLitres(item.volumeLitres)
+                            ) : (
+                              <span style={{ fontSize: '11.5px' }}>
+                                Not applicable {item.weightKg != null ? `(${item.weightKg} kg)` : ''}
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {item.orderedCrates != null ? (
+                              <span>{item.orderedCrates} crates</span>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#B45309' }}>Missing config</span>
+                            )}
+                          </td>
+                          <td>{formatCurrency(item.unitPrice)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                            {formatCurrency(item.total)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #D6D3C8' }}>
+                          Order Total:
                         </td>
-                        <td>{item.orderedCrates} crates</td>
-                        <td
-                          style={{
-                            fontWeight: 600,
-                            color: item.deliveredCrates < item.orderedCrates ? '#B91C1C' : '#059669',
-                          }}
-                        >
-                          {item.deliveredCrates} crates
-                        </td>
-                        <td>{formatCurrency(item.unitPrice)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {formatCurrency(item.total)}
+                        <td style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #D6D3C8', color: 'var(--color-navy)' }}>
+                          {formatCurrency(selectedOrder.totalAmount)}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #D6D3C8' }}>
-                        Order Total:
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #D6D3C8', color: 'var(--color-navy)' }}>
-                        {formatCurrency(selectedOrder.totalAmount)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
 
               {/* Notes or Dispute Notice */}
@@ -453,14 +989,21 @@ export const OrdersList: React.FC = () => {
               <Button variant="secondary" size="sm" icon={<FileCheck size={14} />}>
                 Print Delivery Challan
               </Button>
-              <Button variant="primary" size="sm" onClick={() => setSelectedOrder(null)}>
-                Close Details
-              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button variant="primary" size="sm" onClick={() => setSelectedOrder(null)}>
+                  Close Details
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* 2. CONSOLIDATED ORDER VOLUME SUMMARY MODAL */}
+      <OrderVolumeSummaryModal
+        isOpen={isVolumeSummaryOpen}
+        onClose={() => setIsVolumeSummaryOpen(false)}
+      />
     </div>
   );
 };
-

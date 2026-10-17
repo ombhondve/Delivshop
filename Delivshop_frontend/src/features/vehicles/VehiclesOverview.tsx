@@ -26,11 +26,13 @@ import {
   Radio,
   AlertCircle,
   ExternalLink,
+  Trash2,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { api } from '../../services/api/endpoints';
 import { Vehicle, VehicleSummary } from '../../types';
 import { AddVehicleModal } from './AddVehicleModal';
@@ -82,6 +84,7 @@ export const VehiclesOverview: React.FC = () => {
   const [maintVehicle, setMaintVehicle] = useState<Vehicle | null>(null);
   const [previewVehicleId, setPreviewVehicleId] = useState<string | null>(null);
   const [statusConfirmVehicle, setStatusConfirmVehicle] = useState<Vehicle | null>(null);
+  const [deleteVehicle, setDeleteVehicle] = useState<Vehicle | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -1172,6 +1175,32 @@ export const VehiclesOverview: React.FC = () => {
                               <Power size={13} />
                               {v.is_active ? 'Deactivate Vehicle...' : 'Activate Vehicle...'}
                             </button>
+
+                            <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActionMenuOpenId(null);
+                                setDeleteVehicle(v);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                width: '100%',
+                                padding: '8px 14px',
+                                fontSize: '12px',
+                                color: 'var(--color-danger, #DC2626)',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                              }}
+                              className="hover:bg-slate-50"
+                            >
+                              <Trash2 size={13} />
+                              Delete Vehicle...
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1345,6 +1374,46 @@ export const VehiclesOverview: React.FC = () => {
             )}
           </div>
         </Modal>
+      )}
+
+      {/* Delete Vehicle Confirmation Modal */}
+      {deleteVehicle && (
+        <DeleteConfirmModal
+          isOpen={Boolean(deleteVehicle)}
+          onClose={() => setDeleteVehicle(null)}
+          title="Delete Vehicle Asset"
+          entityType="Vehicle"
+          entityName={deleteVehicle.registration_number}
+          entityIdentifier={deleteVehicle.vehicle_code}
+          isActive={Boolean(deleteVehicle.is_active)}
+          details={[
+            { label: 'Registration Number', value: deleteVehicle.registration_number },
+            { label: 'Asset Code', value: deleteVehicle.vehicle_code },
+            { label: 'Vehicle Type', value: deleteVehicle.vehicle_type },
+            { label: 'Operational Status', value: deleteVehicle.status },
+          ]}
+          blockingReason={
+            deleteVehicle.status === 'ASSIGNED' || Boolean(deleteVehicle.active_run_id)
+              ? `Vehicle is currently assigned to an active delivery run (${deleteVehicle.active_run_code || 'In Progress'}). You must reassign or complete all active dispatches before deleting.`
+              : null
+          }
+          customWarning="Vehicles with historical runs, inspections, or maintenance logs will be securely archived and deactivated to retain complete compliance records. Unused vehicle assets without historical records will be permanently purged."
+          onDeactivateRequested={() => {
+            if (deleteVehicle) {
+              const target = deleteVehicle;
+              setDeleteVehicle(null);
+              handleToggleStatus(target);
+            }
+          }}
+          onConfirm={async (reason) => {
+            if (deleteVehicle) {
+              const res = await api.vehicles.delete(deleteVehicle.id, reason);
+              showToast(res?.message || 'Vehicle deleted / archived successfully');
+              setDeleteVehicle(null);
+              fetchVehicles();
+            }
+          }}
+        />
       )}
     </div>
   );

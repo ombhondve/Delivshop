@@ -288,8 +288,11 @@ export default function DriverDashboardScreen() {
       />
 
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -529,9 +532,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 36,
+    paddingBottom: Platform.OS === 'ios' ? 110 : 96,
+    flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,

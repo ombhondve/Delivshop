@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -95,7 +96,13 @@ export default function DriverProfileScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <DriverHeader title="Driver Profile & Settings" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
+      >
         {/* Profile Identity Card */}
         <View style={styles.identityCard}>
           <View style={styles.avatarWrap}>
@@ -300,9 +307,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 36,
+    paddingBottom: Platform.OS === 'ios' ? 110 : 96,
+    flexGrow: 1,
   },
   centerContainer: {
     flex: 1,

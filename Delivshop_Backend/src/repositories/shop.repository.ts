@@ -509,23 +509,49 @@ export const shopRepository = {
 
   async listProducts(shopId: string): Promise<any[]> {
     const shop = await this.findByIdOrShopId(shopId);
-    if (!shop) return [];
-    const res = await query(
-      'SELECT * FROM products WHERE shop_id = $1 ORDER BY created_at DESC',
-      [shop.id]
+    let res = await query(
+      'SELECT * FROM products WHERE shop_id = $1 AND is_active = true AND deleted_at IS NULL ORDER BY name ASC',
+      [shop ? shop.id : shopId]
     );
+    if (res.rowCount === 0) {
+      // Fallback to central dairy replenishment catalog
+      res = await query(
+        'SELECT * FROM products WHERE is_active = true AND deleted_at IS NULL ORDER BY name ASC'
+      );
+    }
     return res.rows;
   },
 
   async checkDependencies(shopId: string): Promise<{
     openOrdersCount: number;
     historicalOrdersCount: number;
+    activeRunStopsCount: number;
+    routeStopsCount: number;
+    runStopsCount: number;
+    invoicesCount: number;
+    paymentsCount: number;
+    collectionsCount: number;
     hasOutstandingBalance: boolean;
     outstandingBalance: number;
+    hasHistoricalRecords: boolean;
+    canPhysicalDelete: boolean;
   }> {
     const shop = await this.findByIdOrShopId(shopId);
     if (!shop) {
-      return { openOrdersCount: 0, historicalOrdersCount: 0, hasOutstandingBalance: false, outstandingBalance: 0 };
+      return {
+        openOrdersCount: 0,
+        historicalOrdersCount: 0,
+        activeRunStopsCount: 0,
+        routeStopsCount: 0,
+        runStopsCount: 0,
+        invoicesCount: 0,
+        paymentsCount: 0,
+        collectionsCount: 0,
+        hasOutstandingBalance: false,
+        outstandingBalance: 0,
+        hasHistoricalRecords: false,
+        canPhysicalDelete: false,
+      };
     }
 
     const openOrdersRes = await query<{ count: string }>(
@@ -537,14 +563,70 @@ export const shopRepository = {
       `SELECT COUNT(*)::text as count FROM orders WHERE shop_id = $1`,
       [shop.id]
     );
+    const activeRunStopsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_run_stops rs
+       JOIN delivery_runs r ON rs.run_id = r.id
+       WHERE rs.shop_id = $1 AND r.status IN ('ASSIGNED', 'IN_PROGRESS', 'STARTED', 'ACTIVE')`,
+      [shop.id]
+    );
+    const routeStopsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM route_stops WHERE shop_id = $1`,
+      [shop.id]
+    );
+    const runStopsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_run_stops WHERE shop_id = $1`,
+      [shop.id]
+    );
+    const invoicesRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM invoices WHERE shop_id = $1`,
+      [shop.id]
+    );
+    const paymentsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM payments WHERE shop_id = $1`,
+      [shop.id]
+    );
+    const collectionsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM delivery_collections WHERE shop_id = $1`,
+      [shop.id]
+    );
 
     const balance = Number(shop.outstanding_balance || 0);
+    const openOrdersCount = parseInt(openOrdersRes.rows[0]?.count || '0', 10);
+    const historicalOrdersCount = parseInt(histOrdersRes.rows[0]?.count || '0', 10);
+    const activeRunStopsCount = parseInt(activeRunStopsRes.rows[0]?.count || '0', 10);
+    const routeStopsCount = parseInt(routeStopsRes.rows[0]?.count || '0', 10);
+    const runStopsCount = parseInt(runStopsRes.rows[0]?.count || '0', 10);
+    const invoicesCount = parseInt(invoicesRes.rows[0]?.count || '0', 10);
+    const paymentsCount = parseInt(paymentsRes.rows[0]?.count || '0', 10);
+    const collectionsCount = parseInt(collectionsRes.rows[0]?.count || '0', 10);
+
+    const hasHistoricalRecords =
+      historicalOrdersCount > 0 ||
+      routeStopsCount > 0 ||
+      runStopsCount > 0 ||
+      invoicesCount > 0 ||
+      paymentsCount > 0 ||
+      collectionsCount > 0;
+
+    const canPhysicalDelete =
+      !hasHistoricalRecords &&
+      openOrdersCount === 0 &&
+      activeRunStopsCount === 0 &&
+      balance <= 0;
 
     return {
-      openOrdersCount: parseInt(openOrdersRes.rows[0]?.count || '0', 10),
-      historicalOrdersCount: parseInt(histOrdersRes.rows[0]?.count || '0', 10),
+      openOrdersCount,
+      historicalOrdersCount,
+      activeRunStopsCount,
+      routeStopsCount,
+      runStopsCount,
+      invoicesCount,
+      paymentsCount,
+      collectionsCount,
       hasOutstandingBalance: balance > 0,
       outstandingBalance: balance,
+      hasHistoricalRecords,
+      canPhysicalDelete,
     };
   },
 
@@ -553,22 +635,54 @@ export const shopRepository = {
     if (!shop) return { softDeleted: false };
 
     const deps = await this.checkDependencies(shop.id);
-    if (deps.historicalOrdersCount === 0) {
-      await query('DELETE FROM shop_accounts WHERE shop_id = $1', [shop.id]);
-      await query('DELETE FROM shops WHERE id = $1', [shop.id]);
-      return { softDeleted: false };
+
+    if (deps.canPhysicalDelete) {
+      const client = await dbPool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM shop_documents WHERE shop_id = $1', [shop.id]);
+        await client.query('DELETE FROM shop_accounts WHERE shop_id = $1', [shop.id]);
+        await client.query('DELETE FROM products WHERE shop_id = $1', [shop.id]);
+        await client.query('DELETE FROM shops WHERE id = $1', [shop.id]);
+        await client.query('COMMIT');
+        return { softDeleted: false };
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
     } else {
-      await query(
-        `UPDATE shops
-         SET deleted_at = NOW(),
-             deleted_by = $2,
-             deletion_reason = $3,
-             status = 'INACTIVE',
-             is_open = false
-         WHERE id = $1`,
-        [shop.id, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
-      );
-      return { softDeleted: true };
+      // Safe archival / soft delete: Preserve all historical transactions & foreign keys
+      const client = await dbPool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(
+          `UPDATE shops
+           SET deleted_at = NOW(),
+               deleted_by = $2,
+               deletion_reason = $3,
+               status = 'INACTIVE',
+               is_open = false,
+               updated_at = NOW()
+           WHERE id = $1`,
+          [shop.id, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
+        );
+        // Deactivate owner user login account
+        if (shop.owner_id) {
+          await client.query(
+            `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`,
+            [shop.owner_id]
+          );
+        }
+        await client.query('COMMIT');
+        return { softDeleted: true };
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
     }
   },
 };

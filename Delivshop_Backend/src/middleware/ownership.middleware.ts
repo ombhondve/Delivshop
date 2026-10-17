@@ -40,7 +40,8 @@ export async function requireShopOrderOwnership(
     }
 
     const order = result.rows[0];
-    if (req.user.role === 'SHOP' && order.owner_id !== req.user.id) {
+    const isOwner = order.owner_id === req.user.id || (req.user.shopId && order.shop_id === req.user.shopId);
+    if (req.user.role === 'SHOP' && !isOwner) {
       sendError(res, 'Forbidden: You do not have permission to access orders from another shop', 403);
       return;
     }

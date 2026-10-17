@@ -8,6 +8,8 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -123,7 +125,7 @@ export default function IncidentReportingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <DriverHeader
         title="Incident & Exceptions"
         subtitle="Operational Escalations"
@@ -161,7 +163,17 @@ export default function IncidentReportingScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
         {activeTab === 'REPORT' ? (
           <View style={styles.formCard}>
             {/* Banner */}
@@ -359,7 +371,8 @@ export default function IncidentReportingScreen() {
             )}
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <ConfirmModal
         visible={confirmModalVisible}
@@ -379,6 +392,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8F8F2',
+  },
+  scrollView: {
+    flex: 1,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -413,7 +429,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 50,
+    flexGrow: 1,
   },
   formCard: {
     backgroundColor: DelivColors.white,

@@ -10,6 +10,7 @@ import {
   Alert,
   Linking,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -363,14 +364,24 @@ export default function ShopDeliveryScreen() {
   const calculatedTotal = calculateDeliveredTotal();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <DriverHeader
         title={delivery.shop_name || 'Shop Delivery'}
         subtitle={`Order #${delivery.order_number || delivery.order_id?.slice(0, 8) || 'DELIV'}`}
         showBack
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
         {/* Shop Info Card */}
         <View style={styles.shopCard}>
           <View style={styles.shopHeaderRow}>
@@ -498,7 +509,7 @@ export default function ShopDeliveryScreen() {
                             Shortage: {item.orderedQty - item.deliveredQty} {item.unit}
                           </Text>
                           <Text style={styles.shortageLabel}>REASON FOR SHORTAGE:</Text>
-                          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reasonScroll}>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled={true} style={styles.reasonScroll}>
                             {SHORTAGE_REASONS.map((r) => {
                               const isSelected = item.shortageReason === r;
                               return (
@@ -784,6 +795,7 @@ export default function ShopDeliveryScreen() {
           </>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Confirmation Modal */}
       <ConfirmModal
@@ -815,6 +827,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8F8F2',
+  },
+  scrollView: {
+    flex: 1,
   },
   centerContainer: {
     flex: 1,
@@ -848,7 +863,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 50,
+    flexGrow: 1,
   },
   shopCard: {
     backgroundColor: DelivColors.white,

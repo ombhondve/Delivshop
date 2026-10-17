@@ -24,6 +24,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import {
@@ -39,6 +40,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { EditShopModal } from './EditShopModal';
 import { AssignDriverModal } from './AssignDriverModal';
 
@@ -63,6 +65,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Status toggle confirmation
   const [isConfirmingDeactivate, setIsConfirmingDeactivate] = useState(false);
@@ -278,6 +281,19 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
             >
               <Power size={14} />
               <span>{shop.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</span>
+            </button>
+          )}
+
+          {isAuthorizedForSecurity && (
+            <button
+              type="button"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="btn btn-sm btn-outline-danger"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 14px', borderColor: '#FCA5A5', color: '#DC2626' }}
+              title="Delete Shop"
+            >
+              <Trash2 size={14} />
+              <span>Delete Shop</span>
             </button>
           )}
         </div>
@@ -1049,6 +1065,36 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Delete Shop Confirmation Modal */}
+      {isDeleteModalOpen && shop && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          title="Delete Shop"
+          entityType="Shop"
+          entityName={shop.name}
+          entityIdentifier={shop.shop_id}
+          isActive={shop.status === 'ACTIVE'}
+          details={[
+            { label: 'Shop Name', value: shop.name },
+            { label: 'Shop ID', value: shop.shop_id },
+            { label: 'Status', value: shop.status },
+            { label: 'Total Orders', value: orders.length },
+          ]}
+          onDeactivateRequested={handleToggleStatus}
+          customWarning={
+            Number(shop.outstanding_balance) > 0
+              ? `Cannot delete shop with an outstanding credit balance of ₹${Number(shop.outstanding_balance).toLocaleString('en-IN')}. Please settle all outstanding balances first.`
+              : 'Shops with historical orders, invoices, or delivery logs will be safely archived to preserve complete ledger history.'
+          }
+          onConfirm={async (reason) => {
+            await api.shops.delete(shop.id, reason);
+            setIsDeleteModalOpen(false);
+            navigate('/admin/shops');
+          }}
+        />
       )}
     </div>
   );

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   X, User, Truck, Shield, FileText, Clock, CheckCircle2,
   AlertTriangle, MapPin, Calendar, Phone, Mail, History,
-  Activity, Package, DollarSign, Lock, AlertCircle, Edit, Plus
+  Activity, Package, DollarSign, Lock, AlertCircle, Edit, Plus, Trash2
 } from 'lucide-react';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { api } from '../../services/api/endpoints';
 import { DriverUser, DriverDeliveryRecord, DriverAuditRecord, DriverFullProfile } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
@@ -18,6 +19,7 @@ interface DriverDetailsDrawerProps {
   onClose: () => void;
   onEdit: (driver: DriverUser) => void;
   onAssignVehicle: (driver: DriverUser) => void;
+  onDriverDeleted?: () => void;
 }
 
 type TabType = 
@@ -38,6 +40,7 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
   onClose,
   onEdit,
   onAssignVehicle,
+  onDriverDeleted,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('OVERVIEW');
   const [profile, setProfile] = useState<DriverFullProfile | null>(null);
@@ -47,6 +50,7 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
   // Submodals
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && driverId) {
@@ -167,13 +171,22 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
 
           <div className="flex items-center space-x-2">
             {driver && (
-              <button
-                onClick={() => onEdit(driver)}
-                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
-              >
-                <Edit className="w-3.5 h-3.5" />
-                <span>Edit Profile</span>
-              </button>
+              <>
+                <button
+                  onClick={() => onEdit(driver)}
+                  className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit Profile</span>
+                </button>
+                <button
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="px-3 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </>
             )}
             <button
               onClick={onClose}
@@ -615,6 +628,44 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
             isOpen={isDocModalOpen}
             onClose={() => setIsDocModalOpen(false)}
             onSuccess={() => fetchFullProfile(driver.id)}
+          />
+        )}
+
+        {/* Delete Driver Confirmation Modal */}
+        {isDeleteModalOpen && driver && (
+          <DeleteConfirmModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            title="Delete Driver Record"
+            entityType="Driver"
+            entityName={driver.name}
+            entityIdentifier={driver.employee_id}
+            isActive={Boolean(driver.is_active)}
+            details={[
+              { label: 'Driver Name', value: driver.name },
+              { label: 'Employee ID', value: driver.employee_id || 'N/A' },
+              { label: 'Current Account Status', value: driver.is_active ? 'Active' : 'Inactive' },
+              {
+                label: 'Active Assignments',
+                value: (driver.active_deliveries || 0) > 0 ? `${driver.active_deliveries} active deliveries` : 'None (Available)',
+              },
+            ]}
+            blockingReason={
+              (driver.active_deliveries || 0) > 0
+                ? `Driver currently has ${driver.active_deliveries} active deliveries assigned. Deliveries must be completed or reassigned before deleting.`
+                : null
+            }
+            customWarning="Drivers with historical dispatches, completed deliveries, payment collections, or payroll records will be safely archived and deactivated to maintain statutory audit and compliance records. Drivers with zero historical records will be permanently purged."
+            onDeactivateRequested={async () => {
+              await api.deliveries.updateDriverStatus(driver.id, false, 'Deactivated prior to deletion');
+              fetchFullProfile(driver.id);
+            }}
+            onConfirm={async (reason) => {
+              await api.deliveries.deleteDriver(driver.id, reason);
+              setIsDeleteModalOpen(false);
+              onClose();
+              if (onDriverDeleted) onDriverDeleted();
+            }}
           />
         )}
 

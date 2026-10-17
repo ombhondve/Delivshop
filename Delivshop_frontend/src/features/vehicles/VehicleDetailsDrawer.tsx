@@ -19,10 +19,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Download,
+  Trash2,
 } from 'lucide-react';
 import { Drawer, DrawerTab } from '../../components/common/Drawer';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { api } from '../../services/api/endpoints';
 import { Vehicle } from '../../types';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
@@ -52,6 +54,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   const fetchVehicleDetails = useCallback(async () => {
@@ -198,6 +201,15 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                 title="Open full page record"
               >
                 Full Page
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteModalOpen(true)}
+                icon={<Trash2 size={13} />}
+                style={{ color: '#DC2626', borderColor: '#FCA5A5' }}
+              >
+                Delete
               </Button>
             </div>
           )
@@ -696,6 +708,34 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
             onClose={() => setIsMaintModalOpen(false)}
             onMaintenanceAdded={() => {
               fetchVehicleDetails();
+              onVehicleUpdated();
+            }}
+          />
+          <DeleteConfirmModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            title="Delete Vehicle Asset"
+            entityType="Vehicle"
+            entityName={vehicle.registration_number}
+            entityIdentifier={vehicle.vehicle_code}
+            isActive={Boolean(vehicle.is_active)}
+            details={[
+              { label: 'Registration Number', value: vehicle.registration_number },
+              { label: 'Asset Code', value: vehicle.vehicle_code },
+              { label: 'Vehicle Type', value: vehicle.vehicle_type },
+              { label: 'Operational Status', value: vehicle.status },
+            ]}
+            blockingReason={
+              vehicle.status === 'ASSIGNED' || Boolean(vehicle.active_run_id)
+                ? `Vehicle is currently assigned to an active delivery run (${vehicle.active_run_code || 'In Progress'}). You must reassign or complete all active dispatches before deleting.`
+                : null
+            }
+            customWarning="Vehicles with historical runs, inspections, or maintenance logs will be securely archived and deactivated to retain complete compliance records. Unused vehicle assets without historical records will be permanently purged."
+            onDeactivateRequested={handleStatusToggle}
+            onConfirm={async (reason) => {
+              await api.vehicles.delete(vehicle.id, reason);
+              setIsDeleteModalOpen(false);
+              onClose();
               onVehicleUpdated();
             }}
           />

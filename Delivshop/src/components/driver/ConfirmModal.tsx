@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TouchableWithoutFeedback,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DelivColors } from '@/constants/theme';
@@ -67,7 +68,15 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               </View>
 
               <Text style={styles.title}>{title}</Text>
-              <Text style={styles.message}>{message}</Text>
+              <ScrollView
+                style={styles.messageScroll}
+                contentContainerStyle={styles.messageScrollContent}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={true}
+              >
+                <Text style={styles.message}>{message}</Text>
+              </ScrollView>
 
               <View style={styles.btnRow}>
                 <TouchableOpacity
@@ -119,6 +128,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
+    maxHeight: '85%',
     backgroundColor: DelivColors.white,
     borderRadius: 16,
     padding: 20,
@@ -144,12 +154,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+  messageScroll: {
+    maxHeight: 220,
+    width: '100%',
+    marginVertical: 4,
+  },
+  messageScrollContent: {
+    paddingHorizontal: 4,
+    paddingBottom: 8,
+  },
   message: {
     fontSize: 14,
     color: DelivColors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 20,
   },
   btnRow: {
     flexDirection: 'row',

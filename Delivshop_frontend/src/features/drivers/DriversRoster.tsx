@@ -28,6 +28,7 @@ import {
 import { api } from '../../services/api/endpoints';
 import { DriverUser, DriverRosterSummary } from '../../types';
 import { AddDriverModal } from './AddDriverModal';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { formatDate } from '../../utils/formatters';
 import { useNavigation } from '../../context/NavigationContext';
 
@@ -53,6 +54,7 @@ export const DriversRoster: React.FC = () => {
   // Modals state
   const { navigate } = useNavigation();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [deleteDriver, setDeleteDriver] = useState<DriverUser | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -615,9 +617,9 @@ export const DriversRoster: React.FC = () => {
                         </Badge>
                       </td>
 
-                      {/* 8. Actions - Only Details Button */}
-                      <td style={{ width: '120px', minWidth: '110px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      {/* 8. Actions - Details & Contextual Delete */}
+                      <td style={{ width: '130px', minWidth: '120px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                           <button
                             type="button"
                             onClick={() => {
@@ -643,6 +645,29 @@ export const DriversRoster: React.FC = () => {
                           >
                             <Eye size={13} />
                             <span>Details</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteDriver(drv)}
+                            style={{
+                              height: '28px',
+                              width: '28px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: 0,
+                              fontSize: '12px',
+                              color: '#94A3B8',
+                              backgroundColor: '#FFFFFF',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                            }}
+                            className="hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+                            title={`Delete ${drv.name}...`}
+                            aria-label={`Delete ${drv.name}`}
+                          >
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
@@ -679,6 +704,49 @@ export const DriversRoster: React.FC = () => {
           fetchRoster();
         }}
       />
+
+      {/* Delete Driver Confirmation Modal */}
+      {deleteDriver && (
+        <DeleteConfirmModal
+          isOpen={Boolean(deleteDriver)}
+          onClose={() => setDeleteDriver(null)}
+          title="Delete Driver Record"
+          entityType="Driver"
+          entityName={deleteDriver.name}
+          entityIdentifier={deleteDriver.employee_id}
+          isActive={Boolean(deleteDriver.is_active)}
+          details={[
+            { label: 'Driver Name', value: deleteDriver.name },
+            { label: 'Employee ID', value: deleteDriver.employee_id || 'N/A' },
+            { label: 'Current Account Status', value: deleteDriver.is_active ? 'Active' : 'Inactive' },
+            {
+              label: 'Active Assignments',
+              value: (deleteDriver.active_deliveries || 0) > 0 ? `${deleteDriver.active_deliveries} active deliveries` : 'None (Available)',
+            },
+          ]}
+          blockingReason={
+            (deleteDriver.active_deliveries || 0) > 0
+              ? `Driver currently has ${deleteDriver.active_deliveries} active deliveries assigned. Deliveries must be completed or reassigned before deleting.`
+              : null
+          }
+          customWarning="Drivers with historical dispatches, completed deliveries, payment collections, or payroll records will be safely archived and deactivated to maintain statutory audit and compliance records. Drivers with zero historical records will be permanently purged."
+          onDeactivateRequested={async () => {
+            if (deleteDriver) {
+              await api.deliveries.updateDriverStatus(deleteDriver.id, false, 'Deactivated prior to deletion');
+              setDeleteDriver(null);
+              fetchRoster();
+            }
+          }}
+          onConfirm={async (reason) => {
+            if (deleteDriver) {
+              const res = await api.deliveries.deleteDriver(deleteDriver.id, reason);
+              showToast(res?.message || 'Driver deleted / archived successfully');
+              setDeleteDriver(null);
+              fetchRoster();
+            }
+          }}
+        />
+      )}
 
     </div>
   );

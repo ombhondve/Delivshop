@@ -225,11 +225,13 @@ export default function DriverCollectionsScreen() {
         </View>
       ) : (
         <FlatList
+          style={styles.listContainer}
           data={collections}
           keyExtractor={(item) => item.id}
           renderItem={renderCollectionCard}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -275,7 +277,12 @@ export default function DriverCollectionsScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.modalBody} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalBody}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+            >
               {/* Shop Selector */}
               <Text style={styles.inputLabel}>SELECT STORE</Text>
               <View style={styles.shopSelectorRow}>
@@ -403,9 +410,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: DelivColors.border,
   },
+  listContainer: {
+    flex: 1,
+  },
   listContent: {
     padding: 16,
-    paddingBottom: 36,
+    paddingBottom: Platform.OS === 'ios' ? 110 : 96,
+    flexGrow: 1,
   },
   listHeaderRow: {
     flexDirection: 'row',
@@ -554,7 +565,8 @@ const styles = StyleSheet.create({
     backgroundColor: DelivColors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '90%',
+    maxHeight: '88%',
+    flexShrink: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -569,9 +581,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: DelivColors.deepEmerald,
   },
+  modalScrollView: {
+    flexShrink: 1,
+  },
   modalBody: {
     padding: 18,
-    paddingBottom: 36,
+    paddingBottom: 48,
+    flexGrow: 1,
   },
   inputLabel: {
     fontSize: 11,

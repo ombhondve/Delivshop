@@ -533,7 +533,7 @@ export interface ProductFilterQuery {
   companyId?: string;
   category?: string;
   status?: 'ACTIVE' | 'INACTIVE';
-  stockStatus?: 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON';
+  stockStatus?: 'ALL' | 'ACTIVE' | 'INACTIVE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRING_SOON' | 'ARCHIVED';
   sortBy?: 'name' | 'sku' | 'price' | 'stock_quantity' | 'created_at' | 'updated_at';
   sortOrder?: 'ASC' | 'DESC';
 }
@@ -1079,5 +1079,141 @@ export interface DriverFullProfile {
   };
   auditHistory?: DriverAuditRecord[];
 }
+
+export interface OrderVolumeSummaryOverview {
+  totalEligibleOrders: number;
+  totalLiquidVolumeLitres: number;
+  totalPackagesRequired: number;
+  totalCratesRequired: number | null;
+  distinctProductsCount: number;
+  includedShopsCount: number;
+  includedStatuses: string[];
+  hasIncompletePackaging: boolean;
+}
+
+export interface PackagingProductBreakdown {
+  productId: string;
+  productName: string;
+  sku: string;
+  packagingType: string;
+  packageSize: string;
+  category: string;
+  isLiquid: boolean;
+  totalPackages: number;
+  totalVolumeLitres: number | null;
+  totalWeightKg: number | null;
+  totalCrates: number | null;
+  crateCapacity: number | null;
+  isCrateCapacityKnown: boolean;
+  missingConfigReason?: string;
+}
+
+export interface ShopWiseOrderItem {
+  itemId: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  category: string;
+  packageSize: string;
+  packagingType: string;
+  isLiquid: boolean;
+  quantity: number;
+  cratesCount: number | null;
+  isCrateCapacityKnown: boolean;
+  volumeLitres: number | null;
+  weightKg: number | null;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface ShopWiseOrderSummary {
+  orderId: string;
+  orderNumber: string;
+  shopId: string;
+  shopCode: string;
+  shopName: string;
+  shopPhone: string;
+  shopAddress: string;
+  orderStatus: string;
+  dispatchStatus: string;
+  driverName: string;
+  routeName: string;
+  totalLiquidVolumeLitres: number;
+  totalPackages: number;
+  totalCrates: number | null;
+  isCrateCapacityKnown: boolean;
+  createdAt: string;
+  deliveredAt?: string | null;
+  items: ShopWiseOrderItem[];
+}
+
+export interface OrderVolumeSummaryResponse {
+  overview: OrderVolumeSummaryOverview;
+  packagingBreakdown: PackagingProductBreakdown[];
+  shopWiseSummary: ShopWiseOrderSummary[];
+  metadata: {
+    generatedAt: string;
+    appliedFilters: {
+      status?: string;
+      deliveryDate?: string;
+      date?: string;
+      shopId?: string;
+      productId?: string;
+      packagingSize?: string;
+    };
+  };
+}
+
+export interface OrderDispatchRecord {
+  id: string;
+  order_number: string;
+  shop_id: string;
+  shop_code: string;
+  shop_name: string;
+  shop_phone?: string;
+  shop_address?: any;
+  delivery_status: string;
+  driver_id?: string;
+  driver_name: string;
+  driver_phone?: string;
+  route_name: string;
+  route_code?: string;
+  status: string;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  total_volume_litres: number;
+  total_crates_count: number;
+  total_packages_count: number;
+  has_unknown_crates?: boolean;
+  created_at: string;
+  delivered_at?: string;
+  notes?: string;
+  items: Array<{
+    id: string;
+    productId: string;
+    name: string;
+    sku: string;
+    category: string;
+    packSize: string;
+    packageSize?: string;
+    packagingType?: string;
+    baseUnit: string;
+    unitsPerPack: number | null;
+    isLiquid: boolean;
+    isCrateCapacityKnown: boolean;
+    quantity: number;
+    cratesCount: number | null;
+    deliveredQuantity?: number;
+    volumeLitres: number;
+    calculatedVolumeLitres?: number;
+    calculatedWeightKg?: number;
+    calculatedCrates?: number | null;
+    unitPrice: number;
+    totalPrice: number;
+    unitType?: string;
+  }>;
+}
+
 
 

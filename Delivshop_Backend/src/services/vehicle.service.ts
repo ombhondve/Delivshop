@@ -343,7 +343,12 @@ export const vehicleService = {
     return vehicleRepository.getActivityHistory(vehicleId);
   },
 
-  async deleteVehicle(vehicleId: string, actorId?: string, reason?: string, ipAddress?: string): Promise<void> {
+  async deleteVehicle(
+    vehicleId: string,
+    actorId?: string,
+    reason?: string,
+    ipAddress?: string
+  ): Promise<{ message: string; softDeleted: boolean; vehicle: { id: string; registrationNumber: string; vehicleCode: string } }> {
     const vehicle = await vehicleRepository.findById(vehicleId);
     if (!vehicle) {
       throw new AppError('Vehicle not found', 404);
@@ -360,11 +365,18 @@ export const vehicleService = {
     if (deps.activeRunsCount > 0) {
       throw new AppError(
         `Cannot delete vehicle: Associated with ${deps.activeRunsCount} active delivery run(s). Please complete or reassign those runs first.`,
-        400
+        409
       );
     }
 
-    await vehicleRepository.softDelete(vehicleId, actorId, reason);
+    let softDeleted = false;
+    if (deps.canPhysicalDelete) {
+      await vehicleRepository.permanentDelete(vehicleId);
+      softDeleted = false;
+    } else {
+      await vehicleRepository.softDelete(vehicleId, actorId, reason);
+      softDeleted = true;
+    }
 
     await auditService.log({
       actorId: actorId || undefined,
@@ -373,11 +385,27 @@ export const vehicleService = {
       entityId: vehicleId,
       details: {
         registrationNumber: vehicle.registration_number,
+        vehicleCode: vehicle.vehicle_code,
+        softDeleted,
         historicalRunsCount: deps.historicalRunsCount,
+        inspectionsCount: deps.inspectionsCount,
+        maintenanceCount: deps.maintenanceCount,
         reason,
       },
       ipAddress,
     });
+
+    return {
+      message: softDeleted
+        ? 'Vehicle successfully archived. Historical dispatch records and maintenance history have been preserved.'
+        : 'Vehicle permanently deleted from fleet.',
+      softDeleted,
+      vehicle: {
+        id: vehicle.id,
+        registrationNumber: vehicle.registration_number,
+        vehicleCode: vehicle.vehicle_code,
+      },
+    };
   },
 
   async exportVehiclesCsv(): Promise<string> {
