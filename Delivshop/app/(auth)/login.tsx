@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    if (submitting) return;
     setErrorMsg(null);
 
     if (loginMode === 'shop') {
@@ -47,7 +48,7 @@ export default function LoginScreen() {
       setSubmitting(true);
       try {
         await login({ email: email.trim(), password });
-        router.replace('/(driver)');
+        router.replace('/(driver)/(tabs)' as any);
       } catch (err: any) {
         setErrorMsg(err.message || 'Login failed. Please verify credentials.');
       } finally {

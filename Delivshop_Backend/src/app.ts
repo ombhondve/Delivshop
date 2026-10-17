@@ -41,8 +41,14 @@ export const createApp = (): Application => {
       const parsedUrl = new URL(normalizedOrigin);
       const hostname = parsedUrl.hostname;
 
-      // Allow local development origins (web / mobile emulator)
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // Allow local development origins and private LAN IP addresses (Expo Go, mobile physical devices on Wi-Fi)
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+        /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+        /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)
+      ) {
         return true;
       }
 
@@ -86,7 +92,7 @@ export const createApp = (): Application => {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Idempotency-Key'],
     optionsSuccessStatus: 204,
   };
 

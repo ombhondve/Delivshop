@@ -628,6 +628,10 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             setIsDetailsOpen(false);
             setSelectedRouteId(null);
           }}
+          onEdit={(updatedRoute) => {
+            fetchRoutesData(true);
+            showToast(`Route ${updatedRoute.route_code || ''} published and ready for dispatch!`);
+          }}
           onDispatchRun={onDispatchRun}
           onDelete={(routeId) => {
             const target = routes.find(r => r.id === routeId);

@@ -630,6 +630,13 @@ export const api = {
       });
     },
 
+    async publish(id: string): Promise<any> {
+      return apiClient<any>(`routes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'PUBLISHED' }),
+      });
+    },
+
     async updateStops(id: string, stops: any[], changesSummary?: string): Promise<any> {
       return apiClient<any>(`routes/${id}/stops`, {
         method: 'PUT',

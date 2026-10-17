@@ -55,9 +55,26 @@ export const routeController = {
     try {
       const { id } = req.params;
       const updated = await routeService.updateRoute(id, req.body, req.user?.id, req.ip);
+      const isPublished = req.body.status === 'PUBLISHED';
       res.json({
         success: true,
-        message: 'Route metadata updated successfully',
+        message: isPublished
+          ? `Route "${updated.name}" (${updated.route_code}) published successfully and ready for dispatch`
+          : 'Route metadata updated successfully',
+        data: updated,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async publishRoute(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const updated = await routeService.updateRoute(id, { status: 'PUBLISHED' }, req.user?.id, req.ip);
+      res.json({
+        success: true,
+        message: `Route "${updated.name}" (${updated.route_code}) published successfully and ready for dispatch`,
         data: updated,
       });
     } catch (err) {

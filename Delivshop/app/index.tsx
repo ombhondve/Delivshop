@@ -26,7 +26,7 @@ export default function DelivshopLandingScreen() {
     if (isShopOwner) {
       router.push('/(shop)');
     } else if (isDriver) {
-      router.push('/(driver)');
+      router.push('/(driver)/(tabs)' as any);
     } else {
       router.push('/(shop)');
     }

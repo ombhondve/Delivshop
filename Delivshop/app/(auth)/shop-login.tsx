@@ -23,6 +23,7 @@ export default function ShopLoginScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    if (submitting) return;
     setErrorMsg(null);
 
     const cleanShopId = shopId.trim();

@@ -29,7 +29,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
   routeId,
   isOpen,
   onClose,
-  onEdit: _onEdit,
+  onEdit,
   onDispatchRun,
   onDelete,
 }) => {
@@ -39,9 +39,11 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [publishFeedback, setPublishFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     if (isOpen && routeId) {
+      setPublishFeedback(null);
       loadRouteDetails(routeId);
     }
   }, [isOpen, routeId]);
@@ -70,14 +72,47 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
   };
 
   const handlePublish = async () => {
-    if (!route) return;
+    if (!route || publishing) return;
+
+    // Client-side pre-validation: route must have at least one stop
+    const stopsCount = route.stops?.length ?? (route as any).stops_count ?? 0;
+    if (stopsCount === 0) {
+      setPublishFeedback({
+        type: 'error',
+        message: 'Cannot publish route: This route has 0 assigned stops. Please add at least one stop before publishing.',
+      });
+      return;
+    }
+
     setPublishing(true);
+    setPublishFeedback(null);
     try {
       const res: any = await api.routes.update(route.id, { status: 'PUBLISHED' });
       const updated = res?.data || res;
       setRoute(updated);
+      setPublishFeedback({
+        type: 'success',
+        message:
+          res?.message ||
+          `Route "${updated.name}" (${updated.route_code || ''}) published successfully! Ready for dispatch.`,
+      });
+      if (onEdit) {
+        onEdit(updated);
+      }
     } catch (err: any) {
-      alert('Failed to publish route: ' + (err?.message || 'Unknown error'));
+      let errMsg = err?.message || 'Failed to publish route';
+      if (err?.details && typeof err.details === 'object') {
+        const detailEntries = Object.entries(err.details)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('; ');
+        if (detailEntries) {
+          errMsg += ` (${detailEntries})`;
+        }
+      }
+      setPublishFeedback({
+        type: 'error',
+        message: errMsg,
+      });
     } finally {
       setPublishing(false);
     }
@@ -220,6 +255,47 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
           </div>
         ) : route ? (
           <>
+            {/* Publication Feedback Banner */}
+            {publishFeedback && (
+              <div
+                style={{
+                  margin: '16px 24px 0 24px',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: publishFeedback.type === 'success' ? '#ECFDF5' : '#FEF2F2',
+                  border: `1px solid ${publishFeedback.type === 'success' ? '#A7F3D0' : '#FECACA'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  color: publishFeedback.type === 'success' ? '#065F46' : '#991B1B',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                }}
+              >
+                {publishFeedback.type === 'success' ? (
+                  <CheckCircle2 size={18} style={{ color: '#10B981', flexShrink: 0 }} />
+                ) : (
+                  <AlertCircle size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
+                )}
+                <span style={{ flex: 1 }}>{publishFeedback.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setPublishFeedback(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    padding: '2px',
+                    display: 'flex',
+                  }}
+                  title="Dismiss"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             {/* 4 Metric Summary Strip */}
             <div className="drawer-metric-grid">
               <div className="drawer-metric-card">

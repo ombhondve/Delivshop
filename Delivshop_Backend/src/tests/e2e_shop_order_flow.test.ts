@@ -49,11 +49,15 @@ async function runEndToEndOrderFlowTest() {
 
     // Pick 1 liquid milk product and 1 solid/dairy product (e.g. Paneer or Curd)
     const liquidProduct = prodRes.rows.find((p) =>
-      p.pack_size?.includes('1L') || p.pack_size?.includes('500ml') || p.category === 'Milk'
+      p.base_unit?.toLowerCase() === 'litre' ||
+      p.base_unit?.toLowerCase() === 'ml' ||
+      p.category === 'Milk' ||
+      p.pack_size?.toLowerCase().includes('1l') ||
+      p.pack_size?.toLowerCase().includes('500ml')
     ) || prodRes.rows[0];
 
     const solidProduct = prodRes.rows.find((p) =>
-      p.category === 'Paneer' || p.category === 'Curd' || p.category === 'Mawa' || p.category === 'Ghee'
+      ['Paneer', 'Curd', 'Mawa', 'Khoa', 'Butter'].includes(p.category)
     ) || prodRes.rows[prodRes.rows.length - 1];
 
     console.log(`🥛 Selected Liquid Product: ${liquidProduct.name} (${liquidProduct.pack_size}, ₹${liquidProduct.price})`);

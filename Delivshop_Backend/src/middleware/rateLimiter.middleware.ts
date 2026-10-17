@@ -18,7 +18,7 @@ export const generalRateLimiter = rateLimit({
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 10, // strict limit for authentication attempts
+  limit: ENV.NODE_ENV === 'production' ? 10 : 100, // strict in prod, accommodating in dev/testing
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   validate: {

@@ -490,7 +490,7 @@ export default function DriverDashboardScreen() {
                     params: { vehicleId: activeRun.vehicle_id, runId: activeRun.id },
                   });
                 } else {
-                  router.push('/(driver)/deliveries');
+                  router.push('/(driver)/(tabs)/deliveries' as any);
                 }
               }}
               activeOpacity={0.8}

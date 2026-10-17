@@ -23,6 +23,7 @@ export default function DriverLoginScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    if (submitting) return;
     setErrorMsg(null);
 
     const cleanEmail = email.trim();
@@ -39,7 +40,7 @@ export default function DriverLoginScreen() {
     setSubmitting(true);
     try {
       await login({ email: cleanEmail, password });
-      router.replace('/(driver)');
+      router.replace('/(driver)/(tabs)' as any);
     } catch (err: any) {
       setErrorMsg(
         err.message || 'Authentication failed. Please verify your driver credentials.'

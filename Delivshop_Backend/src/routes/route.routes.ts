@@ -7,6 +7,7 @@ import {
   createRouteSchema,
   updateRouteSchema,
   updateRouteStopsSchema,
+  routeIdParamSchema,
 } from '../schemas/route.schema.js';
 
 const router = Router();
@@ -37,6 +38,7 @@ router.get(
   '/:id',
   authenticate,
   authorizeRoles('ADMIN', 'SUPPLIER', 'DRIVER'),
+  validateRequest(routeIdParamSchema),
   routeController.getRoute
 );
 
@@ -56,6 +58,14 @@ router.patch(
   routeController.updateRoute
 );
 
+router.post(
+  '/:id/publish',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(routeIdParamSchema),
+  routeController.publishRoute
+);
+
 router.put(
   '/:id/stops',
   authenticate,
@@ -68,6 +78,7 @@ router.delete(
   '/:id',
   authenticate,
   authorizeRoles('ADMIN'),
+  validateRequest(routeIdParamSchema),
   routeController.deleteRoute
 );
 

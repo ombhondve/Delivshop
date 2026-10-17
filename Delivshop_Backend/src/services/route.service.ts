@@ -69,11 +69,20 @@ export const routeService = {
       }
     }
 
+    if (data.status === 'PUBLISHED') {
+      if (!data.stops || !Array.isArray(data.stops) || data.stops.length === 0) {
+        throw new AppError(
+          'Cannot publish route upon creation: At least one stop is required before publishing.',
+          400
+        );
+      }
+    }
+
     const newRoute = await routeRepository.createWithStops(data, actorId);
 
     await auditService.log({
       actorId: actorId || undefined,
-      action: 'ROUTE_CREATED',
+      action: data.status === 'PUBLISHED' ? 'ROUTE_PUBLISHED' : 'ROUTE_CREATED',
       entityType: 'ROUTE',
       entityId: newRoute.id,
       details: {
@@ -81,6 +90,7 @@ export const routeService = {
         name: newRoute.name,
         city: newRoute.city,
         depot: newRoute.depot,
+        status: newRoute.status,
         stopCount: data.stops ? data.stops.length : 0,
       },
       ipAddress,
@@ -99,6 +109,44 @@ export const routeService = {
     delete data.routeCode;
     delete data.route_code;
 
+    // Handle publishing logic and business rules
+    if (data.status === 'PUBLISHED') {
+      // Idempotency: If already published and no other fields changed, return existing
+      const otherKeys = Object.keys(data).filter((k) => k !== 'status');
+      if (existing.status === 'PUBLISHED' && otherKeys.length === 0) {
+        return existing;
+      }
+
+      // Pre-publication check: Route must have at least one stop
+      const stopsCount = existing.stops?.length ?? existing.stops_count ?? 0;
+      if (stopsCount === 0) {
+        throw new AppError(
+          'Cannot publish route: Route must have at least one assigned shop stop before publishing for delivery dispatch.',
+          400
+        );
+      }
+
+      // Pre-publication check: Validate that assigned shops are active
+      if (existing.stops && existing.stops.length > 0) {
+        const shopIds = existing.stops.map((s: any) => s.shop_id || s.shopId).filter(Boolean);
+        if (shopIds.length > 0) {
+          const validation = await routeRepository.validateShopsEligibility(shopIds);
+          if (validation.missingIds.length > 0) {
+            throw new AppError(
+              `Cannot publish route: One or more assigned stops reference non-existent shops: ${validation.missingIds.join(', ')}`,
+              400
+            );
+          }
+          if (validation.inactiveIds.length > 0) {
+            throw new AppError(
+              `Cannot publish route: One or more assigned stops belong to inactive or closed shops: ${validation.inactiveIds.join(', ')}. Please update route stops before publishing.`,
+              400
+            );
+          }
+        }
+      }
+    }
+
     // If changing to INACTIVE, ensure no active runs exist
     if (data.status === 'INACTIVE' && existing.status !== 'INACTIVE') {
       const deps = await routeRepository.checkDependencies(id);
@@ -115,12 +163,20 @@ export const routeService = {
       throw new AppError('Failed to update route', 500);
     }
 
+    const isPublishing = data.status === 'PUBLISHED' && existing.status !== 'PUBLISHED';
+    const action = isPublishing ? 'ROUTE_PUBLISHED' : 'ROUTE_UPDATED';
+
     await auditService.log({
       actorId: actorId || undefined,
-      action: 'ROUTE_UPDATED',
+      action,
       entityType: 'ROUTE',
       entityId: id,
-      details: { changes: data },
+      details: {
+        changes: data,
+        previousStatus: existing.status,
+        newStatus: updated.status,
+        stopsCount: updated.stops_count ?? existing.stops_count ?? 0,
+      },
       ipAddress,
     });
 

@@ -28,7 +28,7 @@ export interface RouteRecord {
   state: string;
   depot: string;
   description: string | null;
-  status: 'DRAFT' | 'ACTIVE' | 'INACTIVE';
+  status: 'DRAFT' | 'ACTIVE' | 'PUBLISHED' | 'INACTIVE' | 'ARCHIVED';
   total_distance_km: number;
   estimated_duration_minutes: number;
   version: number;
@@ -187,7 +187,7 @@ export const routeRepository = {
       state?: string;
       depot?: string;
       description?: string;
-      status?: 'DRAFT' | 'ACTIVE';
+      status?: 'DRAFT' | 'ACTIVE' | 'PUBLISHED' | 'INACTIVE' | 'ARCHIVED';
       totalDistanceKm?: number;
       estimatedDurationMinutes?: number;
       stops?: Array<{
@@ -357,11 +357,19 @@ export const routeRepository = {
     const fields: string[] = [];
     const values: any[] = [];
 
+    const payload = { ...data };
+    if (payload.totalDistanceKm !== undefined && payload.total_distance_km === undefined) {
+      payload.total_distance_km = payload.totalDistanceKm;
+    }
+    if (payload.estimatedDurationMinutes !== undefined && payload.estimated_duration_minutes === undefined) {
+      payload.estimated_duration_minutes = payload.estimatedDurationMinutes;
+    }
+
     const allowed = ['name', 'city', 'state', 'depot', 'description', 'status', 'total_distance_km', 'estimated_duration_minutes'];
 
     for (const key of allowed) {
-      if (data[key] !== undefined) {
-        values.push(data[key]);
+      if (payload[key] !== undefined) {
+        values.push(payload[key]);
         fields.push(`${key} = $${values.length}`);
       }
     }
