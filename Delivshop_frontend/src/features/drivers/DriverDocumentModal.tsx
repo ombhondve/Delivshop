@@ -138,7 +138,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             backgroundColor: '#F8FAF8',
             display: 'flex',
             alignItems: 'center',
@@ -221,7 +221,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                   padding: '8px 12px',
                   fontSize: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   backgroundColor: '#FFFFFF',
                   outline: 'none',
                 }}
@@ -253,7 +253,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                   fontSize: '13px',
                   fontFamily: 'monospace',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   backgroundColor: '#FFFFFF',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -276,7 +276,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                     padding: '8px 12px',
                     fontSize: '13px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -297,7 +297,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                     padding: '8px 12px',
                     fontSize: '13px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -319,7 +319,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                   padding: '8px 12px',
                   fontSize: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   backgroundColor: '#FFFFFF',
                   outline: 'none',
                 }}
@@ -357,7 +357,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: `2px dashed ${dragOver ? 'var(--color-primary)' : '#CBD5E1'}`,
+                    border: `2px dashed ${dragOver ? 'var(--color-primary)' : '#A7AE9F'}`,
                     backgroundColor: dragOver ? 'var(--color-primary-subtle)' : '#F8FAFC',
                     borderRadius: '12px',
                     padding: '24px 16px',
@@ -437,7 +437,7 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
             style={{
               marginTop: '24px',
               paddingTop: '16px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '10px',
@@ -486,3 +486,4 @@ export const DriverDocumentModal: React.FC<DriverDocumentModalProps> = ({
     </div>
   );
 };
+

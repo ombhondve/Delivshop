@@ -265,7 +265,7 @@ export const ProductCatalog: React.FC = () => {
                     gap: '5px',
                     padding: '5px 10px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     color: '#334155',
                     fontSize: '12px',
@@ -290,7 +290,7 @@ export const ProductCatalog: React.FC = () => {
                     gap: '5px',
                     padding: '5px 10px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     color: '#334155',
                     fontSize: '12px',
@@ -326,8 +326,8 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'ALL' ? 'var(--color-navy)' : '#E2E8F0'}`,
-                boxShadow: activeTab === 'ALL' ? '0 2px 6px rgba(17, 31, 51, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
+                border: `1px solid ${activeTab === 'ALL' ? 'var(--color-navy)' : '#D6D3C8'}`,
+                boxShadow: activeTab === 'ALL' ? '0 2px 6px rgba(6, 78, 59, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
               <div>
@@ -352,8 +352,8 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'ACTIVE' ? 'var(--color-primary)' : '#E2E8F0'}`,
-                boxShadow: activeTab === 'ACTIVE' ? '0 2px 6px rgba(25, 118, 210, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
+                border: `1px solid ${activeTab === 'ACTIVE' ? 'var(--color-primary)' : '#D6D3C8'}`,
+                boxShadow: activeTab === 'ACTIVE' ? '0 2px 6px rgba(4, 120, 87, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
               <div>
@@ -378,7 +378,7 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'LOW_STOCK' ? '#D97706' : '#E2E8F0'}`,
+                border: `1px solid ${activeTab === 'LOW_STOCK' ? '#D97706' : '#D6D3C8'}`,
                 boxShadow: activeTab === 'LOW_STOCK' ? '0 2px 6px rgba(217, 119, 6, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
@@ -404,7 +404,7 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'OUT_OF_STOCK' ? '#EF4444' : '#E2E8F0'}`,
+                border: `1px solid ${activeTab === 'OUT_OF_STOCK' ? '#EF4444' : '#D6D3C8'}`,
                 boxShadow: activeTab === 'OUT_OF_STOCK' ? '0 2px 6px rgba(239, 68, 68, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
@@ -430,7 +430,7 @@ export const ProductCatalog: React.FC = () => {
               }}
               className="catalog-summary-card"
               style={{
-                border: `1px solid ${activeTab === 'EXPIRING_SOON' ? '#2563EB' : '#E2E8F0'}`,
+                border: `1px solid ${activeTab === 'EXPIRING_SOON' ? '#2563EB' : '#D6D3C8'}`,
                 boxShadow: activeTab === 'EXPIRING_SOON' ? '0 2px 6px rgba(37, 99, 235, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
@@ -499,7 +499,7 @@ export const ProductCatalog: React.FC = () => {
               height: '32px',
               padding: '0 10px 0 32px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12.5px',
               outline: 'none',
               boxSizing: 'border-box',
@@ -539,7 +539,7 @@ export const ProductCatalog: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
@@ -567,7 +567,7 @@ export const ProductCatalog: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
@@ -595,7 +595,7 @@ export const ProductCatalog: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
@@ -622,7 +622,7 @@ export const ProductCatalog: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               backgroundColor: '#FAFAF9',
               color: '#334155',
               fontSize: '12px',
@@ -733,7 +733,7 @@ export const ProductCatalog: React.FC = () => {
           <div className="catalog-table-container">
             <table className="business-table catalog-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #D6D3C8', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '7px 10px', minWidth: '200px' }}>Product</th>
                   <th style={{ padding: '7px 8px', width: '120px' }}>SKU</th>
                   <th style={{ padding: '7px 8px', minWidth: '150px' }}>Supplier Company</th>
@@ -829,7 +829,7 @@ export const ProductCatalog: React.FC = () => {
                             borderRadius: '4px',
                             backgroundColor: '#F1F5F9',
                             color: '#334155',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid #D6D3C8',
                           }}
                         >
                           {prod.sku}
@@ -972,7 +972,7 @@ export const ProductCatalog: React.FC = () => {
                             style={{
                               padding: '4px 7px',
                               borderRadius: '5px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid #A7AE9F',
                               backgroundColor: '#FFFFFF',
                               color: '#334155',
                               fontSize: '11px',
@@ -999,8 +999,8 @@ export const ProductCatalog: React.FC = () => {
                             style={{
                               padding: '4px',
                               borderRadius: '5px',
-                              border: '1px solid #BFDBFE',
-                              backgroundColor: '#EFF6FF',
+                              border: '1px solid #6EE7B7',
+                              backgroundColor: '#D1FAE5',
                               color: 'var(--color-primary)',
                               cursor: 'pointer',
                               width: '26px',
@@ -1049,7 +1049,7 @@ export const ProductCatalog: React.FC = () => {
                             style={{
                               padding: '4px',
                               borderRadius: '5px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid #A7AE9F',
                               backgroundColor: '#FFFFFF',
                               color: '#475569',
                               cursor: 'pointer',
@@ -1102,7 +1102,7 @@ export const ProductCatalog: React.FC = () => {
                               style={{
                                 padding: '4px',
                                 borderRadius: '5px',
-                                border: '1px solid #E2E8F0',
+                                border: '1px solid #D6D3C8',
                                 backgroundColor: '#F8FAFC',
                                 color: '#94A3B8',
                                 cursor: 'not-allowed',
@@ -1177,7 +1177,7 @@ export const ProductCatalog: React.FC = () => {
                   style={{
                     padding: '4px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     fontSize: '12.5px',
                     backgroundColor: '#FFFFFF',
                   }}
@@ -1199,7 +1199,7 @@ export const ProductCatalog: React.FC = () => {
                     gap: '4px',
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     color: currentPage <= 1 ? '#94A3B8' : '#334155',
                     fontSize: '12.5px',
@@ -1225,7 +1225,7 @@ export const ProductCatalog: React.FC = () => {
                     gap: '4px',
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     color: currentPage >= data.totalPages ? '#94A3B8' : '#334155',
                     fontSize: '12.5px',
@@ -1382,3 +1382,4 @@ export const ProductCatalog: React.FC = () => {
     </>
   );
 };
+

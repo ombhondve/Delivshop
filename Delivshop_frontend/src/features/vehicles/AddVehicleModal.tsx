@@ -120,7 +120,7 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
         }}
       >
@@ -128,7 +128,7 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -393,7 +393,7 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
                     padding: '12px 14px',
                     borderRadius: '8px',
                     backgroundColor: formData.isRefrigerated ? '#F0F9FF' : '#F8FAFC',
-                    border: `1px solid ${formData.isRefrigerated ? '#BAE6FD' : '#E2E8F0'}`,
+                    border: `1px solid ${formData.isRefrigerated ? '#BAE6FD' : '#D6D3C8'}`,
                   }}
                 >
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0 }}>
@@ -516,7 +516,7 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
               style={{
                 marginTop: '20px',
                 paddingTop: '16px',
-                borderTop: '1px solid #E2E8F0',
+                borderTop: '1px solid #D6D3C8',
                 display: 'flex',
                 justifyContent: 'flex-end',
                 gap: '10px',
@@ -545,3 +545,4 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
     </div>
   );
 };
+

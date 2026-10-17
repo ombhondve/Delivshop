@@ -352,7 +352,7 @@ export const OrdersList: React.FC = () => {
                   backgroundColor: '#FFFFFF',
                   padding: '14px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
               >
                 <div>
@@ -421,10 +421,10 @@ export const OrdersList: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #E2E8F0' }}>
+                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #D6D3C8' }}>
                         Order Total:
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #E2E8F0', color: 'var(--color-navy)' }}>
+                      <td style={{ textAlign: 'right', fontWeight: 700, borderTop: '2px solid #D6D3C8', color: 'var(--color-navy)' }}>
                         {formatCurrency(selectedOrder.totalAmount)}
                       </td>
                     </tr>
@@ -439,7 +439,7 @@ export const OrdersList: React.FC = () => {
                     padding: '12px 14px',
                     borderRadius: '6px',
                     backgroundColor: selectedOrder.status === 'DISPUTED' ? '#FEF2F2' : '#F1F5F9',
-                    border: `1px solid ${selectedOrder.status === 'DISPUTED' ? '#FECACA' : '#E2E8F0'}`,
+                    border: `1px solid ${selectedOrder.status === 'DISPUTED' ? '#FECACA' : '#D6D3C8'}`,
                     color: selectedOrder.status === 'DISPUTED' ? '#991B1B' : 'var(--text-primary)',
                     fontSize: '12.5px',
                   }}
@@ -463,3 +463,4 @@ export const OrdersList: React.FC = () => {
     </div>
   );
 };
+

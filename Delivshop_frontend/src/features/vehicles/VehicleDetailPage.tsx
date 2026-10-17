@@ -160,9 +160,9 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             borderRadius: '9999px',
             fontSize: '12px',
             fontWeight: 600,
-            backgroundColor: '#F1F5F9',
+            backgroundColor: '#F0FDF4',
             color: '#64748B',
-            border: '1px solid #CBD5E1',
+            border: '1px solid #A7AE9F',
           }}
         >
           Inactive
@@ -200,9 +200,9 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               borderRadius: '9999px',
               fontSize: '12px',
               fontWeight: 600,
-              backgroundColor: '#EFF6FF',
+              backgroundColor: '#D1FAE5',
               color: '#1E40AF',
-              border: '1px solid #BFDBFE',
+              border: '1px solid #6EE7B7',
             }}
           >
             Assigned to Delivery Run
@@ -254,7 +254,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         );
       default:
         return (
-          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: '#F1F5F9', color: '#475569' }}>
+          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: '#F0FDF4', color: '#475569' }}>
             {status}
           </span>
         );
@@ -265,12 +265,12 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
     return (
       <div className="page-container" style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <div style={{ width: '120px', height: '36px', background: '#E2E8F0', borderRadius: '6px' }} />
+          <div style={{ width: '120px', height: '36px', background: '#D6D3C8', borderRadius: '6px' }} />
         </div>
-        <div style={{ height: '140px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '20px' }} />
+        <div style={{ height: '140px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #D6D3C8', marginBottom: '20px' }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{ height: '90px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }} />
+            <div key={i} style={{ height: '90px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #D6D3C8' }} />
           ))}
         </div>
       </div>
@@ -295,7 +295,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         >
           <Truck size={32} />
         </div>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#111F33', margin: '0 0 8px 0' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1F2937', margin: '0 0 8px 0' }}>
           Vehicle Asset Not Found
         </h2>
         <p style={{ fontSize: '13.5px', color: '#64748B', marginBottom: '24px' }}>
@@ -372,7 +372,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '12px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           padding: '20px 24px',
           marginBottom: '20px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -393,8 +393,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 width: '52px',
                 height: '52px',
                 borderRadius: '10px',
-                backgroundColor: vehicle?.is_refrigerated ? '#E0F2FE' : '#F1F5F9',
-                color: vehicle?.is_refrigerated ? '#0284C7' : '#111F33',
+                backgroundColor: vehicle?.is_refrigerated ? '#E0F2FE' : '#F0FDF4',
+                color: vehicle?.is_refrigerated ? '#0284C7' : '#1F2937',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -406,7 +406,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#111F33', margin: 0 }}>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1F2937', margin: 0 }}>
                   {vehicle?.registration_number}
                 </h1>
                 {vehicle && getStatusBadge(vehicle.status, vehicle.is_active)}
@@ -569,11 +569,11 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                 Payload & Crates
               </span>
-              <div style={{ fontSize: '20px', fontWeight: 800, color: '#111F33', marginTop: '4px' }}>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#1F2937', marginTop: '4px' }}>
                 {vehicle?.capacity_crates} crates
               </div>
             </div>
-            <div style={{ background: '#F1F5F9', color: '#111F33', padding: '8px', borderRadius: '6px' }}>
+            <div style={{ background: '#F0FDF4', color: '#1F2937', padding: '8px', borderRadius: '6px' }}>
               <Package size={18} />
             </div>
           </div>
@@ -588,11 +588,11 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                 Odometer Reading
               </span>
-              <div style={{ fontSize: '20px', fontWeight: 800, color: '#111F33', marginTop: '4px' }}>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#1F2937', marginTop: '4px' }}>
                 {Number(vehicle?.current_odometer_km || 0).toLocaleString('en-IN')} KM
               </div>
             </div>
-            <div style={{ background: '#F1F5F9', color: '#111F33', padding: '8px', borderRadius: '6px' }}>
+            <div style={{ background: '#F0FDF4', color: '#1F2937', padding: '8px', borderRadius: '6px' }}>
               <Gauge size={18} />
             </div>
           </div>
@@ -620,7 +620,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             </div>
             <div
               style={{
-                background: vehicle?.is_refrigerated ? '#E0F2FE' : '#F1F5F9',
+                background: vehicle?.is_refrigerated ? '#E0F2FE' : '#F0FDF4',
                 color: vehicle?.is_refrigerated ? '#0284C7' : '#64748B',
                 padding: '8px',
                 borderRadius: '6px',
@@ -657,7 +657,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             </div>
             <div
               style={{
-                background: vehicle?.active_run_code ? '#EFF6FF' : '#DCFCE7',
+                background: vehicle?.active_run_code ? '#D1FAE5' : '#DCFCE7',
                 color: vehicle?.active_run_code ? '#2563EB' : '#15803D',
                 padding: '8px',
                 borderRadius: '6px',
@@ -675,7 +675,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
       {/* Tabs Navigation */}
       <div
         style={{
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid #D6D3C8',
           marginBottom: '20px',
           display: 'flex',
           gap: '8px',
@@ -692,8 +692,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             border: 'none',
             background: 'none',
             cursor: 'pointer',
-            borderBottom: activeTab === 'overview' ? '2px solid #1976D2' : '2px solid transparent',
-            color: activeTab === 'overview' ? '#1976D2' : '#64748B',
+            borderBottom: activeTab === 'overview' ? '2px solid #047857' : '2px solid transparent',
+            color: activeTab === 'overview' ? '#047857' : '#64748B',
             whiteSpace: 'nowrap',
           }}
         >
@@ -710,8 +710,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             border: 'none',
             background: 'none',
             cursor: 'pointer',
-            borderBottom: activeTab === 'assignments' ? '2px solid #1976D2' : '2px solid transparent',
-            color: activeTab === 'assignments' ? '#1976D2' : '#64748B',
+            borderBottom: activeTab === 'assignments' ? '2px solid #047857' : '2px solid transparent',
+            color: activeTab === 'assignments' ? '#047857' : '#64748B',
             whiteSpace: 'nowrap',
           }}
         >
@@ -728,8 +728,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             border: 'none',
             background: 'none',
             cursor: 'pointer',
-            borderBottom: activeTab === 'documents' ? '2px solid #1976D2' : '2px solid transparent',
-            color: activeTab === 'documents' ? '#1976D2' : '#64748B',
+            borderBottom: activeTab === 'documents' ? '2px solid #047857' : '2px solid transparent',
+            color: activeTab === 'documents' ? '#047857' : '#64748B',
             whiteSpace: 'nowrap',
           }}
         >
@@ -746,8 +746,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             border: 'none',
             background: 'none',
             cursor: 'pointer',
-            borderBottom: activeTab === 'maintenance' ? '2px solid #1976D2' : '2px solid transparent',
-            color: activeTab === 'maintenance' ? '#1976D2' : '#64748B',
+            borderBottom: activeTab === 'maintenance' ? '2px solid #047857' : '2px solid transparent',
+            color: activeTab === 'maintenance' ? '#047857' : '#64748B',
             whiteSpace: 'nowrap',
           }}
         >
@@ -764,8 +764,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             border: 'none',
             background: 'none',
             cursor: 'pointer',
-            borderBottom: activeTab === 'activity' ? '2px solid #1976D2' : '2px solid transparent',
-            color: activeTab === 'activity' ? '#1976D2' : '#64748B',
+            borderBottom: activeTab === 'activity' ? '2px solid #047857' : '2px solid transparent',
+            color: activeTab === 'activity' ? '#047857' : '#64748B',
             whiteSpace: 'nowrap',
           }}
         >
@@ -781,7 +781,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '18px' }}>
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Registration Number:</span>
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#111F33' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#1F2937' }}>
                     {vehicle?.registration_number}
                   </span>
                 </div>
@@ -795,35 +795,35 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Make & Model:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.make_model}
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Callsign / Nickname:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: vehicle?.nickname ? '#111F33' : '#94A3B8' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: vehicle?.nickname ? '#1F2937' : '#94A3B8' }}>
                     {vehicle?.nickname || 'None assigned'}
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Manufacturing Year:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.manufacturing_year || 'Not specified'}
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Vehicle Classification:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.vehicle_type}
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Fuel / Propulsion Type:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.fuel_type}
                   </span>
                 </div>
@@ -839,35 +839,35 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Payload & Crate Capacity:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.capacity_kg} KG ({vehicle?.capacity_crates} crates)
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Current Odometer:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {Number(vehicle?.current_odometer_km || 0).toLocaleString('en-IN')} KM
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Home Base Depot:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.depot}
                   </span>
                 </div>
 
                 <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Registered Timestamp:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#111F33' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {formatDate(vehicle?.created_at || '')}
                   </span>
                 </div>
               </div>
 
               {vehicle?.notes && (
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #D6D3C8' }}>
                   <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', display: 'block', marginBottom: '4px' }}>
                     Operational & Maintenance Remarks:
                   </span>
@@ -883,7 +883,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <div style={{ padding: '20px' }}>
               {vehicle?.active_run_code ? (
                 <div>
-                  <div style={{ padding: '12px', backgroundColor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', marginBottom: '14px' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#D1FAE5', borderRadius: '8px', border: '1px solid #6EE7B7', marginBottom: '14px' }}>
                     <div style={{ fontSize: '11px', color: '#1E40AF', fontWeight: 600, textTransform: 'uppercase' }}>
                       Active Dispatch Run
                     </div>
@@ -899,8 +899,8 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
 
                   <div style={{ marginBottom: '12px' }}>
                     <span style={{ fontSize: '12px', color: '#64748B' }}>Assigned Driver:</span>
-                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#111F33', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <UserIcon size={14} style={{ color: '#1976D2' }} />
+                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#1F2937', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <UserIcon size={14} style={{ color: '#047857' }} />
                       <span>{vehicle.active_driver_name || 'Driver on Duty'}</span>
                     </div>
                     {vehicle.active_driver_phone && (
@@ -922,7 +922,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               ) : (
                 <div style={{ textAlign: 'center', padding: '16px 0', color: '#64748B' }}>
                   <CheckCircle2 size={36} style={{ color: '#16A34A', margin: '0 auto 10px auto' }} />
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#111F33' }}>Available on Standby</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937' }}>Available on Standby</div>
                   <p style={{ fontSize: '12.5px', margin: '6px 0 16px 0', lineHeight: 1.5 }}>
                     This vehicle is currently not assigned to any active delivery run and is ready for route allocation.
                   </p>
@@ -951,7 +951,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           {!vehicle?.assignments || vehicle.assignments.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
               <Clock size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111F33', margin: '0 0 6px 0' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>
                 No historical delivery runs logged
               </h4>
               <p style={{ fontSize: '13px', margin: '0 0 16px 0' }}>
@@ -970,7 +970,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <div className="table-responsive">
               <table className="table" style={{ width: '100%', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #D6D3C8', textAlign: 'left' }}>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Run Code</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Route & Hub</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Assigned Driver</th>
@@ -982,11 +982,11 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 <tbody>
                   {vehicle.assignments.map((run: any) => (
                     <tr key={run.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontWeight: 700, color: '#1976D2' }}>
+                      <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontWeight: 700, color: '#047857' }}>
                         {run.run_code}
                       </td>
                       <td style={{ padding: '12px 18px' }}>
-                        <div style={{ fontWeight: 600, color: '#111F33' }}>
+                        <div style={{ fontWeight: 600, color: '#1F2937' }}>
                           {run.route_name || run.route_code}
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748B' }}>
@@ -994,7 +994,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                         </div>
                       </td>
                       <td style={{ padding: '12px 18px' }}>
-                        <div style={{ fontWeight: 600, color: '#111F33' }}>{run.driver_name}</div>
+                        <div style={{ fontWeight: 600, color: '#1F2937' }}>{run.driver_name}</div>
                         <div style={{ fontSize: '11px', color: '#64748B' }}>
                           Emp ID: {run.driver_employee_id || 'N/A'} • {run.driver_phone || ''}
                         </div>
@@ -1003,7 +1003,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                         {formatDate(run.delivery_date)}
                       </td>
                       <td style={{ padding: '12px 18px' }}>
-                        <span style={{ fontWeight: 600, color: '#111F33' }}>
+                        <span style={{ fontWeight: 600, color: '#1F2937' }}>
                           {run.completed_stops_count || 0} / {run.planned_stops_count || 0}
                         </span>
                       </td>
@@ -1041,7 +1041,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           <div
             style={{
               padding: '14px 20px',
-              borderBottom: '1px solid #E2E8F0',
+              borderBottom: '1px solid #D6D3C8',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1049,7 +1049,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             }}
           >
             <div style={{ fontSize: '12.5px', color: '#64748B' }}>
-              Mandatory documents for dairy distribution: <strong style={{ color: '#111F33' }}>RC & Insurance</strong>
+              Mandatory documents for dairy distribution: <strong style={{ color: '#1F2937' }}>RC & Insurance</strong>
             </div>
 
             <button
@@ -1065,7 +1065,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           {!vehicle?.documents || vehicle.documents.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
               <FileText size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111F33', margin: '0 0 6px 0' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>
                 No compliance documents uploaded yet
               </h4>
               <p style={{ fontSize: '13px', margin: '0 0 18px 0', maxWidth: '440px', marginInline: 'auto' }}>
@@ -1083,7 +1083,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <div className="table-responsive">
               <table className="table" style={{ width: '100%', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #D6D3C8', textAlign: 'left' }}>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Document Type</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Reference / Policy #</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Issue Date</th>
@@ -1096,7 +1096,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 <tbody>
                   {vehicle.documents.map((doc: any) => (
                     <tr key={doc.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '12px 18px', fontWeight: 700, color: '#111F33' }}>
+                      <td style={{ padding: '12px 18px', fontWeight: 700, color: '#1F2937' }}>
                         {doc.document_type}
                       </td>
                       <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontWeight: 600, color: '#0369A1' }}>
@@ -1112,7 +1112,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                             color:
                               doc.expiry_date && new Date(doc.expiry_date) < new Date()
                                 ? '#DC2626'
-                                : '#111F33',
+                                : '#1F2937',
                           }}
                         >
                           {doc.expiry_date ? formatDate(doc.expiry_date) : 'Permanent'}
@@ -1129,7 +1129,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: '#1976D2',
+                              color: '#047857',
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -1169,7 +1169,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                               type="button"
                               onClick={() => setConfirmDeleteDocId(null)}
                               style={{
-                                backgroundColor: '#E2E8F0',
+                                backgroundColor: '#D6D3C8',
                                 color: '#475569',
                                 border: 'none',
                                 borderRadius: '4px',
@@ -1217,7 +1217,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           <div
             style={{
               padding: '14px 20px',
-              borderBottom: '1px solid #E2E8F0',
+              borderBottom: '1px solid #D6D3C8',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1225,7 +1225,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             }}
           >
             <div style={{ fontSize: '12.5px', color: '#64748B' }}>
-              Logged Service Entries: <strong style={{ color: '#111F33' }}>{vehicle?.maintenance?.length || 0}</strong>
+              Logged Service Entries: <strong style={{ color: '#1F2937' }}>{vehicle?.maintenance?.length || 0}</strong>
             </div>
 
             <button
@@ -1241,7 +1241,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           {!vehicle?.maintenance || vehicle.maintenance.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
               <Wrench size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111F33', margin: '0 0 6px 0' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>
                 No maintenance records logged
               </h4>
               <p style={{ fontSize: '13px', margin: '0 0 18px 0' }}>
@@ -1259,7 +1259,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <div className="table-responsive">
               <table className="table" style={{ width: '100%', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #D6D3C8', textAlign: 'left' }}>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Service Date</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Service Type</th>
                     <th style={{ padding: '12px 18px', color: '#475569' }}>Odometer</th>
@@ -1271,11 +1271,11 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 <tbody>
                   {vehicle.maintenance.map((m: any) => (
                     <tr key={m.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '12px 18px', fontWeight: 700, color: '#111F33' }}>
+                      <td style={{ padding: '12px 18px', fontWeight: 700, color: '#1F2937' }}>
                         {formatDate(m.service_date)}
                       </td>
                       <td style={{ padding: '12px 18px' }}>
-                        <div style={{ fontWeight: 600, color: '#111F33' }}>{m.service_type}</div>
+                        <div style={{ fontWeight: 600, color: '#1F2937' }}>{m.service_type}</div>
                         {m.description && (
                           <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
                             {m.description}
@@ -1313,7 +1313,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           {!vehicle?.activity || vehicle.activity.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
               <History size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111F33', margin: '0 0 6px 0' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>
                 No audit events recorded yet
               </h4>
               <p style={{ fontSize: '13px', margin: 0 }}>
@@ -1331,7 +1331,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                     top: '8px',
                     bottom: '8px',
                     width: '2px',
-                    backgroundColor: '#E2E8F0',
+                    backgroundColor: '#D6D3C8',
                   }}
                 />
 
@@ -1348,7 +1348,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                           height: '16px',
                           borderRadius: '50%',
                           backgroundColor: '#FFFFFF',
-                          border: '3px solid #1976D2',
+                          border: '3px solid #047857',
                         }}
                       />
 
@@ -1356,12 +1356,12 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                         style={{
                           backgroundColor: '#F8FAFC',
                           borderRadius: '8px',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid #D6D3C8',
                           padding: '12px 16px',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#111F33' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#1F2937' }}>
                             {ev.action.replace(/_/g, ' ')}
                           </span>
                           <span style={{ fontSize: '11px', color: '#64748B' }}>
@@ -1381,7 +1381,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                               padding: '8px 10px',
                               backgroundColor: '#FFFFFF',
                               borderRadius: '4px',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid #D6D3C8',
                               fontSize: '11px',
                               color: '#334155',
                               fontFamily: 'monospace',
@@ -1442,3 +1442,4 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
     </div>
   );
 };
+

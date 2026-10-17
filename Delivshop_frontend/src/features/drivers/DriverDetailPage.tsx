@@ -44,7 +44,6 @@ import { EditDriverModal } from './EditDriverModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { DriverSalaryModal } from './DriverSalaryModal';
 import { DriverDocumentModal } from './DriverDocumentModal';
-import { AssignVehicleModal } from './AssignVehicleModal';
 
 interface DriverDetailPageProps {
   driverId: string;
@@ -72,7 +71,6 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
@@ -149,8 +147,8 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
     return (
       <div style={{ padding: '32px 24px', maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <div style={{ width: '80px', height: '28px', backgroundColor: '#E2E8F0', borderRadius: '6px' }} />
-          <div style={{ width: '200px', height: '28px', backgroundColor: '#E2E8F0', borderRadius: '6px' }} />
+          <div style={{ width: '80px', height: '28px', backgroundColor: '#D6D3C8', borderRadius: '6px' }} />
+          <div style={{ width: '200px', height: '28px', backgroundColor: '#D6D3C8', borderRadius: '6px' }} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
           {[1, 2, 3, 4].map((i) => (
@@ -338,7 +336,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                 backgroundColor: 'var(--color-primary-subtle)',
                 padding: '3px 8px',
                 borderRadius: '6px',
-                border: '1px solid #BFDBFE',
+                border: '1px solid #6EE7B7',
               }}
             >
               {driver.employee_id || 'N/A'}
@@ -376,11 +374,6 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <Button variant="secondary" onClick={() => setIsEditModalOpen(true)}>
             <Pencil size={14} style={{ marginRight: '6px' }} />
             Edit Profile
-          </Button>
-
-          <Button variant="secondary" onClick={() => setIsVehicleModalOpen(true)}>
-            <Truck size={14} style={{ marginRight: '6px' }} />
-            Assign Vehicle
           </Button>
 
           <Button variant="secondary" onClick={() => setIsSalaryModalOpen(true)}>
@@ -504,7 +497,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       <div
         style={{
           display: 'flex',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid #D6D3C8',
           marginBottom: '24px',
           gap: '8px',
           overflowX: 'auto',
@@ -668,7 +661,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               <div
                 style={{
                   backgroundColor: '#F8FAFC',
-                  border: '1px dashed #CBD5E1',
+                  border: '1px dashed #A7AE9F',
                   borderRadius: '8px',
                   padding: '16px',
                   marginBottom: '16px',
@@ -684,7 +677,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
               </div>
             )}
 
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid #D6D3C8', paddingTop: '16px' }}>
               <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>
                 Vehicle Allocation Notice
               </div>
@@ -736,7 +729,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             </div>
           </div>
 
-          <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '24px 0 12px 0', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '24px 0 12px 0', borderTop: '1px solid #D6D3C8', paddingTop: '16px' }}>
             Residential Address
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
@@ -777,7 +770,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             </div>
           </div>
 
-          <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '24px 0 12px 0', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '24px 0 12px 0', borderTop: '1px solid #D6D3C8', paddingTop: '16px' }}>
             Emergency Contact Details
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
@@ -879,7 +872,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           </div>
 
           {driver.notes && (
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid #D6D3C8', paddingTop: '16px' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase' }}>
                 Internal Notes & Observations
               </div>
@@ -947,7 +940,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
           {/* Compliance Documents Table */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #D6D3C8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Compliance & KYC Document Records
               </h4>
@@ -1003,7 +996,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                               fontWeight: 600,
                               color: 'var(--color-primary)',
                               backgroundColor: 'var(--color-primary-subtle)',
-                              border: '1px solid #BFDBFE',
+                              border: '1px solid #6EE7B7',
                               borderRadius: '6px',
                               textDecoration: 'none',
                             }}
@@ -1030,7 +1023,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         <div>
           {/* Scheduled Runs Section */}
           <Card style={{ padding: '0', overflow: 'hidden', marginBottom: '24px' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #D6D3C8' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Assigned Delivery Runs History
               </h4>
@@ -1075,7 +1068,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
           {/* Individual Delivery Drops Table */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #D6D3C8' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Individual Delivery Drops ({deliveries.length})
               </h4>
@@ -1167,7 +1160,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
           {/* Attendance Log Table */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #D6D3C8' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Attendance & GPS Check-In Log
               </h4>
@@ -1286,7 +1279,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
           {/* Payroll Disbursements Ledger */}
           <Card style={{ padding: '0', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #D6D3C8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Disbursed Payroll Ledger
               </h4>
@@ -1338,7 +1331,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       {/* 8. AUDIT & ACTIVITY HISTORY TAB */}
       {activeTab === 'audit' && (
         <Card style={{ padding: '0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #D6D3C8' }}>
             <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Audit Trail & Operational Security Log ({auditHistory.length})
             </h4>
@@ -1428,16 +1421,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           fetchDriverProfile();
         }}
       />
-
-      <AssignVehicleModal
-        isOpen={isVehicleModalOpen}
-        driver={driver}
-        onClose={() => setIsVehicleModalOpen(false)}
-        onSuccess={(updated) => {
-          showToast(`Vehicle allocation updated for ${updated.name}`);
-          fetchDriverProfile();
-        }}
-      />
     </div>
   );
 };
+

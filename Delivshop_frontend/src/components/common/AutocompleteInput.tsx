@@ -186,7 +186,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
               ? '1.5px solid #EF4444'
               : isOpen
               ? '1.5px solid #16805D'
-              : '1px solid #CBD5E1',
+              : '1px solid #A7AE9F',
             backgroundColor: disabled ? '#F1F5F9' : '#FFFFFF',
             boxShadow: isOpen ? '0 0 0 3px rgba(22, 128, 93, 0.12)' : 'none',
             transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
@@ -288,7 +288,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
             maxHeight: '230px',
             overflowY: 'auto',
             background: '#FFFFFF',
-            border: '1px solid #CBD5E1',
+            border: '1px solid #A7AE9F',
             borderRadius: '8px',
             boxShadow:
               '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
@@ -394,3 +394,4 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     </div>
   );
 };
+

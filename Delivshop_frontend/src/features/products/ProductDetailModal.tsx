@@ -118,7 +118,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
           animation: 'fadeInScale 0.2s ease-out',
         }}
@@ -127,7 +127,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -222,7 +222,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   padding: '12px 16px',
                   backgroundColor: '#F8FAFC',
                   borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -306,7 +306,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       gap: '5px',
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#FFFFFF',
                       color: '#334155',
                       fontSize: '12.5px',
@@ -327,7 +327,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       gap: '5px',
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#FFFFFF',
                       color: '#334155',
                       fontSize: '12.5px',
@@ -348,7 +348,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       gap: '5px',
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#FFFFFF',
                       color: '#334155',
                       fontSize: '12.5px',
@@ -365,7 +365,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* 3 Metric Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                 {/* Available Stock */}
-                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D6D3C8', borderRadius: '12px', padding: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                       On-Hand Stock
@@ -382,7 +382,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
 
                 {/* Selling & Purchase Price */}
-                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D6D3C8', borderRadius: '12px', padding: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                       Pricing & Margin
@@ -399,7 +399,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
 
                 {/* Supplier Company */}
-                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D6D3C8', borderRadius: '12px', padding: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
                       Supplying Company
@@ -446,10 +446,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     No active batches recorded. Receive stock to add your first lot.
                   </div>
                 ) : (
-                  <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ border: '1px solid #D6D3C8', borderRadius: '10px', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
                       <thead>
-                        <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #D6D3C8', color: '#64748B', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           <th style={{ padding: '10px 14px' }}>Batch Number</th>
                           <th style={{ padding: '10px 14px' }}>Remaining</th>
                           <th style={{ padding: '10px 14px' }}>Expiry Date</th>
@@ -520,28 +520,28 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </h3>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                     <div style={{ fontSize: '11.5px', color: '#64748B', textTransform: 'uppercase' }}>Fat Content</div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', marginTop: '2px' }}>
                       {product.fatPercentage ? `${product.fatPercentage}%` : 'Standard'}
                     </div>
                   </div>
 
-                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                     <div style={{ fontSize: '11.5px', color: '#64748B', textTransform: 'uppercase' }}>SNF Content</div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', marginTop: '2px' }}>
                       {product.snfPercentage ? `${product.snfPercentage}%` : 'Standard'}
                     </div>
                   </div>
 
-                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                     <div style={{ fontSize: '11.5px', color: '#64748B', textTransform: 'uppercase' }}>Storage Temp</div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', marginTop: '2px' }}>
                       {product.storageTemperature || '2°C to 4°C Refrigerated'}
                     </div>
                   </div>
 
-                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                     <div style={{ fontSize: '11.5px', color: '#64748B', textTransform: 'uppercase' }}>FSSAI License</div>
                     <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', marginTop: '2px', fontFamily: 'monospace' }}>
                       {product.fssaiLicense || 'FSSAI Verified'}
@@ -556,3 +556,4 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     </div>
   );
 };
+

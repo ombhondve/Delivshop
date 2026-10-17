@@ -116,10 +116,10 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
       <div className="drawer-backdrop" onClick={onClose} />
       <div className="drawer-panel" style={{ width: '680px', maxWidth: '90vw' }}>
         {/* Header */}
-        <div className="drawer-header" style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0' }}>
+        <div className="drawer-header" style={{ padding: '20px 24px', borderBottom: '1px solid #D6D3C8' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div className="modal-icon-badge" style={{ background: '#F1F5F9', color: '#0F172A', padding: '10px', borderRadius: '8px' }}>
+              <div className="modal-icon-badge" style={{ background: '#ECFDF5', color: '#0F172A', padding: '10px', borderRadius: '8px' }}>
                 <Truck size={24} />
               </div>
               <div>
@@ -151,7 +151,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
 
           {/* Quick Action Sub-bar */}
           {vehicle && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed #D6D3C8' }}>
               <div style={{ fontSize: '12px', color: '#64748B' }}>
                 Operational State:{' '}
                 <strong style={{ color: vehicle.is_active ? '#15803D' : '#94A3B8' }}>
@@ -223,7 +223,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {/* Active Delivery Run Banner if currently dispatched */}
                   {vehicle.active_run_id && (
-                    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Clock size={18} style={{ color: '#2563EB' }} />
                         <div>
@@ -240,7 +240,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                   )}
 
                   {/* Specifications Card */}
-                  <div className="card" style={{ padding: '18px', background: '#F8FAFC' }}>
+                  <div className="card" style={{ padding: '18px', background: '#F0FDF4' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 14px 0', color: '#0F172A' }}>
                       Technical Specifications & Load Rating
                     </h4>
@@ -275,7 +275,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                   </div>
 
                   {/* Logistics Base */}
-                  <div className="card" style={{ padding: '18px', background: '#F8FAFC' }}>
+                  <div className="card" style={{ padding: '18px', background: '#F0FDF4' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 14px 0', color: '#0F172A' }}>
                       Operational Location & Home Depot
                     </h4>
@@ -293,7 +293,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
 
                   {/* Notes */}
                   {vehicle.notes && (
-                    <div className="card" style={{ padding: '16px', background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                    <div className="card" style={{ padding: '16px', background: '#FFFFFF', border: '1px solid #D6D3C8' }}>
                       <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', display: 'block', marginBottom: '6px' }}>
                         Asset Equipment Notes
                       </span>
@@ -318,7 +318,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                   </div>
 
                   {(!vehicle.documents || vehicle.documents.length === 0) ? (
-                    <div style={{ textAlign: 'center', padding: '30px', background: '#F8FAFC', borderRadius: '8px', color: '#64748B' }}>
+                    <div style={{ textAlign: 'center', padding: '30px', background: '#F0FDF4', borderRadius: '8px', color: '#64748B' }}>
                       <FileText size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
                       <p style={{ margin: 0, fontSize: '13px' }}>No documents uploaded yet for this vehicle asset.</p>
                     </div>
@@ -330,7 +330,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                           style={{
                             padding: '14px 16px',
                             background: '#FFFFFF',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid #D6D3C8',
                             borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
@@ -393,7 +393,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                   </div>
 
                   {(!vehicle.maintenance || vehicle.maintenance.length === 0) ? (
-                    <div style={{ textAlign: 'center', padding: '30px', background: '#F8FAFC', borderRadius: '8px', color: '#64748B' }}>
+                    <div style={{ textAlign: 'center', padding: '30px', background: '#F0FDF4', borderRadius: '8px', color: '#64748B' }}>
                       <Wrench size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
                       <p style={{ margin: 0, fontSize: '13px' }}>No maintenance records logged for this vehicle.</p>
                     </div>
@@ -405,7 +405,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                           style={{
                             padding: '14px 16px',
                             background: '#FFFFFF',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid #D6D3C8',
                             borderRadius: '8px',
                           }}
                         >
@@ -444,7 +444,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                     Historical Delivery Runs Dispatched
                   </h4>
                   {(!vehicle.assignments || vehicle.assignments.length === 0) ? (
-                    <div style={{ textAlign: 'center', padding: '30px', background: '#F8FAFC', borderRadius: '8px', color: '#64748B' }}>
+                    <div style={{ textAlign: 'center', padding: '30px', background: '#F0FDF4', borderRadius: '8px', color: '#64748B' }}>
                       <Calendar size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
                       <p style={{ margin: 0, fontSize: '13px' }}>No operational delivery runs recorded yet.</p>
                     </div>
@@ -456,7 +456,7 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
                           style={{
                             padding: '12px 16px',
                             background: '#FFFFFF',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid #D6D3C8',
                             borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
@@ -512,3 +512,4 @@ export const VehicleDetailsDrawer: React.FC<VehicleDetailsDrawerProps> = ({
     </>
   );
 };
+

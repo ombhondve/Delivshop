@@ -194,7 +194,7 @@ export const EditShopModal: React.FC<EditShopModalProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           borderRadius: '12px',
           width: '100%',
           maxWidth: '740px',
@@ -209,7 +209,7 @@ export const EditShopModal: React.FC<EditShopModalProps> = ({
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -555,7 +555,7 @@ export const EditShopModal: React.FC<EditShopModalProps> = ({
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '12px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               paddingTop: '16px',
               marginTop: '8px',
             }}
@@ -583,3 +583,4 @@ export const EditShopModal: React.FC<EditShopModalProps> = ({
   );
 };
 export default EditShopModal;
+

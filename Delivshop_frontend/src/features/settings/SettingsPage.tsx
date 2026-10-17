@@ -196,7 +196,7 @@ export const SettingsPage: React.FC = () => {
                 padding: '12px 14px',
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
               }}
             >
               <div>
@@ -218,7 +218,7 @@ export const SettingsPage: React.FC = () => {
                 padding: '12px 14px',
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
               }}
             >
               <div>
@@ -240,7 +240,7 @@ export const SettingsPage: React.FC = () => {
                 padding: '12px 14px',
                 backgroundColor: '#FFFFFF',
                 borderRadius: '8px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
               }}
             >
               <div>
@@ -266,3 +266,4 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 };
+

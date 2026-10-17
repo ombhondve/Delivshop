@@ -84,7 +84,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
   const getMovementBadge = (type: string) => {
     switch (type) {
       case 'OPENING_STOCK':
-        return { label: 'Opening Stock', bg: '#EFF6FF', color: '#1D4ED8' };
+        return { label: 'Opening Stock', bg: '#D1FAE5', color: '#1D4ED8' };
       case 'PURCHASE_RECEIPT':
         return { label: 'Receipt Inward', bg: '#ECFDF5', color: '#047857' };
       case 'STOCK_ADJUSTMENT_INCREASE':
@@ -129,7 +129,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
           animation: 'fadeInScale 0.2s ease-out',
         }}
@@ -138,7 +138,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -190,7 +190,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
           style={{
             padding: '12px 20px',
             backgroundColor: '#FFFFFF',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             flexWrap: 'wrap',
             gap: '10px',
@@ -216,7 +216,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
                   width: '100%',
                   padding: '7px 10px 7px 32px',
                   borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   fontSize: '13px',
                   boxSizing: 'border-box',
                 }}
@@ -232,7 +232,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
               style={{
                 padding: '7px 10px',
                 borderRadius: '6px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '13px',
                 backgroundColor: '#FFFFFF',
               }}
@@ -258,7 +258,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
               gap: '6px',
               padding: '7px 12px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               backgroundColor: '#FAFAF9',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -291,7 +291,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #D6D3C8', color: '#475569', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '10px 14px' }}>Movement #</th>
                   <th style={{ padding: '10px 14px' }}>Date & Time</th>
                   <th style={{ padding: '10px 14px' }}>Product / Lot</th>
@@ -379,7 +379,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
           <div
             style={{
               padding: '12px 20px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -402,7 +402,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
                   gap: '4px',
                   padding: '5px 10px',
                   borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   backgroundColor: '#FFFFFF',
                   color: currentPage <= 1 ? '#94A3B8' : '#334155',
                   fontSize: '12px',
@@ -428,7 +428,7 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
                   gap: '4px',
                   padding: '5px 10px',
                   borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   backgroundColor: '#FFFFFF',
                   color: currentPage >= data.totalPages ? '#94A3B8' : '#334155',
                   fontSize: '12px',
@@ -446,3 +446,4 @@ export const InventoryLedgerModal: React.FC<InventoryLedgerModalProps> = ({
     </div>
   );
 };
+

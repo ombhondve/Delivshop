@@ -75,7 +75,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
           width: '100%',
           maxWidth: '520px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
           animation: 'fadeInScale 0.2s ease-out',
         }}
@@ -84,7 +84,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -159,7 +159,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
               padding: '14px 16px',
               backgroundColor: '#F8FAFC',
               borderRadius: '10px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid #D6D3C8',
               marginBottom: '18px',
               display: 'flex',
               alignItems: 'center',
@@ -261,7 +261,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
                 width: '100%',
                 padding: '8px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '13px',
                 fontFamily: 'inherit',
                 resize: 'none',
@@ -304,7 +304,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 backgroundColor: '#FFFFFF',
                 color: '#475569',
                 fontSize: '13px',
@@ -332,7 +332,7 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
                 color: '#FFFFFF',
                 boxShadow: isCurrentlyActive
                   ? '0 2px 4px rgba(217, 119, 6, 0.25)'
-                  : '0 2px 4px rgba(25, 118, 210, 0.25)',
+                  : '0 2px 4px rgba(4, 120, 87, 0.25)',
               }}
             >
               {isSubmitting ? (
@@ -352,3 +352,4 @@ export const ProductStatusDialog: React.FC<ProductStatusDialogProps> = ({
     </div>
   );
 };
+

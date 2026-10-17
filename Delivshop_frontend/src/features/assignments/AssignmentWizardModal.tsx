@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   X, Calendar, Truck, User, Navigation, ShieldCheck, 
   AlertTriangle, CheckCircle2, ChevronRight, ArrowLeft, ArrowRight,
-  Clock, MapPin, AlertCircle, FileCheck
+  Clock, MapPin, AlertCircle, FileCheck, Search, Info, Check
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
-import { Route, Vehicle } from '../../types';
+import { Route, Vehicle, DriverUser } from '../../types';
+import { Button } from '../../components/common/Button';
+import { Badge } from '../../components/common/Badge';
 
 interface AssignmentWizardModalProps {
   isOpen: boolean;
@@ -22,26 +24,32 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
 }) => {
   const [step, setStep] = useState(1);
   
-  // Step 1: Date & Operational Area
+  // Step 1: Dispatch & Schedule Information
   const [deliveryDate, setDeliveryDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
+  const [plannedTime, setPlannedTime] = useState('06:00 AM');
+  const [depot, setDepot] = useState('Pune Central Depot');
   const [city, setCity] = useState('Pune');
+  const [dispatchNotes, setDispatchNotes] = useState('');
 
-  // Step 2: Route
+  // Step 2: Route Selection
   const [routes, setRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(preselectedRoute || null);
+  const [routeSearch, setRouteSearch] = useState('');
 
-  // Step 3: Driver
-  const [drivers, setDrivers] = useState<any[]>([]);
-  const [selectedDriver, setSelectedDriver] = useState<any | null>(null);
+  // Step 3: Driver Selection
+  const [drivers, setDrivers] = useState<DriverUser[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<DriverUser | null>(null);
+  const [driverSearch, setDriverSearch] = useState('');
 
-  // Step 4: Vehicle
+  // Step 4: Vehicle Selection
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [vehicleSearch, setVehicleSearch] = useState('');
 
-  // Step 5: Backend Validation State
+  // Step 5: Backend Constraint Validation & Submission
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     valid: boolean;
@@ -49,33 +57,69 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
     warnings: string[];
   } | null>(null);
 
-  // Submitting
   const [submitting, setSubmitting] = useState(false);
   const [dispatchError, setDispatchError] = useState<string | null>(null);
+  const [loadingPrereqs, setLoadingPrereqs] = useState(false);
+
+  // Load prerequisites
+  const loadPrerequisites = useCallback(async () => {
+    setLoadingPrereqs(true);
+    try {
+      // 1. Load routes (query active/published or fallback to all)
+      try {
+        const routesRes: any = await api.routes.list({ status: 'ACTIVE' });
+        const list = Array.isArray(routesRes) ? routesRes : routesRes?.data || [];
+        if (list.length > 0) {
+          setRoutes(list);
+        } else {
+          const allRoutes: any = await api.routes.list();
+          setRoutes(Array.isArray(allRoutes) ? allRoutes : allRoutes?.data || []);
+        }
+      } catch (e) {
+        const allRoutes: any = await api.routes.list();
+        setRoutes(Array.isArray(allRoutes) ? allRoutes : allRoutes?.data || []);
+      }
+
+      // 2. Load active drivers
+      const driversRes: any = await api.deliveries.listAllDrivers();
+      const driverList = Array.isArray(driversRes) ? driversRes : driversRes?.data || [];
+      setDrivers(driverList);
+
+      // 3. Load fleet vehicles
+      const vehiclesRes: any = await api.vehicles.list({ limit: 100 });
+      const vehicleList = Array.isArray(vehiclesRes) ? vehiclesRes : vehiclesRes?.data || [];
+      setVehicles(vehicleList);
+
+    } catch (err) {
+      console.error('Failed to load assignment wizard prerequisites:', err);
+    } finally {
+      setLoadingPrereqs(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       loadPrerequisites();
+      if (preselectedRoute) {
+        setSelectedRoute(preselectedRoute);
+      }
+    } else {
+      setStep(1);
+      setValidationResult(null);
+      setDispatchError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedRoute, loadPrerequisites]);
 
-  const loadPrerequisites = async () => {
-    try {
-      // 1. Load published routes
-      const routesRes: any = await api.routes.list({ status: 'PUBLISHED' });
-      setRoutes(Array.isArray(routesRes) ? routesRes : routesRes?.data || []);
-
-      // 2. Load active drivers
-      const driversRes: any = await api.deliveries.listAllDrivers({ status: 'ACTIVE' });
-      setDrivers(Array.isArray(driversRes) ? driversRes : driversRes?.data || []);
-
-      // 3. Load active vehicles
-      const vehiclesRes: any = await api.vehicles.list({ status: 'AVAILABLE' });
-      setVehicles(Array.isArray(vehiclesRes) ? vehiclesRes : vehiclesRes?.data || []);
-    } catch (err) {
-      console.error('Failed to load assignment wizard prerequisites:', err);
-    }
-  };
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !submitting) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, submitting, onClose]);
 
   const handleValidateAssignment = async () => {
     if (!selectedRoute || !selectedDriver || !selectedVehicle) return;
@@ -88,20 +132,20 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
         routeId: selectedRoute.id,
         driverId: selectedDriver.id,
         vehicleId: selectedVehicle.id,
-        deliveryDate
+        deliveryDate,
       });
 
       const data = res?.data || res;
       setValidationResult({
         valid: data?.isValid ?? data?.valid ?? true,
         errors: data?.errors || [],
-        warnings: data?.warnings || []
+        warnings: data?.warnings || [],
       });
     } catch (err: any) {
       setValidationResult({
         valid: false,
-        errors: [err?.message || 'Validation failed due to network or invariant rejection'],
-        warnings: []
+        errors: [err?.message || 'Assignment constraint validation check rejected'],
+        warnings: [],
       });
     } finally {
       setValidating(false);
@@ -114,17 +158,18 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
     setDispatchError(null);
 
     try {
-      const res: any = await api.assignments.create({
+      await api.assignments.create({
         routeId: selectedRoute.id,
         driverId: selectedDriver.id,
         vehicleId: selectedVehicle.id,
         deliveryDate,
-        dispatchImmediately: true
+        notes: dispatchNotes ? `[Depot: ${depot} | Departure: ${plannedTime}] ${dispatchNotes}` : `[Depot: ${depot} | Departure: ${plannedTime}]`,
       });
 
       onAssignmentCreated();
+      onClose();
     } catch (err: any) {
-      setDispatchError(err?.message || 'Dispatch error');
+      setDispatchError(err?.message || 'Failed to persist delivery dispatch run. Please resolve conflicts.');
     } finally {
       setSubmitting(false);
     }
@@ -132,265 +177,700 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Filtered lists
+  const filteredRoutes = routes.filter(r => 
+    (r.name || '').toLowerCase().includes(routeSearch.toLowerCase()) ||
+    (r.route_code || r.code || '').toLowerCase().includes(routeSearch.toLowerCase()) ||
+    (r.depot || '').toLowerCase().includes(routeSearch.toLowerCase())
+  );
+
+  const filteredDrivers = drivers.filter(d => 
+    (d.name || '').toLowerCase().includes(driverSearch.toLowerCase()) ||
+    (d.employee_id || '').toLowerCase().includes(driverSearch.toLowerCase()) ||
+    (d.phone || '').includes(driverSearch)
+  );
+
+  const filteredVehicles = vehicles.filter(v => 
+    (v.registration_number || v.registrationNumber || '').toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+    (v.vehicle_type || v.type || '').toLowerCase().includes(vehicleSearch.toLowerCase()) ||
+    (v.vehicle_code || '').toLowerCase().includes(vehicleSearch.toLowerCase())
+  );
+
+  const stepLabels = [
+    'Schedule',
+    'Select Route',
+    'Assign Driver',
+    'Assign Vehicle',
+    'Verify & Dispatch',
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-        
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(6, 78, 59, 0.65)',
+        backdropFilter: 'blur(3px)',
+        zIndex: 1250,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '12px',
+          width: '100%',
+          maxWidth: '740px',
+          maxHeight: '92vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          border: '1px solid #D6D3C8',
+          overflow: 'hidden',
+        }}
+      >
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-blue-100 text-blue-700 rounded-xl">
-              <Truck className="w-6 h-6" />
+        <div
+          style={{
+            padding: '16px 22px',
+            borderBottom: '1px solid #D6D3C8',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--color-primary-subtle)',
+                color: 'var(--color-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Truck size={18} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Dispatch Delivery Run</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Step {step} of 6 • Date, Route, Driver & Vehicle Planning
+              <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                Dispatch Delivery Run
+              </h2>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+                Step {step} of 5 • {stepLabels[step - 1]}
               </p>
             </div>
           </div>
+
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            disabled={submitting}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#64748B',
+              padding: '4px',
+              borderRadius: '6px',
+            }}
           >
-            <X className="w-5 h-5" />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Progress Tracker */}
-        <div className="flex border-b border-slate-100 bg-white px-6 py-3 justify-between items-center text-xs">
-          {['Date & Area', 'Route', 'Driver', 'Vehicle', 'Validation', 'Dispatch'].map((label, i) => (
-            <div key={label} className="flex items-center space-x-1.5">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
-                step === i + 1 
-                  ? 'bg-blue-600 text-white' 
-                  : step > i + 1 
-                  ? 'bg-emerald-100 text-emerald-800' 
-                  : 'bg-slate-100 text-slate-400'
-              }`}>
-                {step > i + 1 ? '✓' : i + 1}
+        {/* Progress Tracker Strip */}
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid #D6D3C8',
+            backgroundColor: '#F8FAFC',
+            padding: '10px 20px',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          {stepLabels.map((label, i) => {
+            const isCurrent = step === i + 1;
+            const isCompleted = step > i + 1;
+
+            return (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    backgroundColor: isCurrent 
+                      ? 'var(--color-primary)' 
+                      : (isCompleted ? 'var(--color-success)' : '#D6D3C8'),
+                    color: (isCurrent || isCompleted) ? '#FFFFFF' : '#64748B',
+                  }}
+                >
+                  {isCompleted ? <Check size={12} /> : i + 1}
+                </div>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: isCurrent ? 700 : 500,
+                    color: isCurrent ? 'var(--color-primary)' : (isCompleted ? '#1E293B' : '#94A3B8'),
+                  }}
+                >
+                  {label}
+                </span>
+                {i < 4 && <ChevronRight size={14} color="#A7AE9F" style={{ marginLeft: '4px' }} />}
               </div>
-              <span className={step === i + 1 ? 'font-bold text-blue-600' : 'text-slate-500 hidden sm:inline'}>
-                {label}
-              </span>
-              {i < 5 && <ChevronRight className="w-3 h-3 text-slate-300 hidden sm:inline" />}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div style={{ padding: '22px', overflowY: 'auto', flex: 1, backgroundColor: '#FFFFFF' }}>
           
-          {/* STEP 1: Date & Area */}
+          {/* STEP 1: Dispatch & Schedule */}
           {step === 1 && (
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold text-slate-900">Select Date & Operational Area</h3>
-              
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Delivery Run Date *
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                  Operational Date & Dispatch Scheduling
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                  Define target delivery date, dispatch depot, and planned departure time.
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Delivery Run Date *
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      className="toolbar-search-input"
+                      style={{ width: '100%', height: '38px' }}
+                    />
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#64748B', marginTop: '4px', display: 'block' }}>
+                    Drivers and vehicles are evaluated against this date for conflicting dispatches.
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Planned Departure Time *
+                  </label>
+                  <select
+                    value={plannedTime}
+                    onChange={(e) => setPlannedTime(e.target.value)}
+                    className="toolbar-select-field"
+                    style={{ width: '100%', height: '38px' }}
+                  >
+                    <option value="05:00 AM">05:00 AM (Early Milk Run)</option>
+                    <option value="05:30 AM">05:30 AM (Morning Drop)</option>
+                    <option value="06:00 AM">06:00 AM (Standard Commercial)</option>
+                    <option value="06:30 AM">06:30 AM (Second Shift)</option>
+                    <option value="07:00 AM">07:00 AM (Retail Rush)</option>
+                    <option value="08:00 AM">08:00 AM (Mid-Morning Route)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Dispatch Depot / Fulfillment Center *
+                  </label>
+                  <select
+                    value={depot}
+                    onChange={(e) => setDepot(e.target.value)}
+                    className="toolbar-select-field"
+                    style={{ width: '100%', height: '38px' }}
+                  >
+                    <option value="Pune Central Depot">Pune Central Depot (Shivajinagar)</option>
+                    <option value="Hadapsar Distribution Hub">Hadapsar Distribution Hub</option>
+                    <option value="Hinjewadi Logistics Hub">Hinjewadi Logistics Hub</option>
+                    <option value="Katraj Cold Storage Depot">Katraj Cold Storage Depot</option>
+                    <option value="Pimpri Processing Hub">Pimpri Processing Hub</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Operating City Hub
+                  </label>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="toolbar-select-field"
+                    style={{ width: '100%', height: '38px' }}
+                  >
+                    <option value="Pune">Pune (Maharashtra)</option>
+                    <option value="Mumbai">Mumbai (Maharashtra)</option>
+                    <option value="Nagpur">Nagpur (Maharashtra)</option>
+                    <option value="Nashik">Nashik (Maharashtra)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  Dispatch Notes & Instructions
                 </label>
-                <input
-                  type="date"
-                  value={deliveryDate}
-                  onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <textarea
+                  rows={2}
+                  value={dispatchNotes}
+                  onChange={(e) => setDispatchNotes(e.target.value)}
+                  placeholder="e.g. Ensure all crates are cold-chain sealed before departure"
+                  className="toolbar-search-input"
+                  style={{ width: '100%', height: 'auto', padding: '8px 12px' }}
                 />
-                <p className="text-xs text-slate-400 mt-1">Assignments are scheduled and verified for this specific operating date.</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Operating City / Hub
-                </label>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Pune">Pune (Maharashtra)</option>
-                  <option value="Mumbai">Mumbai (Maharashtra)</option>
-                  <option value="Nagpur">Nagpur (Maharashtra)</option>
-                  <option value="Nashik">Nashik (Maharashtra)</option>
-                </select>
               </div>
             </div>
           )}
 
-          {/* STEP 2: Route */}
+          {/* STEP 2: Route Selection */}
           {step === 2 && (
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold text-slate-900">Select Published Route Template</h3>
-              
-              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                {routes.map((r) => (
-                  <div
-                    key={r.id}
-                    onClick={() => setSelectedRoute(r)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                      selectedRoute?.id === r.id
-                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-xs font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
-                          {r.route_code || r.code}
-                        </span>
-                        <h4 className="font-semibold text-slate-900">{r.name}</h4>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {r.stops_count || r.stopsCount || 0} stops • {r.total_distance_km || r.estimatedDistanceKm || '—'} km • Depot: {r.depot || r.depotName || 'Main'}
-                      </p>
-                    </div>
-                    {selectedRoute?.id === r.id && (
-                      <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    )}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                  Select Delivery Corridor / Route
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                  Choose from published routes with configured shop sequences and distance plans.
+                </p>
+              </div>
 
-                {routes.length === 0 && (
-                  <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    No published routes available. Please create and publish a route template first.
+              {/* Route Search */}
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                <input
+                  type="text"
+                  placeholder="Search route by name, corridor code, or depot..."
+                  value={routeSearch}
+                  onChange={(e) => setRouteSearch(e.target.value)}
+                  className="toolbar-search-input"
+                  style={{ width: '100%', paddingLeft: '36px', height: '38px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflowY: 'auto' }}>
+                {filteredRoutes.map((r) => {
+                  const isSelected = selectedRoute?.id === r.id;
+                  const stopsCount = r.stops_count || r.stopsCount || 0;
+
+                  return (
+                    <div
+                      key={r.id}
+                      onClick={() => setSelectedRoute(r)}
+                      style={{
+                        padding: '14px 16px',
+                        borderRadius: '8px',
+                        border: isSelected ? '2px solid var(--color-primary)' : '1px solid #D6D3C8',
+                        backgroundColor: isSelected ? 'var(--color-primary-subtle)' : '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <code
+                            style={{
+                              fontFamily: 'monospace',
+                              fontWeight: 700,
+                              fontSize: '11.5px',
+                              color: 'var(--color-primary)',
+                              backgroundColor: '#DBEAFE',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                            }}
+                          >
+                            {r.route_code || r.code || 'RT-CORRIDOR'}
+                          </code>
+                          <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {r.name}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+                          <strong>{stopsCount}</strong> delivery stops • {r.total_distance_km || '—'} km • Depot: {r.depot || depot}
+                        </div>
+                      </div>
+
+                      {isSelected ? (
+                        <div
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--color-primary)',
+                            color: '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Check size={14} />
+                        </div>
+                      ) : (
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #A7AE9F' }} />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {filteredRoutes.length === 0 && (
+                  <div style={{ padding: '30px', textAlign: 'center', color: '#64748B', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px dashed #A7AE9F' }}>
+                    No matching routes found. Create and publish a route before dispatching runs.
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* STEP 3: Driver */}
+          {/* STEP 3: Driver Selection */}
           {step === 3 && (
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold text-slate-900">Assign Eligible Driver</h3>
-              
-              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                {drivers.map((d) => (
-                  <div
-                    key={d.id}
-                    onClick={() => setSelectedDriver(d)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                      selectedDriver?.id === d.id
-                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
-                        {d.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-semibold text-slate-900">{d.name}</h4>
-                          <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-100 rounded text-slate-600">
-                            {d.employee_id || d.employeeId || 'DRV'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          Phone: {d.phone} • Status: <span className="text-emerald-600 font-medium">Active</span>
-                        </p>
-                      </div>
-                    </div>
-                    {selectedDriver?.id === d.id && (
-                      <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    )}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                  Assign Eligible Driver
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                  Select an active licensed personnel from the roster for this delivery run.
+                </p>
+              </div>
 
-                {drivers.length === 0 && (
-                  <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    No active drivers found.
+              {/* Driver Search */}
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                <input
+                  type="text"
+                  placeholder="Search driver by name, employee ID, or phone..."
+                  value={driverSearch}
+                  onChange={(e) => setDriverSearch(e.target.value)}
+                  className="toolbar-search-input"
+                  style={{ width: '100%', paddingLeft: '36px', height: '38px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflowY: 'auto' }}>
+                {filteredDrivers.map((d) => {
+                  const isSelected = selectedDriver?.id === d.id;
+                  const isInactive = !d.is_active;
+
+                  return (
+                    <div
+                      key={d.id}
+                      onClick={() => !isInactive && setSelectedDriver(d)}
+                      style={{
+                        padding: '14px 16px',
+                        borderRadius: '8px',
+                        border: isSelected 
+                          ? '2px solid var(--color-primary)' 
+                          : (isInactive ? '1px dashed #A7AE9F' : '1px solid #D6D3C8'),
+                        backgroundColor: isSelected 
+                          ? 'var(--color-primary-subtle)' 
+                          : (isInactive ? '#F8FAFC' : '#FFFFFF'),
+                        cursor: isInactive ? 'not-allowed' : 'pointer',
+                        opacity: isInactive ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--color-navy)',
+                            color: '#FFFFFF',
+                            fontWeight: 700,
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {d.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                              {d.name}
+                            </span>
+                            <code
+                              style={{
+                                fontFamily: 'monospace',
+                                fontWeight: 700,
+                                fontSize: '11px',
+                                color: 'var(--color-primary)',
+                                backgroundColor: 'var(--color-primary-subtle)',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {d.employee_id || 'DRV'}
+                            </code>
+                            <Badge variant={d.is_active ? 'success' : 'danger'}>
+                              {d.is_active ? 'Available' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '3px' }}>
+                            Phone: {d.phone || '—'} • Licence: {d.license_number || 'LMV-TR'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isSelected ? (
+                        <div
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--color-primary)',
+                            color: '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Check size={14} />
+                        </div>
+                      ) : (
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #A7AE9F' }} />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {filteredDrivers.length === 0 && (
+                  <div style={{ padding: '30px', textAlign: 'center', color: '#64748B', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px dashed #A7AE9F' }}>
+                    No matching active drivers found in roster.
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* STEP 4: Vehicle */}
+          {/* STEP 4: Vehicle Selection */}
           {step === 4 && (
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold text-slate-900">Assign Fleet Vehicle</h3>
-              
-              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                {vehicles.map((v) => (
-                  <div
-                    key={v.id}
-                    onClick={() => setSelectedVehicle(v)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                      selectedVehicle?.id === v.id
-                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-slate-100 text-slate-700 rounded-lg">
-                        <Truck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-semibold font-mono text-slate-900">{v.registration_number || v.registrationNumber}</h4>
-                          <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded text-slate-600">
-                            {v.vehicle_type || v.type}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          Capacity: {v.capacity_kg || v.capacityKg} kg / {v.capacity_crates || v.capacityCrates} crates • {v.make_model || v.makeModel || 'Fleet'}
-                        </p>
-                      </div>
-                    </div>
-                    {selectedVehicle?.id === v.id && (
-                      <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    )}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                  Assign Fleet Vehicle
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                  Allocate an operational fleet asset with validated crate capacity and compliance.
+                </p>
+              </div>
 
-                {vehicles.length === 0 && (
-                  <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    No available vehicles found in this hub.
+              {/* Vehicle Search */}
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                <input
+                  type="text"
+                  placeholder="Search vehicle by registration, type, or asset ID..."
+                  value={vehicleSearch}
+                  onChange={(e) => setVehicleSearch(e.target.value)}
+                  className="toolbar-search-input"
+                  style={{ width: '100%', paddingLeft: '36px', height: '38px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflowY: 'auto' }}>
+                {filteredVehicles.map((v) => {
+                  const isSelected = selectedVehicle?.id === v.id;
+                  const isMaintenance = v.status === 'UNDER_MAINTENANCE' || v.status === 'INACTIVE';
+
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => !isMaintenance && setSelectedVehicle(v)}
+                      style={{
+                        padding: '14px 16px',
+                        borderRadius: '8px',
+                        border: isSelected 
+                          ? '2px solid var(--color-primary)' 
+                          : (isMaintenance ? '1px dashed #A7AE9F' : '1px solid #D6D3C8'),
+                        backgroundColor: isSelected 
+                          ? 'var(--color-primary-subtle)' 
+                          : (isMaintenance ? '#F8FAFC' : '#FFFFFF'),
+                        cursor: isMaintenance ? 'not-allowed' : 'pointer',
+                        opacity: isMaintenance ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '8px',
+                            backgroundColor: '#F1F5F9',
+                            color: '#334155',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Truck size={18} />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13.5px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
+                              {v.registration_number || v.registrationNumber}
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748B', backgroundColor: '#F1F5F9', padding: '1px 6px', borderRadius: '4px' }}>
+                              {v.vehicle_type || v.type}
+                            </span>
+                            {v.is_refrigerated && (
+                              <Badge variant="navy">Cold Chain</Badge>
+                            )}
+                            <Badge variant={v.status === 'AVAILABLE' ? 'success' : (v.status === 'UNDER_MAINTENANCE' ? 'warning' : 'neutral')}>
+                              {v.status}
+                            </Badge>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '3px' }}>
+                            Capacity: <strong>{v.capacity_crates || v.capacityCrates || 60}</strong> crates ({v.capacity_kg || v.capacityKg || 500} kg) • {v.make_model || 'Commercial Fleet'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isSelected ? (
+                        <div
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--color-primary)',
+                            color: '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Check size={14} />
+                        </div>
+                      ) : (
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #A7AE9F' }} />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {filteredVehicles.length === 0 && (
+                  <div style={{ padding: '30px', textAlign: 'center', color: '#64748B', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px dashed #A7AE9F' }}>
+                    No available fleet vehicles found.
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* STEP 5: Real-time Backend Validation */}
+          {/* STEP 5: Real-time Backend Validation & Review */}
           {step === 5 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-slate-900">Pre-Dispatch Operational Validation</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
+                    Pre-Dispatch Operational Validation
+                  </h3>
+                  <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                    Real-time verification against double-booking, vehicle compliance, and route sequencing.
+                  </p>
+                </div>
                 <button
+                  type="button"
                   onClick={handleValidateAssignment}
                   disabled={validating}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-primary)',
+                    fontWeight: 600,
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
                 >
                   Re-check Invariants
                 </button>
               </div>
 
+              {/* Validation Status Box */}
               {validating ? (
-                <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-sm text-slate-600 mt-3 font-medium">Validating driver eligibility, vehicle compliance, and scheduling invariants...</p>
+                <div style={{ padding: '24px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
+                  <div className="spin-icon" style={{ display: 'inline-block', marginBottom: '8px' }}>
+                    <ShieldCheck size={28} color="var(--color-primary)" />
+                  </div>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#475569', margin: 0 }}>
+                    Validating operational invariants against database...
+                  </p>
                 </div>
               ) : validationResult ? (
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {validationResult.valid ? (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start space-x-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div
+                      style={{
+                        padding: '14px 16px',
+                        backgroundColor: '#F0FDF4',
+                        border: '1px solid #BBF7D0',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <CheckCircle2 size={20} color="var(--color-success)" style={{ flexShrink: 0 }} />
                       <div>
-                        <h4 className="font-semibold text-emerald-900 text-sm">All Operational Constraints Passed</h4>
-                        <p className="text-xs text-emerald-700 mt-0.5">
-                          Driver schedule is open. Vehicle documents (RC, Insurance, PUC) are valid. No double-booking conflict detected.
+                        <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#166534', margin: 0 }}>
+                          Operational Constraints Validated Successfully
+                        </h4>
+                        <p style={{ fontSize: '12px', color: '#15803D', margin: '2px 0 0 0' }}>
+                          Driver is open for assignment. Vehicle compliance is verified. No double-booking conflict detected.
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-2">
-                      <div className="flex items-center space-x-2 text-red-800 font-semibold text-sm">
-                        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                        <span>Validation Invariant Violations</span>
+                    <div
+                      style={{
+                        padding: '14px 16px',
+                        backgroundColor: '#FEF2F2',
+                        border: '1px solid #FECACA',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-danger)', fontWeight: 700, fontSize: '13.5px' }}>
+                        <AlertCircle size={18} />
+                        <span>Validation Constraint Conflicts Detected</span>
                       </div>
-                      <ul className="text-xs text-red-700 space-y-1 list-disc pl-5">
+                      <ul style={{ margin: '4px 0 0 0', paddingLeft: '20px', fontSize: '12.5px', color: '#991B1B' }}>
                         {validationResult.errors.map((err, i) => (
                           <li key={i}>{err}</li>
                         ))}
@@ -399,54 +879,98 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
                   )}
 
                   {validationResult.warnings && validationResult.warnings.length > 0 && (
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-                      <div className="flex items-center space-x-2 text-amber-800 font-semibold text-xs">
-                        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                        <span>Advisory Warnings</span>
-                      </div>
-                      <ul className="text-xs text-amber-700 space-y-1 list-disc pl-5">
-                        {validationResult.warnings.map((w, i) => (
-                          <li key={i}>{w}</li>
-                        ))}
-                      </ul>
+                    <div
+                      style={{
+                        padding: '12px 14px',
+                        backgroundColor: '#FFFBEB',
+                        border: '1px solid #FDE68A',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        color: '#92400E',
+                      }}
+                    >
+                      <strong style={{ display: 'block', marginBottom: '2px' }}>Operational Notice:</strong>
+                      {validationResult.warnings.join(' • ')}
                     </div>
                   )}
                 </div>
               ) : null}
-            </div>
-          )}
 
-          {/* STEP 6: Review & Dispatch */}
-          {step === 6 && (
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold text-slate-900">Review Assignment & Confirm Dispatch</h3>
+              {/* Summary Cards */}
+              <div
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  borderRadius: '10px',
+                  border: '1px solid #D6D3C8',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Dispatch Manifest Summary
+                </h4>
 
-              <div className="p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-3 text-sm">
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500 text-xs">Delivery Date:</span>
-                  <span className="font-semibold text-slate-900">{deliveryDate}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block' }}>Delivery Date & Time</span>
+                    <strong>{deliveryDate} ({plannedTime})</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block' }}>Depot Location</span>
+                    <strong>{depot}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block' }}>Selected Route</span>
+                    <strong>{selectedRoute?.route_code || 'RT'} — {selectedRoute?.name}</strong>
+                    <span style={{ display: 'block', fontSize: '11.5px', color: '#64748B' }}>
+                      {selectedRoute?.stops_count || selectedRoute?.stopsCount || 0} scheduled retail shops
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block' }}>Assigned Driver</span>
+                    <strong>{selectedDriver?.name}</strong>
+                    <span style={{ display: 'block', fontSize: '11.5px', color: '#64748B' }}>
+                      ID: {selectedDriver?.employee_id || 'DRV'} • Phone: {selectedDriver?.phone}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block' }}>Allocated Fleet Vehicle</span>
+                    <strong style={{ fontFamily: 'monospace' }}>{selectedVehicle?.registration_number || selectedVehicle?.registrationNumber}</strong>
+                    <span style={{ display: 'block', fontSize: '11.5px', color: '#64748B' }}>
+                      {selectedVehicle?.vehicle_type || 'Van'} • {selectedVehicle?.capacity_crates || 60} crates capacity
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block' }}>Operational City</span>
+                    <strong>{city} (Maharashtra)</strong>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500 text-xs">Route:</span>
-                  <span className="font-semibold text-slate-900">{selectedRoute?.route_code || selectedRoute?.code} — {selectedRoute?.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500 text-xs">Driver:</span>
-                  <span className="font-semibold text-slate-900">{selectedDriver?.name} ({selectedDriver?.employee_id || selectedDriver?.employeeId})</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500 text-xs">Vehicle:</span>
-                  <span className="font-semibold font-mono text-slate-900">{selectedVehicle?.registration_number || selectedVehicle?.registrationNumber}</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500 text-xs">Planned Stops:</span>
-                  <span className="font-semibold text-slate-900">{selectedRoute?.stops_count || selectedRoute?.stopsCount || 0} retail locations</span>
-                </div>
+
+                {dispatchNotes && (
+                  <div style={{ borderTop: '1px solid #D6D3C8', paddingTop: '10px', fontSize: '12.5px', color: '#475569' }}>
+                    <span style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600 }}>Notes: </span>
+                    {dispatchNotes}
+                  </div>
+                )}
               </div>
 
               {dispatchError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FECACA',
+                    borderRadius: '8px',
+                    color: 'var(--color-danger)',
+                    fontSize: '12.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
                   <span>{dispatchError}</span>
                 </div>
               )}
@@ -456,62 +980,79 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
         </div>
 
         {/* Footer Navigation */}
-        <div className="p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-          <button
-            onClick={() => setStep(s => Math.max(1, s - 1))}
-            disabled={step === 1 || submitting}
-            className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1"
+        <div
+          style={{
+            padding: '16px 22px',
+            borderTop: '1px solid #D6D3C8',
+            backgroundColor: '#F8FAFC',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              if (step === 1) {
+                onClose();
+              } else {
+                setStep(s => Math.max(1, s - 1));
+              }
+            }}
+            disabled={submitting}
+            icon={step > 1 ? <ArrowLeft size={14} /> : undefined}
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
-          </button>
+            {step === 1 ? 'Cancel' : 'Back'}
+          </Button>
 
-          {step < 5 && (
-            <button
+          {step < 4 && (
+            <Button
+              type="button"
+              variant="primary"
               onClick={() => {
                 if (step === 1 && !deliveryDate) return;
                 if (step === 2 && !selectedRoute) return;
                 if (step === 3 && !selectedDriver) return;
-                if (step === 4) {
-                  setStep(5);
-                  handleValidateAssignment();
-                  return;
-                }
                 setStep(s => s + 1);
               }}
               disabled={
                 (step === 1 && !deliveryDate) ||
                 (step === 2 && !selectedRoute) ||
-                (step === 3 && !selectedDriver) ||
-                (step === 4 && !selectedVehicle)
+                (step === 3 && !selectedDriver)
               }
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold flex items-center space-x-1.5 transition-colors shadow-sm disabled:opacity-50"
             >
               <span>Continue</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              <ArrowRight size={14} style={{ marginLeft: '6px' }} />
+            </Button>
+          )}
+
+          {step === 4 && (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                if (!selectedVehicle) return;
+                setStep(5);
+                handleValidateAssignment();
+              }}
+              disabled={!selectedVehicle}
+            >
+              <span>Verify & Review</span>
+              <ArrowRight size={14} style={{ marginLeft: '6px' }} />
+            </Button>
           )}
 
           {step === 5 && (
-            <button
-              onClick={() => setStep(6)}
-              disabled={!validationResult?.valid}
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold flex items-center space-x-1.5 transition-colors shadow-sm disabled:opacity-50"
-            >
-              <span>Proceed to Summary</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-
-          {step === 6 && (
-            <button
+            <Button
+              type="button"
+              variant="primary"
               onClick={handleCreateAssignment}
-              disabled={submitting}
-              className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center space-x-2 transition-colors shadow-sm disabled:opacity-50"
+              disabled={submitting || (validationResult !== null && !validationResult.valid)}
+              icon={<Truck size={15} />}
             >
-              <Truck className="w-4 h-4" />
-              <span>{submitting ? 'Dispatching...' : 'Confirm & Dispatch Run'}</span>
-            </button>
+              {submitting ? 'Dispatching Run...' : 'Confirm & Dispatch Run'}
+            </Button>
           )}
         </div>
 
@@ -519,3 +1060,4 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
     </div>
   );
 };
+

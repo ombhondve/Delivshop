@@ -93,14 +93,12 @@ export const DriversRoster: React.FC = () => {
 
   const handleExportRoster = () => {
     try {
-      const headers = ['Driver Name', 'Employee ID', 'Phone', 'Email', 'Vehicle Number', 'Vehicle Type', 'Assigned Route', 'Status', 'Active Deliveries', 'Completed Deliveries'];
+      const headers = ['Driver Name', 'Employee ID', 'Phone', 'Email', 'Assigned Route', 'Status', 'Active Deliveries', 'Completed Deliveries'];
       const rows = drivers.map((d) => [
         `"${d.name}"`,
         `"${d.employee_id || ''}"`,
         `"${d.phone || ''}"`,
         `"${d.email}"`,
-        `"${d.vehicle_number || ''}"`,
-        `"${d.vehicle_type || ''}"`,
         `"${d.assigned_route || ''}"`,
         `"${d.status || (d.is_active ? 'ACTIVE' : 'INACTIVE')}"`,
         d.active_deliveries || 0,
@@ -445,15 +443,14 @@ export const DriversRoster: React.FC = () => {
             <table className="business-table">
               <thead>
                 <tr>
-                  <th style={{ width: '220px', minWidth: '200px' }}>Driver</th>
-                  <th style={{ width: '135px', minWidth: '125px', maxWidth: '145px' }}>Employee ID</th>
-                  <th style={{ width: '100px', minWidth: '90px', maxWidth: '105px' }}>Phone</th>
-                  <th style={{ width: '190px', minWidth: '175px', maxWidth: '205px' }}>Assigned Vehicle</th>
-                  <th style={{ width: '130px', minWidth: '125px', maxWidth: '145px' }}>Current Status</th>
-                  <th style={{ width: '170px', minWidth: '155px', maxWidth: '185px' }}>Current Assignment</th>
-                  <th style={{ width: '95px', minWidth: '85px', maxWidth: '100px', textAlign: 'center' }}>Today's Drops</th>
-                  <th style={{ width: '95px', minWidth: '90px', maxWidth: '105px' }}>Account</th>
-                  <th style={{ width: '160px', minWidth: '150px', maxWidth: '180px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '240px', minWidth: '220px' }}>Driver</th>
+                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Employee ID</th>
+                  <th style={{ width: '160px', minWidth: '145px' }}>Phone</th>
+                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Current Status</th>
+                  <th style={{ width: '210px', minWidth: '180px' }}>Current Assignment</th>
+                  <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>Today's Drops</th>
+                  <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px' }}>Account</th>
+                  <th style={{ width: '120px', minWidth: '110px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -467,7 +464,7 @@ export const DriversRoster: React.FC = () => {
                   return (
                     <tr key={drv.id}>
                       {/* 1. Driver Name, Avatar & Email */}
-                      <td style={{ width: '220px', minWidth: '200px' }}>
+                      <td style={{ width: '240px', minWidth: '220px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div
                             style={{
@@ -519,7 +516,7 @@ export const DriversRoster: React.FC = () => {
                       </td>
 
                       {/* 2. Employee ID */}
-                      <td style={{ width: '135px', minWidth: '125px', maxWidth: '145px' }}>
+                      <td style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>
                         <code
                           style={{
                             fontFamily: 'monospace',
@@ -529,7 +526,7 @@ export const DriversRoster: React.FC = () => {
                             backgroundColor: 'var(--color-primary-subtle)',
                             padding: '2px 6px',
                             borderRadius: '4px',
-                            border: '1px solid #BFDBFE',
+                            border: '1px solid #6EE7B7',
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -538,7 +535,7 @@ export const DriversRoster: React.FC = () => {
                       </td>
 
                       {/* 3. Phone */}
-                      <td style={{ width: '100px', minWidth: '90px', maxWidth: '105px' }}>
+                      <td style={{ width: '160px', minWidth: '145px' }}>
                         <div
                           style={{
                             fontSize: '12px',
@@ -554,44 +551,13 @@ export const DriversRoster: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* 4. Assigned Vehicle */}
-                      <td style={{ width: '190px', minWidth: '175px', maxWidth: '205px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Truck size={13} color="#64748B" style={{ flexShrink: 0 }} />
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              fontSize: '12px',
-                              color: 'var(--text-primary)',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {drv.vehicle_number || 'Unallocated'}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '11px',
-                            color: '#64748B',
-                            marginTop: '1px',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {drv.assigned_route || drv.vehicle_type || 'No route assigned'}
-                        </div>
-                      </td>
-
-                      {/* 5. Current Status */}
-                      <td style={{ width: '130px', minWidth: '125px', maxWidth: '145px' }}>
+                      {/* 4. Current Status */}
+                      <td style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>
                         {getOperationalStatusBadge(drv)}
                       </td>
 
-                      {/* 6. Current Assignment */}
-                      <td style={{ width: '170px', minWidth: '155px', maxWidth: '185px' }}>
+                      {/* 5. Current Assignment */}
+                      <td style={{ width: '210px', minWidth: '180px' }}>
                         {drv.current_order_number ? (
                           <div style={{ minWidth: 0, overflow: 'hidden' }}>
                             <div
@@ -625,8 +591,8 @@ export const DriversRoster: React.FC = () => {
                         )}
                       </td>
 
-                      {/* 7. Today's Drops */}
-                      <td style={{ width: '95px', minWidth: '85px', maxWidth: '100px', textAlign: 'center' }}>
+                      {/* 6. Today's Drops */}
+                      <td style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '3px' }}>
                           <span
                             style={{
@@ -642,15 +608,15 @@ export const DriversRoster: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* 8. Account */}
-                      <td style={{ width: '95px', minWidth: '90px', maxWidth: '105px' }}>
+                      {/* 7. Account */}
+                      <td style={{ width: '110px', minWidth: '100px', maxWidth: '120px' }}>
                         <Badge variant={drv.is_active ? 'success' : 'danger'}>
                           {drv.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </td>
 
-                      {/* 9. Actions - Only Details Button */}
-                      <td style={{ width: '160px', minWidth: '150px', maxWidth: '180px', textAlign: 'right' }}>
+                      {/* 8. Actions - Only Details Button */}
+                      <td style={{ width: '120px', minWidth: '110px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                           <button
                             type="button"
@@ -668,7 +634,7 @@ export const DriversRoster: React.FC = () => {
                               fontWeight: 600,
                               color: 'var(--color-primary)',
                               backgroundColor: 'var(--color-primary-subtle)',
-                              border: '1px solid #BFDBFE',
+                              border: '1px solid #6EE7B7',
                               borderRadius: '6px',
                               cursor: 'pointer',
                             }}
@@ -717,3 +683,4 @@ export const DriversRoster: React.FC = () => {
     </div>
   );
 };
+

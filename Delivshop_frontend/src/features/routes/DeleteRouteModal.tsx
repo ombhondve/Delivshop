@@ -85,7 +85,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -163,7 +163,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
           <div
             style={{
               background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
+              border: '1px solid #D6D3C8',
               borderRadius: '8px',
               padding: '14px 16px',
               marginBottom: '16px',
@@ -179,7 +179,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
                   background: 'var(--color-primary-subtle)',
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  border: '1px solid #BFDBFE',
+                  border: '1px solid #6EE7B7',
                 }}
               >
                 {route.route_code || route.code}
@@ -248,7 +248,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
                 padding: '8px 12px',
                 fontSize: '13px',
                 borderRadius: '6px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
               }}
             />
           </div>
@@ -259,7 +259,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
           style={{
             padding: '16px 24px',
             background: '#F8FAFC',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '10px',
@@ -276,7 +276,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
               fontWeight: 600,
               borderRadius: '6px',
               background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               color: '#475569',
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
@@ -317,3 +317,4 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
     </div>
   );
 };
+

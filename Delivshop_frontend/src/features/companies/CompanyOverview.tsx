@@ -284,7 +284,7 @@ export const CompanyOverview: React.FC = () => {
         <div
           style={{
             backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #D6D3C8',
             borderRadius: '8px',
             padding: '8px 14px',
             display: 'flex',
@@ -324,7 +324,7 @@ export const CompanyOverview: React.FC = () => {
         <div
           style={{
             backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #D6D3C8',
             borderRadius: '8px',
             padding: '8px 14px',
             display: 'flex',
@@ -364,7 +364,7 @@ export const CompanyOverview: React.FC = () => {
         <div
           style={{
             backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #D6D3C8',
             borderRadius: '8px',
             padding: '8px 14px',
             display: 'flex',
@@ -404,7 +404,7 @@ export const CompanyOverview: React.FC = () => {
         <div
           style={{
             backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #D6D3C8',
             borderRadius: '8px',
             padding: '8px 14px',
             display: 'flex',
@@ -453,7 +453,7 @@ export const CompanyOverview: React.FC = () => {
           backgroundColor: '#FFFFFF',
           padding: '8px 14px',
           borderRadius: '8px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           marginBottom: '10px',
           boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
         }}
@@ -471,7 +471,7 @@ export const CompanyOverview: React.FC = () => {
               height: '32px',
               padding: '0 10px 0 32px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12.5px',
               outline: 'none',
               boxSizing: 'border-box',
@@ -511,7 +511,7 @@ export const CompanyOverview: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
@@ -536,7 +536,7 @@ export const CompanyOverview: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
@@ -564,7 +564,7 @@ export const CompanyOverview: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               fontSize: '12px',
               backgroundColor: '#FAFAF9',
               color: '#334155',
@@ -590,7 +590,7 @@ export const CompanyOverview: React.FC = () => {
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               backgroundColor: '#FAFAF9',
               color: '#334155',
               fontSize: '12px',
@@ -702,7 +702,7 @@ export const CompanyOverview: React.FC = () => {
           <div className="business-table-container" style={{ overflowX: 'auto' }}>
             <table className="business-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #D6D3C8', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '7px 10px', minWidth: '200px' }}>Company</th>
                   <th style={{ padding: '7px 8px', width: '120px' }}>Code</th>
                   <th style={{ padding: '7px 8px' }}>Contact Person</th>
@@ -797,7 +797,7 @@ export const CompanyOverview: React.FC = () => {
                             borderRadius: '4px',
                             backgroundColor: '#F1F5F9',
                             color: '#334155',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid #D6D3C8',
                           }}
                         >
                           {company.companyCode}
@@ -863,7 +863,7 @@ export const CompanyOverview: React.FC = () => {
                               padding: '2px 5px',
                               borderRadius: '4px',
                               backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid #D6D3C8',
                               fontFamily: 'monospace',
                               fontSize: '10.5px',
                               color: '#334155',
@@ -933,7 +933,7 @@ export const CompanyOverview: React.FC = () => {
                               gap: '3px',
                               padding: '4px 7px',
                               borderRadius: '5px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid #A7AE9F',
                               backgroundColor: '#FFFFFF',
                               color: '#334155',
                               fontSize: '11px',
@@ -957,7 +957,7 @@ export const CompanyOverview: React.FC = () => {
                             style={{
                               padding: '4px',
                               borderRadius: '5px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid #A7AE9F',
                               backgroundColor: '#FFFFFF',
                               color: '#475569',
                               cursor: 'pointer',
@@ -1010,7 +1010,7 @@ export const CompanyOverview: React.FC = () => {
                               style={{
                                 padding: '4px',
                                 borderRadius: '5px',
-                                border: '1px solid #E2E8F0',
+                                border: '1px solid #D6D3C8',
                                 backgroundColor: '#F8FAFC',
                                 color: '#94A3B8',
                                 cursor: 'not-allowed',
@@ -1068,7 +1068,7 @@ export const CompanyOverview: React.FC = () => {
           <div
             style={{
               padding: '8px 14px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'center',
@@ -1102,7 +1102,7 @@ export const CompanyOverview: React.FC = () => {
                   style={{
                     padding: '4px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     fontSize: '12.5px',
                     backgroundColor: '#FFFFFF',
                   }}
@@ -1125,7 +1125,7 @@ export const CompanyOverview: React.FC = () => {
                     gap: '4px',
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     color: currentPage <= 1 ? '#94A3B8' : '#334155',
                     fontSize: '12.5px',
@@ -1151,7 +1151,7 @@ export const CompanyOverview: React.FC = () => {
                     gap: '4px',
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     color: currentPage >= data.totalPages ? '#94A3B8' : '#334155',
                     fontSize: '12.5px',
@@ -1258,3 +1258,4 @@ export const CompanyOverview: React.FC = () => {
     </div>
   );
 };
+

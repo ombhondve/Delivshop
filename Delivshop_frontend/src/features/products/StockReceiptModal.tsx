@@ -145,7 +145,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
           animation: 'fadeInScale 0.2s ease-out',
         }}
@@ -154,7 +154,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -263,7 +263,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                 width: '100%',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                border: `1px solid ${errors.companyId ? '#EF4444' : '#CBD5E1'}`,
+                border: `1px solid ${errors.companyId ? '#EF4444' : '#A7AE9F'}`,
                 fontSize: '13.5px',
                 backgroundColor: '#FFFFFF',
                 boxSizing: 'border-box',
@@ -292,7 +292,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: `1px solid ${errors.quantity ? '#EF4444' : '#CBD5E1'}`,
+                  border: `1px solid ${errors.quantity ? '#EF4444' : '#A7AE9F'}`,
                   fontSize: '14px',
                   boxSizing: 'border-box',
                 }}
@@ -314,7 +314,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   fontSize: '14px',
                   boxSizing: 'border-box',
                 }}
@@ -336,7 +336,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   fontSize: '13.5px',
                   fontFamily: 'monospace',
                   boxSizing: 'border-box',
@@ -356,7 +356,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: `1px solid ${errors.expiryDate ? '#EF4444' : '#CBD5E1'}`,
+                  border: `1px solid ${errors.expiryDate ? '#EF4444' : '#A7AE9F'}`,
                   fontSize: '13.5px',
                   boxSizing: 'border-box',
                 }}
@@ -380,7 +380,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   fontSize: '13.5px',
                   boxSizing: 'border-box',
                 }}
@@ -399,7 +399,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   fontSize: '13.5px',
                   boxSizing: 'border-box',
                 }}
@@ -420,7 +420,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
                 width: '100%',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '13.5px',
                 boxSizing: 'border-box',
               }}
@@ -435,7 +435,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
               justifyContent: 'flex-end',
               gap: '12px',
               paddingTop: '8px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
             }}
           >
             <button
@@ -445,7 +445,7 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
               style={{
                 padding: '9px 18px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 backgroundColor: '#FFFFFF',
                 color: '#475569',
                 fontSize: '14px',
@@ -489,3 +489,4 @@ export const StockReceiptModal: React.FC<StockReceiptModalProps> = ({
     </div>
   );
 };
+

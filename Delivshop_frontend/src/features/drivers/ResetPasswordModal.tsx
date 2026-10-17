@@ -52,7 +52,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(18, 61, 50, 0.45)',
+        backgroundColor: 'rgba(6, 78, 59, 0.55)',
         backdropFilter: 'blur(3px)',
         display: 'flex',
         alignItems: 'center',
@@ -71,14 +71,14 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
           width: '100%',
           maxWidth: '460px',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
         }}
       >
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -181,7 +181,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 fontFamily: 'monospace',
                 fontWeight: 600,
                 borderRadius: '6px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 outline: 'none',
               }}
             />
@@ -200,3 +200,4 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
     </div>
   );
 };
+

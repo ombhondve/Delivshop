@@ -146,7 +146,7 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
                     backgroundColor: 'var(--color-primary-subtle)',
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid #6EE7B7',
                   }}
                 >
                   {driver?.employee_id || profile?.employment?.employeeId || 'DRV'}
@@ -622,3 +622,4 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
     </div>
   );
 };
+

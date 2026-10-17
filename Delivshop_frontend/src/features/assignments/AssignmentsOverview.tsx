@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Plus, Search, Truck, Calendar, 
+  Plus, Search, Truck, Calendar, Clock,
   Navigation, CheckCircle2,
-  RefreshCw, Eye, X, ListFilter
+  RefreshCw, Eye, X, ListFilter, AlertTriangle, Building2, MapPin
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { DeliveryRun, Route } from '../../types';
@@ -22,17 +22,14 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('');
+  const [depotFilter, setDepotFilter] = useState('ALL');
 
-  // Modals
+  // Modals & Drawers
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  useEffect(() => {
-    loadAssignments();
-  }, [statusFilter, dateFilter]);
-
-  const loadAssignments = async () => {
+  const loadAssignments = useCallback(async () => {
     setLoading(true);
     try {
       const params: any = {};
@@ -47,27 +44,36 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, dateFilter]);
+
+  useEffect(() => {
+    loadAssignments();
+  }, [loadAssignments]);
 
   const filteredRuns = runs.filter(r => {
     const code = r.run_code || r.runCode || '';
     const driver = r.driver_name || r.driverName || '';
     const vehicle = r.vehicle_registration || r.registrationNumber || '';
     const route = r.route_name || r.routeName || '';
+    const routeDepot = r.route_depot || '';
 
-    return (
+    const matchesSearch = 
       code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      route.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+      route.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesDepot = depotFilter === 'ALL' || routeDepot.toLowerCase().includes(depotFilter.toLowerCase());
+
+    return matchesSearch && matchesDepot;
   });
 
   // Statistics
   const totalRuns = runs.length;
+  const assignedRuns = runs.filter(r => r.status === 'ASSIGNED' || r.status === 'READY').length;
   const inProgressRuns = runs.filter(r => r.status === 'IN_PROGRESS').length;
   const completedRuns = runs.filter(r => r.status === 'COMPLETED').length;
-  const assignedRuns = runs.filter(r => r.status === 'ASSIGNED').length;
+  const cancelledRuns = runs.filter(r => r.status === 'CANCELLED').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -76,7 +82,8 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
       case 'IN_PROGRESS':
         return <Badge variant="info">In Progress</Badge>;
       case 'ASSIGNED':
-        return <Badge variant="warning">Assigned</Badge>;
+      case 'READY':
+        return <Badge variant="navy">Ready to Dispatch</Badge>;
       case 'CANCELLED':
         return <Badge variant="danger">Cancelled</Badge>;
       default:
@@ -84,12 +91,13 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
     }
   };
 
-  const isFiltered = Boolean(searchTerm || statusFilter !== 'ALL' || dateFilter);
+  const isFiltered = Boolean(searchTerm || statusFilter !== 'ALL' || dateFilter || depotFilter !== 'ALL');
 
   const clearAllFilters = () => {
     setSearchTerm('');
     setStatusFilter('ALL');
     setDateFilter('');
+    setDepotFilter('ALL');
   };
 
   return (
@@ -118,13 +126,14 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             onClick={() => setIsWizardOpen(true)}
             icon={<Plus size={16} />}
           >
-            Dispatch New Run
+            New Dispatch
           </Button>
         </div>
       </div>
 
-      {/* 2. Compact 4-Card KPI Summary Strip */}
-      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      {/* 2. Compact 5-Card Clickable KPI Summary Strip */}
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        {/* Total Runs */}
         <div
           className="metric-card"
           onClick={() => setStatusFilter('ALL')}
@@ -139,58 +148,15 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             <Calendar size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Scheduled Runs</span>
+            <span className="metric-title">Total Runs</span>
             <span className="metric-value">{totalRuns}</span>
             <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>
-              {assignedRuns} pending start
+              Operational roster
             </span>
           </div>
         </div>
 
-        <div
-          className="metric-card"
-          onClick={() => setStatusFilter('IN_PROGRESS')}
-          style={{
-            cursor: 'pointer',
-            borderColor: statusFilter === 'IN_PROGRESS' ? 'var(--color-warning)' : undefined,
-            backgroundColor: statusFilter === 'IN_PROGRESS' ? 'var(--color-warning-bg)' : undefined,
-          }}
-          title="Click to filter active delivery runs in transit"
-        >
-          <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
-            <Truck size={18} />
-          </div>
-          <div className="metric-info">
-            <span className="metric-title">Active on Road</span>
-            <span className="metric-value">{inProgressRuns}</span>
-            <span className="metric-trend" style={{ color: '#B45309' }}>
-              In Transit
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="metric-card"
-          onClick={() => setStatusFilter('COMPLETED')}
-          style={{
-            cursor: 'pointer',
-            borderColor: statusFilter === 'COMPLETED' ? 'var(--color-success)' : undefined,
-            backgroundColor: statusFilter === 'COMPLETED' ? 'var(--color-success-bg)' : undefined,
-          }}
-          title="Click to filter completed trips"
-        >
-          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
-            <CheckCircle2 size={18} />
-          </div>
-          <div className="metric-info">
-            <span className="metric-title">Completed Trips</span>
-            <span className="metric-value">{completedRuns}</span>
-            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
-              {totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0}% success rate
-            </span>
-          </div>
-        </div>
-
+        {/* Ready to Dispatch */}
         <div
           className="metric-card"
           onClick={() => setStatusFilter('ASSIGNED')}
@@ -205,10 +171,79 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             <Navigation size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Ready for Dispatch</span>
+            <span className="metric-title">Scheduled</span>
             <span className="metric-value">{assignedRuns}</span>
             <span className="metric-trend" style={{ color: '#6D28D9' }}>
-              Verified assignments
+              Ready for dispatch
+            </span>
+          </div>
+        </div>
+
+        {/* Active on Road */}
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('IN_PROGRESS')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'IN_PROGRESS' ? 'var(--color-warning)' : undefined,
+            backgroundColor: statusFilter === 'IN_PROGRESS' ? 'var(--color-warning-bg)' : undefined,
+          }}
+          title="Click to filter active delivery runs in transit"
+        >
+          <div className="metric-icon" style={{ backgroundColor: '#FEF3C7', color: '#B45309' }}>
+            <Truck size={18} />
+          </div>
+          <div className="metric-info">
+            <span className="metric-title">In Progress</span>
+            <span className="metric-value">{inProgressRuns}</span>
+            <span className="metric-trend" style={{ color: '#B45309' }}>
+              Active in transit
+            </span>
+          </div>
+        </div>
+
+        {/* Completed Trips */}
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('COMPLETED')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'COMPLETED' ? 'var(--color-success)' : undefined,
+            backgroundColor: statusFilter === 'COMPLETED' ? 'var(--color-success-bg)' : undefined,
+          }}
+          title="Click to filter completed trips"
+        >
+          <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
+            <CheckCircle2 size={18} />
+          </div>
+          <div className="metric-info">
+            <span className="metric-title">Completed</span>
+            <span className="metric-value">{completedRuns}</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
+              {totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0}% success rate
+            </span>
+          </div>
+        </div>
+
+        {/* Cancelled Trips */}
+        <div
+          className="metric-card"
+          onClick={() => setStatusFilter('CANCELLED')}
+          style={{
+            cursor: 'pointer',
+            borderColor: statusFilter === 'CANCELLED' ? 'var(--color-danger)' : undefined,
+            backgroundColor: statusFilter === 'CANCELLED' ? '#FEE2E2' : undefined,
+          }}
+          title="Click to filter cancelled runs"
+        >
+          <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+            <AlertTriangle size={18} />
+          </div>
+          <div className="metric-info">
+            <span className="metric-title">Cancelled</span>
+            <span className="metric-value">{cancelledRuns}</span>
+            <span className="metric-trend" style={{ color: '#DC2626' }}>
+              Exceptions
             </span>
           </div>
         </div>
@@ -221,7 +256,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             <Search size={18} className="search-input-icon" />
             <input
               type="text"
-              placeholder="Search run code, driver, vehicle, or route..."
+              placeholder="Search by assignment ID, driver, vehicle, or route..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="toolbar-search-input"
@@ -261,7 +296,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
               aria-label="Filter by run status"
             >
               <option value="ALL">All Run Statuses</option>
-              <option value="ASSIGNED">Assigned (Ready)</option>
+              <option value="ASSIGNED">Scheduled (Ready)</option>
               <option value="IN_PROGRESS">In Progress (Transit)</option>
               <option value="COMPLETED">Completed Trips</option>
               <option value="CANCELLED">Cancelled</option>
@@ -278,6 +313,23 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
               className="toolbar-select-field"
               aria-label="Filter by delivery date"
             />
+          </div>
+
+          {/* Depot Filter */}
+          <div className="filter-select-wrapper">
+            <Building2 size={16} className="filter-leading-icon" />
+            <select
+              value={depotFilter}
+              onChange={(e) => setDepotFilter(e.target.value)}
+              className="toolbar-select-field"
+              aria-label="Filter by depot location"
+            >
+              <option value="ALL">All Depots</option>
+              <option value="Pune Central">Pune Central Depot</option>
+              <option value="Hadapsar">Hadapsar Hub</option>
+              <option value="Hinjewadi">Hinjewadi Hub</option>
+              <option value="Katraj">Katraj Cold Storage</option>
+            </select>
           </div>
 
           {/* Clear Filters Button */}
@@ -324,7 +376,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
               </Button>
             ) : (
               <Button variant="primary" onClick={() => setIsWizardOpen(true)} icon={<Plus size={15} />}>
-                Dispatch First Run
+                New Dispatch
               </Button>
             )}
           </div>
@@ -333,18 +385,20 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
             <table className="business-table">
               <thead>
                 <tr>
-                  <th style={{ width: '160px', minWidth: '150px' }}>Run Code & Date</th>
-                  <th style={{ width: '200px', minWidth: '180px' }}>Route Template</th>
-                  <th style={{ width: '170px', minWidth: '150px' }}>Assigned Driver</th>
-                  <th style={{ width: '160px', minWidth: '140px' }}>Fleet Vehicle</th>
-                  <th style={{ width: '150px', minWidth: '130px' }}>Stops Progress</th>
-                  <th style={{ width: '130px', minWidth: '110px' }}>Status</th>
-                  <th style={{ width: '110px', minWidth: '90px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '160px', minWidth: '150px' }}>Assignment ID</th>
+                  <th style={{ width: '130px', minWidth: '120px' }}>Date & Schedule</th>
+                  <th style={{ width: '180px', minWidth: '160px' }}>Driver</th>
+                  <th style={{ width: '190px', minWidth: '170px' }}>Route</th>
+                  <th style={{ width: '170px', minWidth: '150px' }}>Fleet Vehicle</th>
+                  <th style={{ width: '140px', minWidth: '120px' }}>Stops Progress</th>
+                  <th style={{ width: '140px', minWidth: '120px' }}>Assignment Status</th>
+                  <th style={{ width: '110px', minWidth: '95px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRuns.map((run) => (
                   <tr key={run.id}>
+                    {/* 1. Assignment ID */}
                     <td style={{ width: '160px', minWidth: '150px' }}>
                       <code
                         style={{
@@ -353,44 +407,58 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
                           fontSize: '11.5px',
                           color: 'var(--color-primary)',
                           backgroundColor: 'var(--color-primary-subtle)',
-                          padding: '1px 5px',
+                          padding: '2px 6px',
                           borderRadius: '4px',
-                          border: '1px solid #BFDBFE',
+                          border: '1px solid #6EE7B7',
                         }}
                       >
                         {run.run_code || run.runCode}
                       </code>
-                      <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={11} />
-                        <span>{run.delivery_date || run.deliveryDate}</span>
+                    </td>
+
+                    {/* 2. Date & Schedule */}
+                    <td style={{ width: '130px', minWidth: '120px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {run.delivery_date || run.deliveryDate}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                        <Clock size={11} />
+                        <span>06:00 AM</span>
                       </div>
                     </td>
-                    <td style={{ width: '200px', minWidth: '180px' }}>
-                      <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
-                        {run.route_name || run.routeName || 'Sequenced Route'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
-                        {run.route_code || run.routeCode || 'RT-CORRIDOR'}
-                      </div>
-                    </td>
-                    <td style={{ width: '170px', minWidth: '150px' }}>
+
+                    {/* 3. Driver */}
+                    <td style={{ width: '180px', minWidth: '160px' }}>
                       {(run.driver_name || run.driverName) ? (
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
                             {run.driver_name || run.driverName}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#64748B' }}>
-                            {run.driver_phone || run.driverPhone || '—'}
+                          <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>{(run as any).driver_employee_id ? `[${(run as any).driver_employee_id}]` : ''}</span>
+                            <span>{run.driver_phone || run.driverPhone || '—'}</span>
                           </div>
                         </div>
                       ) : (
                         <span style={{ fontSize: '11.5px', color: '#D97706', fontWeight: 500 }}>Unassigned</span>
                       )}
                     </td>
-                    <td style={{ width: '160px', minWidth: '140px' }}>
+
+                    {/* 4. Route */}
+                    <td style={{ width: '190px', minWidth: '170px' }}>
+                      <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                        {run.route_name || run.routeName || 'Sequenced Route'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        {run.route_code || run.routeCode || 'RT-CORRIDOR'} • {run.route_depot || 'Main Depot'}
+                      </div>
+                    </td>
+
+                    {/* 5. Vehicle */}
+                    <td style={{ width: '170px', minWidth: '150px' }}>
                       {(run.vehicle_registration || run.registrationNumber) ? (
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 600, fontSize: '12.5px', fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                             {run.vehicle_registration || run.registrationNumber}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748B' }}>
@@ -401,12 +469,14 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
                         <span style={{ fontSize: '11.5px', color: '#D97706', fontWeight: 500 }}>Unallocated</span>
                       )}
                     </td>
-                    <td style={{ width: '150px', minWidth: '130px' }}>
+
+                    {/* 6. Stops Progress */}
+                    <td style={{ width: '140px', minWidth: '120px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
                           {run.completed_stops_count ?? run.completedStopsCount ?? 0}/{run.planned_stops_count ?? run.totalStopsCount ?? 0}
                         </span>
-                        <div style={{ width: '50px', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: '48px', height: '6px', backgroundColor: '#D6D3C8', borderRadius: '3px', overflow: 'hidden' }}>
                           <div 
                             style={{ 
                               height: '100%',
@@ -420,10 +490,14 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
                         </div>
                       </div>
                     </td>
-                    <td style={{ width: '130px', minWidth: '110px' }}>
+
+                    {/* 7. Status */}
+                    <td style={{ width: '140px', minWidth: '120px' }}>
                       {getStatusBadge(run.status)}
                     </td>
-                    <td style={{ width: '110px', minWidth: '90px', textAlign: 'right' }}>
+
+                    {/* 8. Actions */}
+                    <td style={{ width: '110px', minWidth: '95px', textAlign: 'right' }}>
                       <button
                         type="button"
                         onClick={() => {
@@ -441,7 +515,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
                           fontWeight: 600,
                           color: 'var(--color-primary)',
                           backgroundColor: 'var(--color-primary-subtle)',
-                          border: '1px solid #BFDBFE',
+                          border: '1px solid #6EE7B7',
                           borderRadius: '6px',
                           cursor: 'pointer',
                         }}
@@ -487,3 +561,4 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
     </div>
   );
 };
+

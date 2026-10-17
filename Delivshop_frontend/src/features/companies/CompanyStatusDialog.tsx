@@ -76,7 +76,7 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
           width: '100%',
           maxWidth: '520px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
           animation: 'fadeInScale 0.2s ease-out',
         }}
@@ -85,7 +85,7 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -202,7 +202,7 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
                 width: '100%',
                 padding: '10px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '13px',
                 outline: 'none',
                 boxSizing: 'border-box',
@@ -228,7 +228,7 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
               style={{
                 padding: '9px 18px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 backgroundColor: '#FFFFFF',
                 color: '#475569',
                 fontSize: '14px',
@@ -275,3 +275,4 @@ export const CompanyStatusDialog: React.FC<CompanyStatusDialogProps> = ({
     </div>
   );
 };
+

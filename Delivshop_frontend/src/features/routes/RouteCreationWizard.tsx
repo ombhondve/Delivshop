@@ -389,7 +389,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -443,7 +443,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
           <div
             style={{
               display: 'flex',
-              borderBottom: '1px solid #E2E8F0',
+              borderBottom: '1px solid #D6D3C8',
               background: '#F8FAFC',
               padding: '12px 24px',
               gap: '12px',
@@ -476,7 +476,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       width: '26px',
                       height: '26px',
                       borderRadius: '50%',
-                      background: isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary)' : '#CBD5E1',
+                      background: isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary)' : '#A7AE9F',
                       color: '#FFFFFF',
                       fontSize: '12px',
                       fontWeight: 700,
@@ -497,7 +497,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     {s.title}
                   </span>
                   {s.num < 3 && (
-                    <ChevronRight size={14} color="#CBD5E1" style={{ marginLeft: 'auto' }} />
+                    <ChevronRight size={14} color="#A7AE9F" style={{ marginLeft: 'auto' }} />
                   )}
                 </div>
               );
@@ -562,7 +562,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   alignItems: 'center',
                   gap: '12px',
                   background: '#F1F5F9',
-                  border: '1.5px dashed #CBD5E1',
+                  border: '1.5px dashed #A7AE9F',
                   borderRadius: '10px',
                   padding: '14px 24px',
                   marginBottom: '24px',
@@ -583,7 +583,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   style={{
                     padding: '8px 12px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     background: '#FFFFFF',
                     color: '#334155',
                     fontSize: '12.5px',
@@ -610,15 +610,15 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   textAlign: 'left',
                 }}
               >
-                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                   <span style={{ fontSize: '11px', color: '#64748B', display: 'block' }}>Route Name</span>
                   <strong style={{ fontSize: '13px', color: '#0F172A' }}>{createdRoute.name}</strong>
                 </div>
-                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                   <span style={{ fontSize: '11px', color: '#64748B', display: 'block' }}>Operational Area</span>
                   <strong style={{ fontSize: '13px', color: '#0F172A' }}>{createdRoute.city}, {createdRoute.state}</strong>
                 </div>
-                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
                   <span style={{ fontSize: '11px', color: '#64748B', display: 'block' }}>Assigned Stops</span>
                   <strong style={{ fontSize: '13px', color: 'var(--color-navy)' }}>
                     {createdRoute.stops?.length || createdRoute.stops_count || selectedStops.length} Retail Shops
@@ -638,7 +638,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     fontWeight: 600,
                     fontSize: '13px',
                     background: '#FFFFFF',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     cursor: 'pointer',
                   }}
                 >
@@ -719,7 +719,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                         height: '42px',
                         fontSize: '13.5px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid #A7AE9F',
                         padding: '0 12px',
                         width: '100%',
                       }}
@@ -742,7 +742,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                           height: '42px',
                           fontSize: '13px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid #A7AE9F',
                           padding: '0 10px',
                           width: '100%',
                           background: '#FFFFFF',
@@ -771,7 +771,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                           height: '42px',
                           fontSize: '13px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid #A7AE9F',
                           padding: '0 12px',
                           width: '100%',
                         }}
@@ -792,7 +792,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       style={{
                         fontSize: '13px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid #A7AE9F',
                         padding: '10px 12px',
                         width: '100%',
                       }}
@@ -807,7 +807,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   <div
                     style={{
                       background: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid #D6D3C8',
                       borderRadius: '8px',
                       padding: '14px 16px',
                     }}
@@ -947,7 +947,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                             height: '36px',
                             fontSize: '12.5px',
                             borderRadius: '6px',
-                            border: '1px solid #CBD5E1',
+                            border: '1px solid #A7AE9F',
                             width: '100%',
                           }}
                         />
@@ -990,7 +990,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       style={{
                         padding: '30px 20px',
                         background: '#F8FAFC',
-                        border: '1px dashed #CBD5E1',
+                        border: '1px dashed #A7AE9F',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
@@ -1009,7 +1009,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                           padding: '6px 16px',
                           fontSize: '12.5px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid #A7AE9F',
                           background: '#FFFFFF',
                           cursor: 'pointer',
                         }}
@@ -1023,7 +1023,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       style={{
                         maxHeight: '260px',
                         overflowY: 'auto',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid #D6D3C8',
                         borderRadius: '8px',
                         background: '#FFFFFF',
                       }}
@@ -1055,7 +1055,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                                     style={{
                                       fontSize: '11px',
                                       fontFamily: 'monospace',
-                                      background: '#E2E8F0',
+                                      background: '#D6D3C8',
                                       padding: '1px 6px',
                                       borderRadius: '4px',
                                       color: '#475569',
@@ -1146,7 +1146,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                             style={{
                               padding: '8px 12px',
                               background: '#FFFFFF',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid #A7AE9F',
                               borderRadius: '6px',
                               display: 'flex',
                               alignItems: 'center',
@@ -1191,7 +1191,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                                   onClick={() => handleMoveStop(idx, 'UP')}
                                   title="Move earlier"
                                   style={{
-                                    border: '1px solid #CBD5E1',
+                                    border: '1px solid #A7AE9F',
                                     background: '#FFFFFF',
                                     borderRadius: '4px',
                                     padding: '3px',
@@ -1208,7 +1208,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                                   onClick={() => handleMoveStop(idx, 'DOWN')}
                                   title="Move later"
                                   style={{
-                                    border: '1px solid #CBD5E1',
+                                    border: '1px solid #A7AE9F',
                                     background: '#FFFFFF',
                                     borderRadius: '4px',
                                     padding: '3px',
@@ -1247,7 +1247,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                           marginTop: '10px',
                           padding: '10px 14px',
                           background: '#F8FAFC',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid #D6D3C8',
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
@@ -1279,7 +1279,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
           <div
             style={{
               padding: '16px 24px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               background: '#F8FAFC',
               display: 'flex',
               justifyContent: 'space-between',
@@ -1297,7 +1297,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     padding: '8px 18px',
                     fontSize: '13px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     background: '#FFFFFF',
                     cursor: 'pointer',
                   }}
@@ -1317,7 +1317,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   padding: '8px 18px',
                   fontSize: '13px',
                   borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #A7AE9F',
                   background: '#FFFFFF',
                   color: '#475569',
                   cursor: loading ? 'not-allowed' : 'pointer',
@@ -1367,3 +1367,4 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
     </div>
   );
 };
+

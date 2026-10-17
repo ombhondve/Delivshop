@@ -319,7 +319,7 @@ export const DashboardPage: React.FC = () => {
                   key={i}
                   style={{
                     padding: '14px 16px',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid #D6D3C8',
                     borderRadius: '8px',
                     backgroundColor: '#FFFFFF',
                   }}
@@ -384,7 +384,7 @@ export const DashboardPage: React.FC = () => {
                   padding: '12px',
                   backgroundColor: '#FFFFFF',
                   borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -403,7 +403,7 @@ export const DashboardPage: React.FC = () => {
                   padding: '12px',
                   backgroundColor: '#FFFFFF',
                   borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -422,7 +422,7 @@ export const DashboardPage: React.FC = () => {
                   padding: '12px',
                   backgroundColor: '#FFFFFF',
                   borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -466,3 +466,4 @@ export const DashboardPage: React.FC = () => {
     </div>
   );
 };
+

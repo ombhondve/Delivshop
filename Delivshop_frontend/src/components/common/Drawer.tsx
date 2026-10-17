@@ -78,7 +78,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '1px solid #BFDBFE',
+                  border: '1px solid #6EE7B7',
                 }}
               >
                 {icon}
@@ -186,3 +186,4 @@ export const Drawer: React.FC<DrawerProps> = ({
     </div>
   );
 };
+

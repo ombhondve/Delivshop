@@ -100,7 +100,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
         }}
       >
@@ -108,7 +108,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
         <div
           style={{
             padding: '24px 28px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'space-between',
@@ -125,7 +125,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
                   height: '56px',
                   borderRadius: '12px',
                   objectFit: 'cover',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
@@ -180,7 +180,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
               >
                 <span
                   style={{
-                    backgroundColor: '#E2E8F0',
+                    backgroundColor: '#D6D3C8',
                     color: '#334155',
                     fontFamily: 'monospace',
                     fontWeight: 600,
@@ -232,7 +232,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             <div
               style={{
                 backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '12px 16px',
               }}
@@ -248,7 +248,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             <div
               style={{
                 backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '12px 16px',
               }}
@@ -264,7 +264,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             <div
               style={{
                 backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '12px 16px',
               }}
@@ -310,7 +310,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             {/* Contact Person & Communications */}
             <div
               style={{
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '18px',
               }}
@@ -362,7 +362,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             {/* Business & Tax Identifiers */}
             <div
               style={{
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '18px',
               }}
@@ -427,7 +427,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             {/* Address */}
             <div
               style={{
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '18px',
               }}
@@ -452,7 +452,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
             {/* Internal Notes / System Info */}
             <div
               style={{
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '12px',
                 padding: '18px',
               }}
@@ -490,7 +490,7 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
         <div
           style={{
             padding: '16px 28px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid #D6D3C8',
             backgroundColor: '#F8FAFC',
             display: 'flex',
             alignItems: 'center',
@@ -530,3 +530,4 @@ export const CompanyDetailModal: React.FC<CompanyDetailModalProps> = ({
     </div>
   );
 };
+

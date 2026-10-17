@@ -21,7 +21,7 @@ export const NotFoundPage: React.FC = () => {
           width: '100%',
           backgroundColor: '#FFFFFF',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           boxShadow: '0 4px 16px rgba(18, 61, 50, 0.06)',
           padding: '40px 32px',
           textAlign: 'center',
@@ -125,7 +125,7 @@ export const NotFoundPage: React.FC = () => {
               padding: '11px 20px',
               backgroundColor: '#F8FAFC',
               color: '#475569',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #A7AE9F',
               borderRadius: '10px',
               fontSize: '14px',
               fontWeight: 600,
@@ -143,3 +143,4 @@ export const NotFoundPage: React.FC = () => {
     </div>
   );
 };
+

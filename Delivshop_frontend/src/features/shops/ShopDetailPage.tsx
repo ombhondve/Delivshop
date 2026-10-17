@@ -990,7 +990,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
                   backgroundColor: '#FFFFFF',
                   padding: '14px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                 }}
               >
                 <div>
@@ -1027,7 +1027,7 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
                   padding: '12px 14px',
                   backgroundColor: 'var(--bg-primary)',
                   borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid #D6D3C8',
                   fontSize: '13px',
                 }}
               >
@@ -1054,3 +1054,4 @@ export const ShopDetailPage: React.FC<ShopDetailPageProps> = ({ shopId }) => {
   );
 };
 export default ShopDetailPage;
+

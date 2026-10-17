@@ -91,7 +91,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(18, 61, 50, 0.45)',
+        backgroundColor: 'rgba(6, 78, 59, 0.55)',
         backdropFilter: 'blur(3px)',
         display: 'flex',
         alignItems: 'center',
@@ -113,7 +113,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
         }}
       >
@@ -121,7 +121,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
         <div
           style={{
             padding: '16px 22px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -190,7 +190,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   required
                   value={formData.name || ''}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -203,7 +203,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   required
                   value={formData.phone || ''}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -215,7 +215,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="tel"
                   value={formData.alternatePhone || ''}
                   onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -227,7 +227,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -239,7 +239,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="date"
                   value={formData.dateOfBirth || ''}
                   onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -250,7 +250,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                 <select
                   value={formData.gender || 'MALE'}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#FFFFFF' }}
+                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#FFFFFF' }}
                 >
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
@@ -274,7 +274,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.address || ''}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -286,7 +286,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.city || ''}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -298,7 +298,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.state || ''}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -310,7 +310,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.pincode || ''}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
             </div>
@@ -330,7 +330,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.employeeId || ''}
                   onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#F8FAFC' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#F8FAFC' }}
                 />
               </div>
 
@@ -342,7 +342,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="date"
                   value={formData.joiningDate || ''}
                   onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -353,7 +353,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                 <select
                   value={formData.employmentStatus || 'ACTIVE'}
                   onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#FFFFFF' }}
+                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#FFFFFF' }}
                 >
                   <option value="ACTIVE">Active (Full-Time)</option>
                   <option value="PROBATION">Probationary</option>
@@ -379,7 +379,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.licenseNumber || ''}
                   onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -391,7 +391,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="date"
                   value={formData.licenseExpiry || ''}
                   onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -402,7 +402,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                 <select
                   value={formData.licenseClass || 'LMV-TR'}
                   onChange={(e) => setFormData({ ...formData, licenseClass: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#FFFFFF' }}
+                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#FFFFFF' }}
                 >
                   <option value="LMV">LMV</option>
                   <option value="LMV-TR">LMV-TR (Commercial)</option>
@@ -427,7 +427,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.emergencyContactName || ''}
                   onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -439,7 +439,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="tel"
                   value={formData.emergencyContactPhone || ''}
                   onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -451,7 +451,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.emergencyContactRelation || ''}
                   onChange={(e) => setFormData({ ...formData, emergencyContactRelation: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
             </div>
@@ -466,7 +466,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
               rows={2}
               value={formData.notes || ''}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', resize: 'vertical' }}
+              style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', resize: 'vertical' }}
             />
           </div>
         </form>
@@ -475,7 +475,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
         <div
           style={{
             padding: '14px 22px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '10px',
@@ -493,3 +493,4 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
     </div>
   );
 };
+

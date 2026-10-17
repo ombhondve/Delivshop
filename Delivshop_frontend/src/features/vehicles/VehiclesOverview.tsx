@@ -324,7 +324,7 @@ export const VehiclesOverview: React.FC = () => {
               fontWeight: 700,
               backgroundColor: 'var(--color-primary-subtle)',
               color: 'var(--color-primary)',
-              border: '1px solid #BFDBFE',
+              border: '1px solid #6EE7B7',
             }}
           >
             <Fuel size={10} /> CNG
@@ -797,7 +797,7 @@ export const VehiclesOverview: React.FC = () => {
                                 backgroundColor: 'var(--color-primary-subtle)',
                                 padding: '1px 5px',
                                 borderRadius: '4px',
-                                border: '1px solid #BFDBFE',
+                                border: '1px solid #6EE7B7',
                                 whiteSpace: 'nowrap',
                               }}
                             >
@@ -964,7 +964,7 @@ export const VehiclesOverview: React.FC = () => {
                             fontWeight: 600,
                             color: 'var(--color-primary)',
                             backgroundColor: 'var(--color-primary-subtle)',
-                            border: '1px solid #BFDBFE',
+                            border: '1px solid #6EE7B7',
                             borderRadius: '6px',
                             cursor: 'pointer',
                           }}
@@ -1241,3 +1241,4 @@ export const VehiclesOverview: React.FC = () => {
     </div>
   );
 };
+

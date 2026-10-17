@@ -148,7 +148,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
           animation: 'fadeInScale 0.2s ease-out',
         }}
@@ -157,7 +157,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -263,7 +263,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               padding: '14px 16px',
               backgroundColor: '#F8FAFC',
               borderRadius: '10px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid #D6D3C8',
             }}
           >
             <div>
@@ -299,7 +299,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 width: '100%',
                 padding: '10px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '14px',
                 backgroundColor: '#FFFFFF',
                 boxSizing: 'border-box',
@@ -340,7 +340,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                   width: '100%',
                   padding: '9px 12px 9px 30px',
                   borderRadius: '8px',
-                  border: `1px solid ${errors.quantity ? '#EF4444' : '#CBD5E1'}`,
+                  border: `1px solid ${errors.quantity ? '#EF4444' : '#A7AE9F'}`,
                   fontSize: '14px',
                   fontWeight: 600,
                   boxSizing: 'border-box',
@@ -362,7 +362,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 width: '100%',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '13.5px',
                 backgroundColor: '#FFFFFF',
                 boxSizing: 'border-box',
@@ -391,7 +391,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 width: '100%',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                border: `1px solid ${errors.reason ? '#EF4444' : '#CBD5E1'}`,
+                border: `1px solid ${errors.reason ? '#EF4444' : '#A7AE9F'}`,
                 fontSize: '13.5px',
                 boxSizing: 'border-box',
                 resize: 'none',
@@ -414,7 +414,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 width: '100%',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 fontSize: '13.5px',
                 boxSizing: 'border-box',
               }}
@@ -429,7 +429,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               justifyContent: 'flex-end',
               gap: '12px',
               paddingTop: '8px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
             }}
           >
             <button
@@ -439,7 +439,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               style={{
                 padding: '9px 18px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid #A7AE9F',
                 backgroundColor: '#FFFFFF',
                 color: '#475569',
                 fontSize: '14px',
@@ -483,3 +483,4 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     </div>
   );
 };
+

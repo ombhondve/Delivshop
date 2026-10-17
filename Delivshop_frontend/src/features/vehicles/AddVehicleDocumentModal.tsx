@@ -145,7 +145,7 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
         }}
       >
@@ -153,7 +153,7 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -166,7 +166,7 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
                 width: '36px',
                 height: '36px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
+                backgroundColor: '#D1FAE5',
                 color: '#1D4ED8',
                 display: 'flex',
                 alignItems: 'center',
@@ -311,7 +311,7 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: '2px dashed #CBD5E1',
+                    border: '2px dashed #A7AE9F',
                     borderRadius: '8px',
                     padding: '20px',
                     textAlign: 'center',
@@ -320,7 +320,7 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0284C7')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#CBD5E1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#A7AE9F')}
                 >
                   <Upload size={24} style={{ color: '#0284C7', margin: '0 auto 6px auto' }} />
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
@@ -400,7 +400,7 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
             style={{
               marginTop: '20px',
               paddingTop: '16px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '10px',
@@ -428,3 +428,4 @@ export const AddVehicleDocumentModal: React.FC<AddVehicleDocumentModalProps> = (
     </div>
   );
 };
+

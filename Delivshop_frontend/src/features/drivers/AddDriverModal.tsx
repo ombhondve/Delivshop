@@ -142,7 +142,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(18, 61, 50, 0.45)',
+        backgroundColor: 'rgba(6, 78, 59, 0.55)',
         backdropFilter: 'blur(3px)',
         display: 'flex',
         alignItems: 'center',
@@ -164,7 +164,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #D6D3C8',
           overflow: 'hidden',
         }}
       >
@@ -172,7 +172,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
         <div
           style={{
             padding: '16px 22px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid #D6D3C8',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -249,7 +249,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
             <div
               style={{
                 backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #D6D3C8',
                 borderRadius: '10px',
                 padding: '20px',
                 maxWidth: '440px',
@@ -257,7 +257,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 textAlign: 'left',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #D6D3C8' }}>
                 <span style={{ fontSize: '13px', color: '#64748B' }}>Assigned Employee ID:</span>
                 <span
                   style={{
@@ -332,8 +332,8 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               style={{
                 marginBottom: '18px',
                 padding: '10px 14px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #BFDBFE',
+                backgroundColor: '#D1FAE5',
+                border: '1px solid #6EE7B7',
                 borderRadius: '8px',
                 fontSize: '12px',
                 color: '#1E40AF',
@@ -382,7 +382,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -404,7 +404,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -425,7 +425,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -446,7 +446,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -466,7 +466,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -485,7 +485,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 8px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#FFFFFF',
                       outline: 'none',
                     }}
@@ -531,7 +531,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -552,7 +552,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -573,7 +573,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -594,7 +594,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -637,7 +637,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       fontWeight: 600,
                       fontFamily: 'monospace',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#F8FAFC',
                       outline: 'none',
                     }}
@@ -661,7 +661,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -680,7 +680,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 8px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#FFFFFF',
                       outline: 'none',
                     }}
@@ -726,7 +726,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -746,7 +746,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -765,7 +765,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 8px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       backgroundColor: '#FFFFFF',
                       outline: 'none',
                     }}
@@ -812,7 +812,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -833,7 +833,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -854,7 +854,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
                   />
@@ -863,7 +863,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
             </div>
 
             {/* Section 6: Mobile App Credentials */}
-            <div style={{ marginBottom: '16px', backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ marginBottom: '16px', backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
               <h4
                 style={{
                   fontSize: '13px',
@@ -896,7 +896,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     fontSize: '13px',
                     fontFamily: 'monospace',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid #A7AE9F',
                     backgroundColor: '#FFFFFF',
                     outline: 'none',
                   }}
@@ -911,7 +911,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
           <div
             style={{
               padding: '14px 22px',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid #D6D3C8',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '10px',
@@ -930,3 +930,4 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
     </div>
   );
 };
+
