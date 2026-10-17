@@ -265,6 +265,7 @@ export interface DriverUser {
   name: string;
   email: string;
   phone?: string;
+  alternate_phone?: string | null;
   role: 'DRIVER';
   is_active: boolean;
   employee_id?: string;
@@ -273,8 +274,21 @@ export interface DriverUser {
   assigned_route?: string | null;
   license_number?: string | null;
   license_expiry?: string | null;
+  license_class?: string | null;
   joining_date?: string | null;
   emergency_contact?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_relation?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  employment_status?: string | null;
+  account_status?: string | null;
+  must_change_password?: boolean | null;
   notes?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -332,32 +346,58 @@ export interface DriverAuditRecord {
 export interface CreateDriverPayload {
   name: string;
   phone: string;
+  alternatePhone?: string;
   email?: string;
   employeeId?: string;
   password?: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
+  licenseClass?: string;
+  joiningDate?: string;
+  emergencyContact?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  employmentStatus?: string;
+  accountStatus?: string;
+  notes?: string;
   vehicleNumber?: string;
   vehicleType?: string;
   assignedRoute?: string;
-  licenseNumber?: string;
-  licenseExpiry?: string;
-  joiningDate?: string;
-  emergencyContact?: string;
-  notes?: string;
 }
 
 export interface UpdateDriverPayload {
   name?: string;
   phone?: string;
+  alternatePhone?: string | null;
   email?: string;
   employeeId?: string;
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  licenseClass?: string | null;
+  joiningDate?: string | null;
+  emergencyContact?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  emergencyContactRelation?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  employmentStatus?: string | null;
+  accountStatus?: string | null;
+  notes?: string | null;
   vehicleNumber?: string | null;
   vehicleType?: string | null;
   assignedRoute?: string | null;
-  licenseNumber?: string | null;
-  licenseExpiry?: string | null;
-  joiningDate?: string | null;
-  emergencyContact?: string | null;
-  notes?: string | null;
 }
 
 export interface PaginatedResult<T> {

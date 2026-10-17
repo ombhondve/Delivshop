@@ -32,8 +32,8 @@ import { AddDriverModal } from './AddDriverModal';
 import { EditDriverModal } from './EditDriverModal';
 import { AssignVehicleModal } from './AssignVehicleModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
-import { DriverDetailsDrawer } from './DriverDetailsDrawer';
 import { formatDate } from '../../utils/formatters';
+import { useNavigation } from '../../context/NavigationContext';
 
 export const DriversRoster: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverUser[]>([]);
@@ -55,11 +55,11 @@ export const DriversRoster: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
 
   // Modals state
+  const { navigate } = useNavigation();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isDetailsDrawerOpen, setIsDetailsDrawerOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<DriverUser | null>(null);
 
   // Deletion modal state
@@ -522,7 +522,11 @@ export const DriversRoster: React.FC = () => {
                     <tr key={drv.id}>
                       {/* Driver Name & Avatar */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                          onClick={() => navigate(`/admin/drivers/${drv.id}`)}
+                          title={`View ${drv.name}'s dedicated profile`}
+                        >
                           <div
                             style={{
                               width: '28px',
@@ -541,7 +545,7 @@ export const DriversRoster: React.FC = () => {
                             {initials}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '12.5px', color: '#20342C' }}>
+                            <div style={{ fontWeight: 600, fontSize: '12.5px', color: '#16805D', textDecoration: 'underline', textDecorationColor: '#A7F3D0' }}>
                               {drv.name}
                             </div>
                             <div style={{ fontSize: '11px', color: '#64748B' }}>
@@ -637,16 +641,15 @@ export const DriversRoster: React.FC = () => {
                       {/* Actions Group */}
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                          {/* View Details */}
+                          {/* View Details - Full Page Navigation */}
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedDriver(drv);
-                              setIsDetailsDrawerOpen(true);
+                              navigate(`/admin/drivers/${drv.id}`);
                             }}
                             className="btn btn-secondary btn-table-action"
                             style={{ height: '26px', padding: '0 6px' }}
-                            title="View Full Profile & Deliveries"
+                            title="View Full Driver Profile"
                             aria-label={`View details for ${drv.name}`}
                           >
                             <Eye size={12} />
@@ -842,25 +845,6 @@ export const DriversRoster: React.FC = () => {
         }}
         onSuccess={() => {
           showToast('Driver mobile password reset successfully');
-        }}
-      />
-
-      <DriverDetailsDrawer
-        isOpen={isDetailsDrawerOpen}
-        driverId={selectedDriver?.id || null}
-        onClose={() => {
-          setIsDetailsDrawerOpen(false);
-          setSelectedDriver(null);
-        }}
-        onEdit={(drv) => {
-          setIsDetailsDrawerOpen(false);
-          setSelectedDriver(drv);
-          setIsEditModalOpen(true);
-        }}
-        onAssignVehicle={(drv) => {
-          setIsDetailsDrawerOpen(false);
-          setSelectedDriver(drv);
-          setIsVehicleModalOpen(true);
         }}
       />
 

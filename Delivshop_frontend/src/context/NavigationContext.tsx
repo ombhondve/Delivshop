@@ -7,6 +7,7 @@ export interface RouteState {
   activeTab: ActiveTab;
   shopId: string | null;
   companyId: string | null;
+  driverId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
 }
@@ -17,6 +18,7 @@ interface NavigationContextValue {
   activeTab: ActiveTab;
   shopId: string | null;
   companyId: string | null;
+  driverId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
   navigate: (to: string) => void;
@@ -30,6 +32,7 @@ export function parsePath(pathname: string): {
   activeTab: ActiveTab;
   shopId: string | null;
   companyId: string | null;
+  driverId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
 } {
@@ -42,6 +45,7 @@ export function parsePath(pathname: string): {
       activeTab: 'dashboard',
       shopId: null,
       companyId: null,
+      driverId: null,
       isNotFound: false,
       isLogin: true,
     };
@@ -54,6 +58,7 @@ export function parsePath(pathname: string): {
       activeTab: 'companies',
       shopId: null,
       companyId: decodeURIComponent(companyMatch[1]),
+      driverId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -66,6 +71,20 @@ export function parsePath(pathname: string): {
       activeTab: 'shops',
       shopId: decodeURIComponent(shopMatch[1]),
       companyId: null,
+      driverId: null,
+      isNotFound: false,
+      isLogin: false,
+    };
+  }
+
+  // 4. Check /drivers/:driverId and /admin/drivers/:driverId
+  const driverMatch = cleanPath.match(/^(?:\/admin)?\/drivers\/([^\/]+)$/);
+  if (driverMatch) {
+    return {
+      activeTab: 'drivers',
+      shopId: null,
+      companyId: null,
+      driverId: decodeURIComponent(driverMatch[1]),
       isNotFound: false,
       isLogin: false,
     };
@@ -108,6 +127,7 @@ export function parsePath(pathname: string): {
       activeTab: routeMap[cleanPath],
       shopId: null,
       companyId: null,
+      driverId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -118,6 +138,7 @@ export function parsePath(pathname: string): {
     activeTab: 'dashboard',
     shopId: null,
     companyId: null,
+    driverId: null,
     isNotFound: true,
     isLogin: false,
   };
@@ -172,6 +193,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     activeTab: routeDetails.activeTab,
     shopId: routeDetails.shopId,
     companyId: routeDetails.companyId,
+    driverId: routeDetails.driverId,
     isNotFound: routeDetails.isNotFound,
     isLogin: routeDetails.isLogin,
     navigate,

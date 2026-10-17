@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   User,
-  Truck,
   Shield,
   FileText,
   AlertCircle,
   CheckCircle2,
+  Phone,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { api } from '../../services/api/endpoints';
@@ -34,15 +35,24 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
       setFormData({
         name: driver.name || '',
         phone: driver.phone || '',
+        alternatePhone: driver.alternate_phone || '',
         email: driver.email || '',
         employeeId: driver.employee_id || '',
-        vehicleNumber: driver.vehicle_number || '',
-        vehicleType: driver.vehicle_type || 'Refrigerated Van (1.5 Ton)',
-        assignedRoute: driver.assigned_route || '',
         licenseNumber: driver.license_number || '',
         licenseExpiry: driver.license_expiry ? String(driver.license_expiry).split('T')[0] : '',
+        licenseClass: driver.license_class || 'LMV-TR',
         joiningDate: driver.joining_date ? String(driver.joining_date).split('T')[0] : '',
+        address: driver.address || '',
+        city: driver.city || '',
+        state: driver.state || '',
+        pincode: driver.pincode || '',
+        dateOfBirth: driver.date_of_birth ? String(driver.date_of_birth).split('T')[0] : '',
+        gender: driver.gender || 'MALE',
         emergencyContact: driver.emergency_contact || '',
+        emergencyContactName: driver.emergency_contact_name || '',
+        emergencyContactPhone: driver.emergency_contact_phone || '',
+        emergencyContactRelation: driver.emergency_contact_relation || '',
+        employmentStatus: driver.employment_status || 'ACTIVE',
         notes: driver.notes || '',
       });
       setError(null);
@@ -57,6 +67,10 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
     if (!formData.name?.trim()) {
       setError('Driver full name cannot be blank');
+      return;
+    }
+    if (!formData.phone?.trim()) {
+      setError('Driver phone number cannot be blank');
       return;
     }
 
@@ -94,7 +108,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
           backgroundColor: '#FFFFFF',
           borderRadius: '12px',
           width: '100%',
-          maxWidth: '680px',
+          maxWidth: '720px',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
@@ -119,7 +133,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
               Edit Driver Profile: {driver.name}
             </h3>
             <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-              Employee ID: <code style={{ fontWeight: 600 }}>{driver.employee_id || 'N/A'}</code>
+              Employee ID: <code style={{ fontWeight: 600, color: '#16805D' }}>{driver.employee_id || 'N/A'}</code>
             </p>
           </div>
           <button
@@ -169,7 +183,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Driver Full Name
+                  Driver Full Name <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -182,13 +196,25 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Mobile Phone Number
+                  Mobile Phone Number <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   type="tel"
                   required
                   value={formData.phone || ''}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Alternate Phone
+                </label>
+                <input
+                  type="tel"
+                  value={formData.alternatePhone || ''}
+                  onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
                   style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
                 />
               </div>
@@ -207,63 +233,134 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Emergency Contact
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={formData.dateOfBirth || ''}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Gender
+                </label>
+                <select
+                  value={formData.gender || 'MALE'}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#FFFFFF' }}
+                >
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div style={{ marginBottom: '18px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MapPin size={14} /> Address & Location
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+              <div style={{ gridColumn: 'span 4' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Street Address
                 </label>
                 <input
                   type="text"
-                  value={formData.emergencyContact || ''}
-                  onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
+                  value={formData.address || ''}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={formData.city || ''}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  State
+                </label>
+                <input
+                  type="text"
+                  value={formData.state || ''}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Pincode
+                </label>
+                <input
+                  type="text"
+                  value={formData.pincode || ''}
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Vehicle & Route */}
+          {/* Employment & Status */}
           <div style={{ marginBottom: '18px' }}>
             <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Truck size={14} /> Assigned Vehicle & Route
+              <Shield size={14} /> Employment Status & Identity
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Vehicle Reg No.
+                  Employee ID
                 </label>
                 <input
                   type="text"
-                  value={formData.vehicleNumber || ''}
-                  onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', fontWeight: 600, borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                  value={formData.employeeId || ''}
+                  onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#F8FAFC' }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Vehicle Class
-                </label>
-                <select
-                  value={formData.vehicleType || ''}
-                  onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '12.5px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
-                >
-                  <option value="Refrigerated Van (1.5 Ton)">Refrigerated Van (1.5 Ton)</option>
-                  <option value="Insulated Delivery Van">Insulated Delivery Van</option>
-                  <option value="Refrigerated Milk Tanker">Refrigerated Milk Tanker</option>
-                  <option value="Electric Cargo Van">Electric Cargo Van</option>
-                  <option value="Cold-Box Three-Wheeler">Cold-Box Three-Wheeler</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Assigned Route
+                  Joining Date
                 </label>
                 <input
-                  type="text"
-                  value={formData.assignedRoute || ''}
-                  onChange={(e) => setFormData({ ...formData, assignedRoute: e.target.value })}
+                  type="date"
+                  value={formData.joiningDate || ''}
+                  onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
                   style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Employment Status
+                </label>
+                <select
+                  value={formData.employmentStatus || 'ACTIVE'}
+                  onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#FFFFFF' }}
+                >
+                  <option value="ACTIVE">Active (Full-Time)</option>
+                  <option value="PROBATION">Probationary</option>
+                  <option value="ON_LEAVE">On Leave</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="TERMINATED">Terminated</option>
+                </select>
               </div>
             </div>
           </div>
@@ -273,7 +370,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <FileText size={14} /> License Details & Compliance
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Commercial License No.
@@ -294,6 +391,66 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="date"
                   value={formData.licenseExpiry || ''}
                   onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  License Class
+                </label>
+                <select
+                  value={formData.licenseClass || 'LMV-TR'}
+                  onChange={(e) => setFormData({ ...formData, licenseClass: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none', backgroundColor: '#FFFFFF' }}
+                >
+                  <option value="LMV">LMV</option>
+                  <option value="LMV-TR">LMV-TR (Commercial)</option>
+                  <option value="HMV">HMV (Heavy)</option>
+                  <option value="MCWG">MCWG</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Emergency Contact */}
+          <div style={{ marginBottom: '18px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: '#16805D', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Phone size={14} /> Emergency Contact (Next of Kin)
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Contact Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.emergencyContactName || ''}
+                  onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Emergency Phone
+                </label>
+                <input
+                  type="tel"
+                  value={formData.emergencyContactPhone || ''}
+                  onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
+                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                  Relationship
+                </label>
+                <input
+                  type="text"
+                  value={formData.emergencyContactRelation || ''}
+                  onChange={(e) => setFormData({ ...formData, emergencyContactRelation: e.target.value })}
                   style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #CBD5E1', outline: 'none' }}
                 />
               </div>
