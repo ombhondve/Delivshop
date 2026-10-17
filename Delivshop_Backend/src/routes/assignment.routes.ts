@@ -8,6 +8,7 @@ import {
   createAssignmentSchema,
   updateAssignmentStatusSchema,
   updateRunStopStatusSchema,
+  deleteAssignmentSchema,
 } from '../schemas/assignment.schema.js';
 
 const router = Router();
@@ -43,6 +44,13 @@ router.post(
 );
 
 router.get(
+  '/:id/dependencies',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  assignmentController.getDependencies
+);
+
+router.get(
   '/:id',
   authenticate,
   authorizeRoles('ADMIN', 'SUPPLIER', 'DRIVER'),
@@ -63,6 +71,14 @@ router.patch(
   authorizeRoles('ADMIN', 'SUPPLIER', 'DRIVER'),
   validateRequest(updateRunStopStatusSchema),
   assignmentController.updateStopStatus
+);
+
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  validateRequest(deleteAssignmentSchema),
+  assignmentController.deleteAssignment
 );
 
 export default router;

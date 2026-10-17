@@ -3,7 +3,7 @@ import {
   X, Truck, User, Navigation, Calendar, Clock, 
   CheckCircle2, AlertTriangle, AlertCircle, Phone, 
   MapPin, RefreshCw, Check, ShieldCheck, ChevronRight,
-  Package, FileText, Ban, PlayCircle
+  Package, FileText, Ban, PlayCircle, Trash2
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { DeliveryRun, DeliveryRunStop } from '../../types';
@@ -11,6 +11,8 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { formatDate } from '../../utils/formatters';
+import { useAuth } from '../../hooks/useAuth';
+import { DeleteAssignmentModal } from './DeleteAssignmentModal';
 
 interface AssignmentDetailsDrawerProps {
   runId: string | null;
@@ -43,12 +45,23 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [cancelNotes, setCancelNotes] = useState('');
 
+  // Delete / Archive assignment modal state
+  const { user } = useAuth();
+  const canDeleteAssignment = user?.role === 'ADMIN' || user?.role === 'SUPPLIER';
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleAssignmentDeleted = (msg: string) => {
+    showToast(msg);
+    onRunUpdated();
+    onClose();
   };
 
   const loadRunDetails = useCallback(async (id: string) => {
@@ -362,17 +375,31 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
               )}
             </div>
 
-            {run.status !== 'COMPLETED' && run.status !== 'CANCELLED' && (
-              <Button
-                type="button"
-                variant="danger"
-                onClick={() => setIsCancelConfirmOpen(true)}
-                disabled={actionLoading}
-                icon={<Ban size={14} />}
-              >
-                Cancel Assignment
-              </Button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {run.status !== 'COMPLETED' && run.status !== 'CANCELLED' && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setIsCancelConfirmOpen(true)}
+                  disabled={actionLoading}
+                  icon={<Ban size={14} />}
+                >
+                  Cancel Run
+                </Button>
+              )}
+
+              {canDeleteAssignment && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={actionLoading}
+                  icon={<Trash2 size={14} />}
+                >
+                  Delete Assignment
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
@@ -936,6 +963,14 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
           </div>
         </div>
       )}
+
+      {/* Delete / Archive Assignment Modal */}
+      <DeleteAssignmentModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        run={run}
+        onDeleted={handleAssignmentDeleted}
+      />
     </>
   );
 };

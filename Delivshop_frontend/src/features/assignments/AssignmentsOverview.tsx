@@ -33,7 +33,11 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
     setLoading(true);
     try {
       const params: any = {};
-      if (statusFilter !== 'ALL') params.status = statusFilter;
+      if (statusFilter === 'ARCHIVED') {
+        params.includeArchived = 'true';
+      } else if (statusFilter !== 'ALL') {
+        params.status = statusFilter;
+      }
       if (dateFilter) params.deliveryDate = dateFilter;
 
       const res: any = await api.assignments.list(params);
@@ -86,6 +90,8 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
         return <Badge variant="navy">Ready to Dispatch</Badge>;
       case 'CANCELLED':
         return <Badge variant="danger">Cancelled</Badge>;
+      case 'ARCHIVED':
+        return <Badge variant="neutral">Archived</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
@@ -300,6 +306,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
               <option value="IN_PROGRESS">In Progress (Transit)</option>
               <option value="COMPLETED">Completed Trips</option>
               <option value="CANCELLED">Cancelled</option>
+              <option value="ARCHIVED">Archived Records</option>
             </select>
           </div>
 

@@ -1,4 +1,5 @@
 import { query, dbPool } from '../config/database.js';
+import { AppError } from '../utils/errors.js';
 
 export interface DeliveryRunRecord {
   id: string;
@@ -13,6 +14,9 @@ export interface DeliveryRunRecord {
   dispatch_time: string | null;
   completion_time: string | null;
   notes: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  deletion_reason?: string | null;
   created_at: string;
   updated_at: string;
   route_code?: string;
@@ -38,9 +42,14 @@ export const assignmentRepository = {
     city?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+    includeArchived?: boolean;
   }): Promise<DeliveryRunRecord[]> {
     const whereClauses: string[] = ['1=1'];
     const values: any[] = [];
+
+    if (!params?.includeArchived) {
+      whereClauses.push('dr.deleted_at IS NULL');
+    }
 
     if (params?.search) {
       values.push(`%${params.search.toLowerCase().trim()}%`);
@@ -121,6 +130,7 @@ export const assignmentRepository = {
         COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END)::int as cancelled,
         COUNT(CASE WHEN delivery_date = CURRENT_DATE THEN 1 END)::int as today_assignments
       FROM delivery_runs
+      WHERE deleted_at IS NULL
     `);
     const r = res.rows[0] || {};
     return {
@@ -485,5 +495,232 @@ export const assignmentRepository = {
     );
 
     return res.rows[0];
+  },
+
+  async checkDependencies(runId: string): Promise<{
+    totalStops: number;
+    completedStops: number;
+    collectionsCount: number;
+    reconciliationsCount: number;
+    inspectionsCount: number;
+    incidentsCount: number;
+    hasProtectedDependencies: boolean;
+    blockReason?: string;
+  }> {
+    const stopsRes = await query(
+      `SELECT 
+         COUNT(*)::int as total_stops,
+         COUNT(CASE WHEN status IN ('DELIVERED', 'ARRIVED') THEN 1 END)::int as completed_stops
+       FROM delivery_run_stops
+       WHERE run_id = $1`,
+      [runId]
+    );
+
+    const collectionsRes = await query(
+      `SELECT COUNT(*)::int as count FROM delivery_collections WHERE run_id = $1`,
+      [runId]
+    );
+
+    const reconRes = await query(
+      `SELECT COUNT(*)::int as count FROM delivery_reconciliations WHERE run_id = $1`,
+      [runId]
+    );
+
+    const inspectionsRes = await query(
+      `SELECT COUNT(*)::int as count FROM vehicle_inspections WHERE run_id = $1`,
+      [runId]
+    );
+
+    const incidentsRes = await query(
+      `SELECT COUNT(*)::int as count FROM driver_incidents WHERE run_id = $1`,
+      [runId]
+    );
+
+    const totalStops = stopsRes.rows[0]?.total_stops || 0;
+    const completedStops = stopsRes.rows[0]?.completed_stops || 0;
+    const collectionsCount = collectionsRes.rows[0]?.count || 0;
+    const reconciliationsCount = reconRes.rows[0]?.count || 0;
+    const inspectionsCount = inspectionsRes.rows[0]?.count || 0;
+    const incidentsCount = incidentsRes.rows[0]?.count || 0;
+
+    const hasProtectedDependencies = completedStops > 0 || collectionsCount > 0 || reconciliationsCount > 0;
+    let blockReason: string | undefined;
+
+    if (collectionsCount > 0) {
+      blockReason = `Assignment is linked to ${collectionsCount} payment collection receipt(s). Permanent deletion is blocked to preserve financial audit history.`;
+    } else if (reconciliationsCount > 0) {
+      blockReason = `Assignment has verified end-of-day reconciliation records. Permanent deletion is blocked.`;
+    } else if (completedStops > 0) {
+      blockReason = `Assignment has ${completedStops} shop delivery stop(s) marked as arrived or delivered. Permanent deletion is blocked.`;
+    }
+
+    return {
+      totalStops,
+      completedStops,
+      collectionsCount,
+      reconciliationsCount,
+      inspectionsCount,
+      incidentsCount,
+      hasProtectedDependencies,
+      blockReason,
+    };
+  },
+
+  async deleteRun(
+    runId: string,
+    options?: {
+      actorId?: string;
+      reason?: string;
+      actionType?: 'DELETE' | 'ARCHIVE' | 'CANCEL';
+    }
+  ): Promise<{
+    success: boolean;
+    mode: 'HARD_DELETE' | 'ARCHIVED' | 'CANCELLED';
+    action: 'HARD_DELETE' | 'ARCHIVED' | 'CANCELLED';
+    message: string;
+    runCode: string;
+    details?: any;
+  }> {
+    const client = await dbPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const selectRes = await client.query(
+        `SELECT * FROM delivery_runs WHERE id = $1 FOR UPDATE`,
+        [runId]
+      );
+
+      if (selectRes.rowCount === 0) {
+        throw new AppError('Delivery assignment run not found.', 404);
+      }
+
+      const run = selectRes.rows[0];
+
+      if (run.deleted_at) {
+        throw new AppError(`Assignment ${run.run_code} is already deleted / archived.`, 409);
+      }
+
+      // Check active in-progress status
+      if (run.status === 'IN_PROGRESS') {
+        throw new AppError(
+          `Cannot delete active assignment "${run.run_code}". The route is currently in progress. Dispatchers must complete or cancel the route before modifying the assignment.`,
+          409
+        );
+      }
+
+      // Check operational dependencies
+      const depCheck = await this.checkDependencies(runId);
+      const actionType = options?.actionType || 'DELETE';
+
+      // 1. Explicit cancellation requested
+      if (actionType === 'CANCEL') {
+        await client.query(
+          `UPDATE delivery_runs
+           SET status = 'CANCELLED',
+               notes = CASE WHEN $1::text IS NOT NULL THEN COALESCE(notes, '') || ' | Cancelled: ' || $1::text ELSE notes END,
+               updated_at = NOW()
+           WHERE id = $2`,
+          [options?.reason || null, runId]
+        );
+
+        // Check if vehicle has any other active run
+        const otherRuns = await client.query(
+          `SELECT COUNT(*)::int as count FROM delivery_runs 
+           WHERE vehicle_id = $1 AND id != $2 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS') AND deleted_at IS NULL`,
+          [run.vehicle_id, runId]
+        );
+        if ((otherRuns.rows[0]?.count || 0) === 0) {
+          await client.query(
+            `UPDATE vehicles SET status = 'AVAILABLE', updated_at = NOW() WHERE id = $1 AND status = 'ASSIGNED'`,
+            [run.vehicle_id]
+          );
+        }
+
+        await client.query('COMMIT');
+        return {
+          success: true,
+          mode: 'CANCELLED',
+          action: 'CANCELLED',
+          message: `Delivery assignment ${run.run_code} has been cancelled. Vehicle and driver reservations have been released.`,
+          runCode: run.run_code,
+          details: { oldStatus: run.status, newStatus: 'CANCELLED' },
+        };
+      }
+
+      // 2. Explicit archival requested OR run is COMPLETED or has historical dependencies
+      if (
+        actionType === 'ARCHIVE' ||
+        depCheck.hasProtectedDependencies ||
+        run.status === 'COMPLETED' ||
+        run.status === 'CANCELLED'
+      ) {
+        await client.query(
+          `UPDATE delivery_runs
+           SET deleted_at = NOW(),
+               deleted_by = $1,
+               deletion_reason = $2,
+               updated_at = NOW()
+           WHERE id = $3`,
+          [options?.actorId || null, options?.reason || 'Archived by administrator', runId]
+        );
+
+        // Release vehicle if no other active run
+        const otherRuns = await client.query(
+          `SELECT COUNT(*)::int as count FROM delivery_runs 
+           WHERE vehicle_id = $1 AND id != $2 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS') AND deleted_at IS NULL`,
+          [run.vehicle_id, runId]
+        );
+        if ((otherRuns.rows[0]?.count || 0) === 0) {
+          await client.query(
+            `UPDATE vehicles SET status = 'AVAILABLE', updated_at = NOW() WHERE id = $1 AND status = 'ASSIGNED'`,
+            [run.vehicle_id]
+          );
+        }
+
+        await client.query('COMMIT');
+        return {
+          success: true,
+          mode: 'ARCHIVED',
+          action: 'ARCHIVED',
+          message: depCheck.hasProtectedDependencies
+            ? `Assignment ${run.run_code} archived successfully. Historical delivery, inventory, and payment records were preserved.`
+            : `Assignment ${run.run_code} archived from active view.`,
+          runCode: run.run_code,
+          details: { dependencies: depCheck, archivalReason: options?.reason },
+        };
+      }
+
+      // 3. Permanent hard deletion for unused DRAFT / VALIDATED / ASSIGNED / READY runs
+      await client.query(`DELETE FROM delivery_run_stops WHERE run_id = $1`, [runId]);
+      await client.query(`DELETE FROM delivery_runs WHERE id = $1`, [runId]);
+
+      // Release vehicle if no other active run
+      const otherRuns = await client.query(
+        `SELECT COUNT(*)::int as count FROM delivery_runs 
+         WHERE vehicle_id = $1 AND id != $2 AND status IN ('ASSIGNED', 'READY', 'IN_PROGRESS') AND deleted_at IS NULL`,
+        [run.vehicle_id, runId]
+      );
+      if ((otherRuns.rows[0]?.count || 0) === 0) {
+        await client.query(
+          `UPDATE vehicles SET status = 'AVAILABLE', updated_at = NOW() WHERE id = $1 AND status = 'ASSIGNED'`,
+          [run.vehicle_id]
+        );
+      }
+
+      await client.query('COMMIT');
+      return {
+        success: true,
+        mode: 'HARD_DELETE',
+        action: 'HARD_DELETE',
+        message: `Assignment ${run.run_code} and all planned stops permanently deleted.`,
+        runCode: run.run_code,
+        details: { plannedStopsDeleted: depCheck.totalStops },
+      };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   },
 };

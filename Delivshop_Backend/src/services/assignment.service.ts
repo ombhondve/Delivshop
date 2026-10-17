@@ -13,6 +13,7 @@ export const assignmentService = {
     city?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+    includeArchived?: boolean;
   }): Promise<DeliveryRunRecord[]> {
     return assignmentRepository.listAll(params);
   },
@@ -167,5 +168,91 @@ export const assignmentService = {
     });
 
     return updatedStop;
+  },
+
+  async getDependencies(runId: string): Promise<any> {
+    const existing = await assignmentRepository.findById(runId);
+    if (!existing) {
+      throw new AppError('Delivery assignment run not found', 404);
+    }
+    const deps = await assignmentRepository.checkDependencies(runId);
+    const isProgress = existing.status === 'IN_PROGRESS';
+    const canHardDelete =
+      !isProgress &&
+      !deps.hasProtectedDependencies &&
+      ['DRAFT', 'VALIDATED', 'ASSIGNED', 'READY', 'CANCELLED'].includes(existing.status);
+
+    return {
+      run: existing,
+      dependencies: {
+        totalStops: deps.totalStops,
+        completedStops: deps.completedStops,
+        collectionsCount: deps.collectionsCount,
+        reconciliationsCount: deps.reconciliationsCount,
+        inspectionsCount: deps.inspectionsCount,
+        incidentsCount: deps.incidentsCount,
+      },
+      hasProtectedDependencies: deps.hasProtectedDependencies,
+      canHardDelete,
+      blockReason: isProgress
+        ? 'Assignment is currently actively IN_PROGRESS and cannot be deleted.'
+        : deps.blockReason,
+    };
+  },
+
+  async deleteAssignment(
+    runId: string,
+    options?: {
+      reason?: string;
+      actionType?: 'DELETE' | 'ARCHIVE' | 'CANCEL';
+    },
+    actorId?: string,
+    ipAddress?: string
+  ): Promise<any> {
+    const existing = await assignmentRepository.findById(runId);
+    if (!existing) {
+      throw new AppError('Delivery assignment run not found', 404);
+    }
+
+    if (existing.deleted_at) {
+      throw new AppError(`Assignment ${existing.run_code} is already deleted / archived.`, 400);
+    }
+
+    if (existing.status === 'IN_PROGRESS') {
+      throw new AppError(
+        `Cannot delete active assignment "${existing.run_code}". The route is currently in progress. Dispatchers must complete or cancel the route before modifying the assignment.`,
+        409
+      );
+    }
+
+    const result = await assignmentRepository.deleteRun(runId, {
+      actorId,
+      reason: options?.reason,
+      actionType: options?.actionType,
+    });
+
+    const auditAction =
+      result.mode === 'HARD_DELETE'
+        ? 'DELIVERY_RUN_DELETED'
+        : result.mode === 'CANCELLED'
+        ? 'DELIVERY_RUN_CANCELLED'
+        : 'DELIVERY_RUN_ARCHIVED';
+
+    await auditService.log({
+      actorId: actorId || undefined,
+      action: auditAction,
+      entityType: 'DELIVERY_RUN',
+      entityId: runId,
+      details: {
+        runCode: existing.run_code,
+        status: existing.status,
+        mode: result.mode,
+        reason: options?.reason,
+        details: result.details,
+      },
+      ipAddress,
+    });
+
+    return result;
   },
 };

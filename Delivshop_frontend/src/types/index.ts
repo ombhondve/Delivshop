@@ -963,6 +963,9 @@ export interface DeliveryRun {
   vehicleType?: string;
   capacity_crates?: number;
   is_refrigerated?: boolean;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  deletion_reason?: string | null;
   stops?: DeliveryRunStop[];
 }
 

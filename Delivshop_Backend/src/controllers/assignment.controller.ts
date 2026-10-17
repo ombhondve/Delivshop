@@ -5,7 +5,7 @@ import { AppError } from '../utils/errors.js';
 export const assignmentController = {
   async listAssignments(req: Request, res: Response, next: NextFunction) {
     try {
-      const { search, deliveryDate, status, vehicleId, routeId, city, sortBy, sortOrder } = req.query;
+      const { search, deliveryDate, status, vehicleId, routeId, city, sortBy, sortOrder, includeArchived } = req.query;
       
       // Security: DRIVER role can ONLY view their own assigned runs
       const targetDriverId = req.user?.role === 'DRIVER' 
@@ -21,7 +21,7 @@ export const assignmentController = {
         routeId: routeId as string,
         city: city as string,
         sortBy: sortBy as string,
-        sortOrder: sortOrder as 'ASC' | 'DESC',
+        includeArchived: String(includeArchived) === 'true',
       });
       res.json({ success: true, data: assignments });
     } catch (err) {
@@ -125,6 +125,42 @@ export const assignmentController = {
         success: true,
         message: `Delivery run stop #${sequence} updated`,
         data: stop,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getDependencies(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const dependencies = await assignmentService.getDependencies(id);
+      res.json({ success: true, data: dependencies });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAssignment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { reason, actionType } = req.body || {};
+
+      if (req.user?.role === 'DRIVER') {
+        throw new AppError('Drivers are not permitted to delete or cancel assignments.', 403);
+      }
+
+      const result = await assignmentService.deleteAssignment(
+        id,
+        { reason, actionType },
+        req.user?.id,
+        req.ip
+      );
+
+      res.json({
+        success: true,
+        message: result.message,
+        data: result,
       });
     } catch (err) {
       next(err);

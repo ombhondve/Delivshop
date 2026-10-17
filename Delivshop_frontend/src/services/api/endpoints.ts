@@ -712,5 +712,22 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+
+    async getDependencies(id: string): Promise<any> {
+      return apiClient<any>(`assignments/${id}/dependencies`);
+    },
+
+    async delete(
+      id: string,
+      options?: {
+        reason?: string;
+        actionType?: 'DELETE' | 'ARCHIVE' | 'CANCEL';
+      }
+    ): Promise<any> {
+      return apiClient<any>(`assignments/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify(options || {}),
+      });
+    },
   },
 };

@@ -59,3 +59,12 @@ export const updateRunStopStatusSchema = z.object({
     longitude: z.number().optional(),
   }),
 });
+
+export const deleteAssignmentSchema = z.object({
+  body: z
+    .object({
+      reason: z.string().trim().max(500).optional(),
+      actionType: z.enum(['DELETE', 'ARCHIVE', 'CANCEL']).optional(),
+    })
+    .optional(),
+});
