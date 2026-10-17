@@ -422,13 +422,23 @@ export const assignmentRepository = {
   async updateStopStatus(
     runId: string,
     stopSequence: number,
-    status: 'PENDING' | 'ARRIVED' | 'DELIVERED' | 'FAILED' | 'SKIPPED',
-    notes?: string,
-    proofOfDeliveryUrl?: string,
-    failureReason?: string
+    data: {
+      status: 'PENDING' | 'ARRIVED' | 'DELIVERED' | 'FAILED' | 'SKIPPED';
+      notes?: string;
+      proofOfDeliveryUrl?: string;
+      failureReason?: string;
+      deliveredCratesCount?: number;
+      returnedCratesCount?: number;
+      shortageReason?: string | null;
+      collectedAmount?: number;
+      paymentMethod?: string;
+      otpCode?: string;
+      latitude?: number;
+      longitude?: number;
+    }
   ): Promise<any> {
-    const isDelivered = status === 'DELIVERED';
-    const isArrived = status === 'ARRIVED';
+    const isDelivered = data.status === 'DELIVERED';
+    const isArrived = data.status === 'ARRIVED';
 
     const res = await query(
       `UPDATE delivery_run_stops
@@ -437,10 +447,32 @@ export const assignmentRepository = {
            delivery_time = CASE WHEN $3 = TRUE THEN NOW() ELSE delivery_time END,
            notes = COALESCE($4, notes),
            proof_of_delivery_url = COALESCE($5, proof_of_delivery_url),
-           failure_reason = COALESCE($6, failure_reason)
-       WHERE run_id = $7 AND stop_sequence = $8
+           failure_reason = COALESCE($6, failure_reason),
+           delivered_crates_count = COALESCE($7, delivered_crates_count),
+           returned_crates_count = COALESCE($8, returned_crates_count),
+           shortage_reason = COALESCE($9, shortage_reason),
+           collected_amount = COALESCE($10, collected_amount),
+           payment_method = COALESCE($11, payment_method),
+           otp_code = COALESCE($12, otp_code),
+           otp_verified_at = CASE WHEN $12 IS NOT NULL AND otp_verified_at IS NULL THEN NOW() ELSE otp_verified_at END
+       WHERE run_id = $13 AND stop_sequence = $14
        RETURNING *`,
-      [status, isArrived, isDelivered, notes ?? null, proofOfDeliveryUrl ?? null, failureReason ?? null, runId, stopSequence]
+      [
+        data.status,
+        isArrived,
+        isDelivered,
+        data.notes ?? null,
+        data.proofOfDeliveryUrl ?? null,
+        data.failureReason ?? null,
+        data.deliveredCratesCount ?? null,
+        data.returnedCratesCount ?? null,
+        data.shortageReason ?? null,
+        data.collectedAmount ?? null,
+        data.paymentMethod ?? null,
+        data.otpCode ?? null,
+        runId,
+        stopSequence,
+      ]
     );
 
     // Recalculate completed stops count on parent run

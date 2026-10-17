@@ -1,15 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { assignmentService } from '../services/assignment.service.js';
+import { AppError } from '../utils/errors.js';
 
 export const assignmentController = {
   async listAssignments(req: Request, res: Response, next: NextFunction) {
     try {
-      const { search, deliveryDate, status, driverId, vehicleId, routeId, city, sortBy, sortOrder } = req.query;
+      const { search, deliveryDate, status, vehicleId, routeId, city, sortBy, sortOrder } = req.query;
+      
+      // Security: DRIVER role can ONLY view their own assigned runs
+      const targetDriverId = req.user?.role === 'DRIVER' 
+        ? req.user.id 
+        : (req.query.driverId as string);
+
       const assignments = await assignmentService.listAssignments({
         search: search as string,
         deliveryDate: deliveryDate as string,
         status: status as string,
-        driverId: driverId as string,
+        driverId: targetDriverId,
         vehicleId: vehicleId as string,
         routeId: routeId as string,
         city: city as string,
@@ -45,6 +52,12 @@ export const assignmentController = {
     try {
       const { id } = req.params;
       const assignment = await assignmentService.getAssignmentDetails(id);
+      
+      // Security: Driver can only inspect their own assigned run
+      if (req.user?.role === 'DRIVER' && assignment.driver_id !== req.user.id) {
+        throw new AppError('Access forbidden: You can only view your own delivery assignments.', 403);
+      }
+
       res.json({ success: true, data: assignment });
     } catch (err) {
       next(err);
@@ -53,6 +66,9 @@ export const assignmentController = {
 
   async createAssignment(req: Request, res: Response, next: NextFunction) {
     try {
+      if (req.user?.role === 'DRIVER') {
+        throw new AppError('Drivers are not permitted to dispatch or assign runs.', 403);
+      }
       const run = await assignmentService.createAssignment(req.body, req.user?.id, req.ip);
       res.status(201).json({
         success: true,
@@ -68,6 +84,14 @@ export const assignmentController = {
     try {
       const { id } = req.params;
       const { status, notes } = req.body;
+
+      if (req.user?.role === 'DRIVER') {
+        const assignment = await assignmentService.getAssignmentDetails(id);
+        if (assignment.driver_id !== req.user.id) {
+          throw new AppError('Access forbidden: You cannot update status of another driver\'s assignment.', 403);
+        }
+      }
+
       const updated = await assignmentService.updateStatus(id, status, notes, req.user?.id, req.ip);
       res.json({
         success: true,
@@ -82,6 +106,14 @@ export const assignmentController = {
   async updateStopStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { id, sequence } = req.params;
+
+      if (req.user?.role === 'DRIVER') {
+        const assignment = await assignmentService.getAssignmentDetails(id);
+        if (assignment.driver_id !== req.user.id) {
+          throw new AppError('Access forbidden: You cannot update stops of another driver\'s assignment.', 403);
+        }
+      }
+
       const stop = await assignmentService.updateStopStatus(
         id,
         parseInt(sequence, 10),

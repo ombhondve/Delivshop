@@ -37,9 +37,26 @@ describe('Assignments & Daily Delivery Runs Dispatch Suite', () => {
     const drvRes = await dbPool.query("SELECT id FROM users WHERE role = 'DRIVER' AND is_active = TRUE AND deleted_at IS NULL LIMIT 1");
     driverId = drvRes.rows[0]?.id;
 
-    // Query active available vehicle
-    const vehRes = await dbPool.query("SELECT id FROM vehicles WHERE is_active = TRUE AND deleted_at IS NULL LIMIT 1");
+    // Query active available vehicle with valid documents
+    const vehRes = await dbPool.query(`
+      SELECT v.id FROM vehicles v 
+      WHERE v.is_active = TRUE AND v.deleted_at IS NULL 
+        AND v.status NOT IN ('UNDER_MAINTENANCE', 'INACTIVE')
+        AND NOT EXISTS (
+          SELECT 1 FROM vehicle_documents vd 
+          WHERE vd.vehicle_id = v.id AND vd.document_type IN ('RC', 'INSURANCE', 'PUC') AND vd.expiry_date < '2026-11-05'::date
+        )
+      LIMIT 1
+    `);
     vehicleId = vehRes.rows[0]?.id;
+    if (!vehicleId) {
+      const fallbackVeh = await dbPool.query("SELECT id FROM vehicles WHERE is_active = TRUE AND deleted_at IS NULL LIMIT 1");
+      vehicleId = fallbackVeh.rows[0]?.id;
+      if (vehicleId) {
+        await dbPool.query("UPDATE vehicles SET status = 'AVAILABLE' WHERE id = $1", [vehicleId]);
+        await dbPool.query("UPDATE vehicle_documents SET expiry_date = '2027-12-31' WHERE vehicle_id = $1", [vehicleId]);
+      }
+    }
 
     // Query active route
     const routeRes = await dbPool.query("SELECT id FROM routes WHERE status = 'ACTIVE' AND deleted_at IS NULL LIMIT 1");

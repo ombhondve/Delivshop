@@ -150,7 +150,10 @@ export const deliveryRepository = {
     const res = await query(
       `SELECT u.id, u.name, u.email, u.phone, u.role, u.is_active, 
               u.employee_id, u.vehicle_number, u.vehicle_type, u.assigned_route, 
-              u.license_number, u.license_expiry, u.joining_date, u.emergency_contact, u.notes,
+              u.license_number, u.license_expiry, u.license_class, u.joining_date, 
+              u.emergency_contact, u.emergency_contact_name, u.emergency_contact_phone, u.emergency_contact_relation,
+              u.address, u.city, u.state, u.pincode, u.date_of_birth, u.gender,
+              u.employment_status, u.account_status, u.must_change_password, u.notes,
               u.created_at, u.updated_at,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED'))::int as active_deliveries,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED')::int as completed_deliveries,
@@ -214,7 +217,10 @@ export const deliveryRepository = {
     const res = await query(
       `SELECT u.id, u.name, u.email, u.phone, u.role, u.is_active, 
               u.employee_id, u.vehicle_number, u.vehicle_type, u.assigned_route, 
-              u.license_number, u.license_expiry, u.joining_date, u.emergency_contact, u.notes,
+              u.license_number, u.license_expiry, u.license_class, u.joining_date, 
+              u.emergency_contact, u.emergency_contact_name, u.emergency_contact_phone, u.emergency_contact_relation,
+              u.address, u.city, u.state, u.pincode, u.date_of_birth, u.gender,
+              u.employment_status, u.account_status, u.must_change_password, u.notes,
               u.created_at, u.updated_at,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED'))::int as active_deliveries,
               (SELECT COUNT(*) FROM deliveries d WHERE d.driver_id = u.id AND d.status = 'DELIVERED')::int as completed_deliveries,
@@ -242,6 +248,7 @@ export const deliveryRepository = {
     name: string;
     email: string;
     phone: string;
+    alternatePhone?: string;
     employeeId: string;
     passwordHash: string;
     vehicleNumber?: string;
@@ -249,19 +256,46 @@ export const deliveryRepository = {
     assignedRoute?: string;
     licenseNumber?: string;
     licenseExpiry?: string;
+    licenseClass?: string;
     joiningDate?: string;
     emergencyContact?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    emergencyContactRelation?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    employmentStatus?: string;
+    accountStatus?: string;
+    mustChangePassword?: boolean;
     notes?: string;
   }): Promise<any> {
     const res = await query(
       `INSERT INTO users (
         name, email, phone, employee_id, password_hash, role,
         vehicle_number, vehicle_type, assigned_route,
-        license_number, license_expiry, joining_date, emergency_contact, notes, is_active
+        license_number, license_expiry, license_class, joining_date,
+        emergency_contact, emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
+        address, city, state, pincode, date_of_birth, gender,
+        employment_status, account_status, must_change_password, notes, is_active
        )
-       VALUES ($1, $2, $3, $4, $5, 'DRIVER', $6, $7, $8, $9, $10, COALESCE($11::date, CURRENT_DATE), $12, $13, TRUE)
-       RETURNING id, name, email, phone, employee_id, role, vehicle_number, vehicle_type, 
-                 assigned_route, license_number, license_expiry, joining_date, emergency_contact, 
+       VALUES (
+        $1, $2, $3, $4, $5, 'DRIVER', 
+        $6, $7, $8, 
+        $9, $10, $11, COALESCE($12::date, CURRENT_DATE),
+        $13, $14, $15, $16,
+        $17, $18, $19, $20, $21::date, $22,
+        COALESCE($23, 'ACTIVE'), COALESCE($24, 'ACTIVE'), COALESCE($25, TRUE), $26, TRUE
+       )
+       RETURNING id, name, email, phone, alternate_phone, employee_id, role, 
+                 vehicle_number, vehicle_type, assigned_route, 
+                 license_number, license_expiry, license_class, joining_date, 
+                 emergency_contact, emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
+                 address, city, state, pincode, date_of_birth, gender,
+                 employment_status, account_status, must_change_password,
                  notes, is_active, created_at, updated_at`,
       [
         data.name.trim(),
@@ -274,8 +308,21 @@ export const deliveryRepository = {
         data.assignedRoute || null,
         data.licenseNumber || null,
         data.licenseExpiry || null,
+        data.licenseClass || null,
         data.joiningDate || null,
         data.emergencyContact || null,
+        data.emergencyContactName || null,
+        data.emergencyContactPhone || null,
+        data.emergencyContactRelation || null,
+        data.address || null,
+        data.city || null,
+        data.state || null,
+        data.pincode || null,
+        data.dateOfBirth || null,
+        data.gender || null,
+        data.employmentStatus || 'ACTIVE',
+        data.accountStatus || 'ACTIVE',
+        data.mustChangePassword ?? true,
         data.notes || null,
       ]
     );
@@ -290,14 +337,28 @@ export const deliveryRepository = {
       'name',
       'email',
       'phone',
+      'alternate_phone',
       'employee_id',
       'vehicle_number',
       'vehicle_type',
       'assigned_route',
       'license_number',
       'license_expiry',
+      'license_class',
       'joining_date',
       'emergency_contact',
+      'emergency_contact_name',
+      'emergency_contact_phone',
+      'emergency_contact_relation',
+      'address',
+      'city',
+      'state',
+      'pincode',
+      'date_of_birth',
+      'gender',
+      'employment_status',
+      'account_status',
+      'must_change_password',
       'notes',
     ];
 
@@ -317,8 +378,12 @@ export const deliveryRepository = {
       `UPDATE users 
        SET ${fields.join(', ')}, updated_at = NOW() 
        WHERE id = $${values.length} AND role = 'DRIVER' AND deleted_at IS NULL 
-       RETURNING id, name, email, phone, employee_id, role, vehicle_number, vehicle_type, 
-                 assigned_route, license_number, license_expiry, joining_date, emergency_contact, 
+       RETURNING id, name, email, phone, alternate_phone, employee_id, role, 
+                 vehicle_number, vehicle_type, assigned_route, 
+                 license_number, license_expiry, license_class, joining_date, 
+                 emergency_contact, emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
+                 address, city, state, pincode, date_of_birth, gender,
+                 employment_status, account_status, must_change_password,
                  notes, is_active, created_at, updated_at`,
       values
     );

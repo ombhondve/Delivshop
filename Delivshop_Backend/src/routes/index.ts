@@ -11,6 +11,7 @@ import inventoryRoutes from './inventory.routes.js';
 import vehicleRoutes from './vehicle.routes.js';
 import routeRoutes from './route.routes.js';
 import assignmentRoutes from './assignment.routes.js';
+import collectionRoutes from './collection.routes.js';
 
 const apiRouter = Router();
 
@@ -26,6 +27,7 @@ apiRouter.use('/deliveries', deliveryRoutes);
 apiRouter.use('/vehicles', vehicleRoutes);
 apiRouter.use('/routes', routeRoutes);
 apiRouter.use('/assignments', assignmentRoutes);
+apiRouter.use('/collections', collectionRoutes);
 
 export default apiRouter;
 

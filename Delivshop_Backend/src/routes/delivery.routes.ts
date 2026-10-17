@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { deliveryController } from '../controllers/delivery.controller.js';
+import { attendanceController } from '../controllers/attendance.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { requireDriverDeliveryAssignment } from '../middleware/ownership.middleware.js';
@@ -10,6 +11,9 @@ import {
   updateDriverSchema,
   assignVehicleSchema,
   resetDriverPasswordSchema,
+  attendanceCheckInSchema,
+  attendanceCheckOutSchema,
+  correctAttendanceSchema,
 } from '../schemas/delivery.schema.js';
 
 const router = Router();
@@ -106,6 +110,52 @@ router.post(
   authenticate,
   authorizeRoles('ADMIN'),
   deliveryController.upsertDriverDocument
+);
+
+// Attendance routes
+router.post(
+  '/drivers/:id/attendance/check-in',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  validateRequest(attendanceCheckInSchema),
+  attendanceController.checkIn
+);
+
+router.post(
+  '/drivers/:id/attendance/check-out',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  validateRequest(attendanceCheckOutSchema),
+  attendanceController.checkOut
+);
+
+router.get(
+  '/drivers/:id/attendance/today',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN', 'SUPPLIER'),
+  attendanceController.getToday
+);
+
+router.get(
+  '/drivers/:id/attendance',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN', 'SUPPLIER'),
+  attendanceController.getHistory
+);
+
+router.get(
+  '/drivers/:id/attendance/summary',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN', 'SUPPLIER'),
+  attendanceController.getSummary
+);
+
+router.patch(
+  '/attendance/:id/correct',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(correctAttendanceSchema),
+  attendanceController.correctAttendance
 );
 
 router.put(

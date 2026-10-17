@@ -3,6 +3,8 @@ import { userRepository } from '../repositories/user.repository.js';
 import { auditService } from './audit.service.js';
 import { AppError } from '../utils/errors.js';
 import { hashPassword } from '../utils/password.js';
+import { generateDriverEmployeeId } from './driver-employee-id.service.js';
+import { attendanceService } from './attendance.service.js';
 
 export const deliveryService = {
   async getDelivery(deliveryId: string) {
@@ -116,6 +118,7 @@ export const deliveryService = {
       name: string;
       email?: string;
       phone: string;
+      alternatePhone?: string;
       employeeId?: string;
       password?: string;
       vehicleNumber?: string;
@@ -123,8 +126,20 @@ export const deliveryService = {
       assignedRoute?: string;
       licenseNumber?: string;
       licenseExpiry?: string;
+      licenseClass?: string;
       joiningDate?: string;
       emergencyContact?: string;
+      emergencyContactName?: string;
+      emergencyContactPhone?: string;
+      emergencyContactRelation?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      dateOfBirth?: string;
+      gender?: string;
+      employmentStatus?: string;
+      accountStatus?: string;
       notes?: string;
     },
     actorId?: string,
@@ -133,8 +148,7 @@ export const deliveryService = {
     // 1. Employee ID formatting and uniqueness check
     let empId = data.employeeId?.trim().toUpperCase();
     if (!empId) {
-      const stamp = Date.now().toString().slice(-4);
-      empId = `EMP-DRV-${stamp}`;
+      empId = await generateDriverEmployeeId();
     }
 
     const existingEmp = await userRepository.findByEmployeeId(empId);
@@ -157,6 +171,7 @@ export const deliveryService = {
       name: data.name,
       email: targetEmail,
       phone: data.phone,
+      alternatePhone: data.alternatePhone,
       employeeId: empId,
       passwordHash,
       vehicleNumber: data.vehicleNumber,
@@ -164,8 +179,21 @@ export const deliveryService = {
       assignedRoute: data.assignedRoute,
       licenseNumber: data.licenseNumber,
       licenseExpiry: data.licenseExpiry,
+      licenseClass: data.licenseClass,
       joiningDate: data.joiningDate,
       emergencyContact: data.emergencyContact,
+      emergencyContactName: data.emergencyContactName,
+      emergencyContactPhone: data.emergencyContactPhone,
+      emergencyContactRelation: data.emergencyContactRelation,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      pincode: data.pincode,
+      dateOfBirth: data.dateOfBirth,
+      gender: data.gender,
+      employmentStatus: data.employmentStatus,
+      accountStatus: data.accountStatus,
+      mustChangePassword: true,
       notes: data.notes,
     });
 
@@ -192,14 +220,28 @@ export const deliveryService = {
       name?: string;
       email?: string;
       phone?: string;
+      alternatePhone?: string;
       employeeId?: string;
       vehicleNumber?: string;
       vehicleType?: string;
       assignedRoute?: string;
       licenseNumber?: string;
       licenseExpiry?: string;
+      licenseClass?: string;
       joiningDate?: string;
       emergencyContact?: string;
+      emergencyContactName?: string;
+      emergencyContactPhone?: string;
+      emergencyContactRelation?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      dateOfBirth?: string;
+      gender?: string;
+      employmentStatus?: string;
+      accountStatus?: string;
+      mustChangePassword?: boolean;
       notes?: string;
     },
     actorId?: string,
@@ -231,16 +273,40 @@ export const deliveryService = {
     if (data.assignedRoute !== undefined) payload.assigned_route = data.assignedRoute || null;
     if (data.licenseNumber !== undefined) payload.license_number = data.licenseNumber || null;
     if (data.licenseExpiry !== undefined) payload.license_expiry = data.licenseExpiry || null;
+    if (data.licenseClass !== undefined) payload.license_class = data.licenseClass || null;
     if (data.joiningDate !== undefined) payload.joining_date = data.joiningDate || null;
     if (data.emergencyContact !== undefined) payload.emergency_contact = data.emergencyContact || null;
+    if (data.emergencyContactName !== undefined) payload.emergency_contact_name = data.emergencyContactName || null;
+    if (data.emergencyContactPhone !== undefined) payload.emergency_contact_phone = data.emergencyContactPhone || null;
+    if (data.emergencyContactRelation !== undefined) payload.emergency_contact_relation = data.emergencyContactRelation || null;
+    if (data.alternatePhone !== undefined) payload.alternate_phone = data.alternatePhone || null;
+    if (data.address !== undefined) payload.address = data.address || null;
+    if (data.city !== undefined) payload.city = data.city || null;
+    if (data.state !== undefined) payload.state = data.state || null;
+    if (data.pincode !== undefined) payload.pincode = data.pincode || null;
+    if (data.dateOfBirth !== undefined) payload.date_of_birth = data.dateOfBirth || null;
+    if (data.gender !== undefined) payload.gender = data.gender || null;
+    if (data.employmentStatus !== undefined) payload.employment_status = data.employmentStatus;
+    if (data.accountStatus !== undefined) payload.account_status = data.accountStatus;
+    if (data.mustChangePassword !== undefined) payload.must_change_password = data.mustChangePassword;
+
     delete payload.employeeId;
     delete payload.vehicleNumber;
     delete payload.vehicleType;
     delete payload.assignedRoute;
     delete payload.licenseNumber;
     delete payload.licenseExpiry;
+    delete payload.licenseClass;
     delete payload.joiningDate;
     delete payload.emergencyContact;
+    delete payload.emergencyContactName;
+    delete payload.emergencyContactPhone;
+    delete payload.emergencyContactRelation;
+    delete payload.alternatePhone;
+    delete payload.dateOfBirth;
+    delete payload.employmentStatus;
+    delete payload.accountStatus;
+    delete payload.mustChangePassword;
 
     const updated = await deliveryRepository.updateDriver(driverId, payload);
 
@@ -502,7 +568,8 @@ export const deliveryService = {
       throw new AppError('Driver not found', 404);
     }
 
-    const [deliveries, auditHistory, salaryConfig, payrollRecords, documents, runs] =
+    const now = new Date();
+    const [deliveries, auditHistory, salaryConfig, payrollRecords, documents, runs, attendanceSummary, recentAttendance] =
       await Promise.all([
         deliveryRepository.getDriverDeliveries(driverId),
         deliveryRepository.getDriverAuditHistory(driverId),
@@ -510,6 +577,8 @@ export const deliveryService = {
         deliveryRepository.getPayrollRecords(driverId),
         deliveryRepository.getDriverDocuments(driverId),
         deliveryRepository.getDriverRunsHistory(driverId),
+        attendanceService.getMonthlySummary(driverId, now.getFullYear(), now.getMonth() + 1),
+        attendanceService.getHistory(driverId, 15),
       ]);
 
     return {
@@ -520,6 +589,8 @@ export const deliveryService = {
       payrollRecords,
       documents,
       auditHistory,
+      attendanceSummary,
+      recentAttendance,
     };
   },
 };

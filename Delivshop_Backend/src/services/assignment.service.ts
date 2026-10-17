@@ -125,6 +125,14 @@ export const assignmentService = {
       notes?: string;
       proofOfDeliveryUrl?: string;
       failureReason?: string;
+      deliveredCratesCount?: number;
+      returnedCratesCount?: number;
+      shortageReason?: string | null;
+      collectedAmount?: number;
+      paymentMethod?: string;
+      otpCode?: string;
+      latitude?: number;
+      longitude?: number;
     },
     actorId?: string,
     ipAddress?: string
@@ -137,10 +145,7 @@ export const assignmentService = {
     const updatedStop = await assignmentRepository.updateStopStatus(
       runId,
       stopSequence,
-      data.status,
-      data.notes,
-      data.proofOfDeliveryUrl,
-      data.failureReason
+      data
     );
 
     if (!updatedStop) {
