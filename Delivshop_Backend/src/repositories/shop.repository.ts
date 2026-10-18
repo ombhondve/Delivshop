@@ -371,9 +371,9 @@ export const shopRepository = {
       const shop = shopRes.rows[0];
       const isActive = status === 'ACTIVE';
 
-      // Update user account is_active
+      // Update user account is_active (only for SHOP role to prevent accidental deactivation of admin or supplier accounts)
       await client.query(
-        'UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2',
+        "UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2 AND role = 'SHOP'",
         [isActive, shop.owner_id]
       );
 
@@ -668,10 +668,10 @@ export const shopRepository = {
            WHERE id = $1`,
           [shop.id, actorId || null, reason || 'Archived via administrative deactivation-first deletion']
         );
-        // Deactivate owner user login account
+        // Deactivate owner user login account (only for users with role SHOP)
         if (shop.owner_id) {
           await client.query(
-            `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`,
+            "UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1 AND role = 'SHOP'",
             [shop.owner_id]
           );
         }

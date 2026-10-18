@@ -1,3 +1,4 @@
+import { query } from '../config/database.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/tokens.js';
@@ -89,12 +90,23 @@ export const authService = {
       ipAddress,
     });
 
+    let shopRecord: any = null;
+    if (user.role === 'SHOP') {
+      const shopRes = await query(
+        `SELECT s.id, s.shop_id, s.name, s.shop_type, s.address, s.credit_limit, s.payment_terms
+         FROM shops s WHERE s.owner_id = $1 AND s.deleted_at IS NULL LIMIT 1`,
+        [user.id]
+      );
+      shopRecord = shopRes.rows[0] || null;
+    }
+
     const authUser = {
       id: user.id,
       email: user.email,
       role: user.role,
       driverId: user.role === 'DRIVER' ? user.id : undefined,
       employeeId: user.employee_id,
+      shopId: shopRecord?.shop_id,
     };
 
     const tokens = {
@@ -111,9 +123,11 @@ export const authService = {
         role: user.role,
         phone: user.phone,
         employeeId: user.employee_id,
+        shopId: shopRecord?.shop_id,
         createdAt: user.created_at,
       },
       tokens,
+      shop: shopRecord,
     };
   },
 
@@ -122,12 +136,25 @@ export const authService = {
     if (!user) {
       throw new Error('User not found');
     }
+    let shopRecord: any = null;
+    if (user.role === 'SHOP') {
+      const shopRes = await query(
+        `SELECT s.id, s.shop_id, s.name, s.shop_type, s.address, s.credit_limit, s.payment_terms
+         FROM shops s WHERE s.owner_id = $1 AND s.deleted_at IS NULL LIMIT 1`,
+        [user.id]
+      );
+      shopRecord = shopRes.rows[0] || null;
+    }
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
       phone: user.phone,
+      employeeId: user.employee_id,
+      shopId: shopRecord?.shop_id,
+      shop: shopRecord,
       createdAt: user.created_at,
     };
   },
@@ -151,10 +178,23 @@ export const authService = {
       throw new Error('Account has been deactivated');
     }
 
+    let shopRecord: any = null;
+    if (user.role === 'SHOP') {
+      const shopRes = await query(
+        `SELECT s.id, s.shop_id, s.name, s.shop_type, s.address, s.credit_limit, s.payment_terms
+         FROM shops s WHERE s.owner_id = $1 AND s.deleted_at IS NULL LIMIT 1`,
+        [user.id]
+      );
+      shopRecord = shopRes.rows[0] || null;
+    }
+
     const authUser = {
       id: user.id,
       email: user.email,
       role: user.role,
+      driverId: user.role === 'DRIVER' ? user.id : undefined,
+      employeeId: user.employee_id,
+      shopId: shopRecord?.shop_id,
     };
 
     const tokens = {
@@ -170,9 +210,12 @@ export const authService = {
         name: user.name,
         role: user.role,
         phone: user.phone,
+        employeeId: user.employee_id,
+        shopId: shopRecord?.shop_id,
         createdAt: user.created_at,
       },
       tokens,
+      shop: shopRecord,
     };
   },
 };

@@ -145,33 +145,43 @@ async function executeFetch<T>(
 export async function apiClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const primaryBaseUrl = getApiBaseUrl();
 
-  try {
-    return await executeFetch<T>(primaryBaseUrl, endpoint, options);
-  } catch (err: any) {
-    // If primary local URL fails with network/timeout error, and primary is not the production cloud URL,
-    // automatically failover to verified deployed production cloud backend
-    const isLocalUrl =
-      primaryBaseUrl.includes('192.168.') ||
-      primaryBaseUrl.includes('localhost') ||
-      primaryBaseUrl.includes('127.0.0.1') ||
-      primaryBaseUrl.includes('10.0.2.2');
+  const isLocalUrl =
+    primaryBaseUrl.includes('192.168.') ||
+    primaryBaseUrl.includes('localhost') ||
+    primaryBaseUrl.includes('127.0.0.1') ||
+    primaryBaseUrl.includes('10.0.2.2');
 
+  // If testing a local LAN address in development, probe with a fast timeout (2500ms)
+  // so the user is never stuck waiting 15s if the local backend server is not running
+  const localProbeTimeout = isLocalUrl ? Math.min(options.timeout || 2500, 2500) : (options.timeout || 20000);
+
+  try {
+    return await executeFetch<T>(primaryBaseUrl, endpoint, { ...options, timeout: localProbeTimeout });
+  } catch (err: any) {
     const isNetworkOrTimeout = err.status === 0 || err.code === 'NETWORK_ERROR' || err.code === 'TIMEOUT';
 
     if (isLocalUrl && isNetworkOrTimeout && primaryBaseUrl !== PRODUCTION_API_URL) {
       console.warn(
-        `[ApiClient] Local backend at ${primaryBaseUrl} unreachable (${err.message}). Failing over to production cloud backend at ${PRODUCTION_API_URL}...`
+        `[ApiClient] Local backend at ${primaryBaseUrl} unreachable (${err.message}). Seamlessly failing over to production cloud backend at ${PRODUCTION_API_URL}...`
       );
       try {
-        return await executeFetch<T>(PRODUCTION_API_URL, endpoint, options);
+        // Allow up to 25s for cloud backend to handle potential serverless cold start and DB latency
+        const cloudTimeout = Math.max(options.timeout || 25000, 25000);
+        return await executeFetch<T>(PRODUCTION_API_URL, endpoint, { ...options, timeout: cloudTimeout });
       } catch (cloudErr: any) {
-        // If the cloud backend responded with a real HTTP status (e.g. 401 Invalid Credentials, 429 Rate Limit, etc.),
-        // rethrow that specific error directly so the UI displays the actual server message instead of a false network failure.
+        // If the cloud backend responded with a real HTTP status (e.g. 401, 403, 429), rethrow directly
         if (cloudErr instanceof ApiClientError && cloudErr.status > 0) {
           throw cloudErr;
         }
+        if (cloudErr?.code === 'TIMEOUT') {
+          throw new ApiClientError(
+            'The cloud server is taking longer than usual to respond (cold start). Please try again in a moment.',
+            0,
+            'TIMEOUT'
+          );
+        }
         throw new ApiClientError(
-          `Unable to connect to Delivshop backend. (Local host ${primaryBaseUrl} and Cloud fallback ${PRODUCTION_API_URL} unreachable). Please verify your internet connection.`,
+          'Unable to connect to Delivshop backend. Please check your internet connection.',
           0,
           'NETWORK_ERROR'
         );

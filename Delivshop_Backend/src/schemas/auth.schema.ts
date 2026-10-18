@@ -16,10 +16,25 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  body: z.object({
-    email: z.string().min(3, 'Email or Employee ID is required').max(255),
-    password: z.string().min(1, 'Password is required'),
-  }),
+  body: z.preprocess(
+    (raw: any) => {
+      if (raw && typeof raw === 'object') {
+        const id = raw.email ?? raw.identifier ?? raw.shopId ?? raw.username ?? raw.employeeId;
+        return {
+          ...raw,
+          email: typeof id === 'string' ? id.trim() : id,
+        };
+      }
+      return raw;
+    },
+    z.object({
+      email: z
+        .string({ required_error: 'Email, Shop ID, or Employee ID is required' })
+        .min(2, 'Email, Shop ID, or Employee ID must be at least 2 characters')
+        .max(255),
+      password: z.string({ required_error: 'Password is required' }).min(1, 'Password is required'),
+    })
+  ),
 });
 
 export const refreshTokenSchema = z.object({

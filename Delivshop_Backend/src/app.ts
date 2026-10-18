@@ -104,8 +104,13 @@ export const createApp = (): Application => {
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
   app.use(cookieParser());
 
-  // Root health endpoint for deployment probes
-  app.get('/', (_req: Request, res: Response) => {
+  // Root health endpoint for deployment probes and uptime monitors
+  app.all(['/', '', '/api', '/api/'], (req: Request, res: Response) => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).end();
+      return;
+    }
+
     if (ENV_CONFIG_ERRORS.length > 0) {
       res.status(200).json({
         status: 'CONFIGURATION_REQUIRED',

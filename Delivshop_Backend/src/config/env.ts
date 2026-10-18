@@ -85,7 +85,10 @@ if (validationErrors.length > 0) {
 }
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test', 'preview', 'staging']).default(normalizedNodeEnv),
+  NODE_ENV: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim().length > 0 ? v.trim().toLowerCase() : normalizedNodeEnv),
+    z.enum(['development', 'production', 'test', 'preview', 'staging']).default(normalizedNodeEnv)
+  ),
   PORT: z.preprocess((v) => sanitizeString(v), z.coerce.number().default(5000)),
   DATABASE_URL: z.preprocess(
     (v) => sanitizeString(v) || resolvedDbUrl || 'postgresql://postgres:postgres@localhost:5432/delivshop_db',
@@ -110,5 +113,16 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.preprocess((v) => sanitizeString(v), z.coerce.number().default(100)),
 });
 
-export const ENV = envSchema.parse(process.env);
+const parsedEnv = envSchema.safeParse(process.env);
+if (!parsedEnv.success) {
+  console.warn('⚠️ Environment schema parsing warnings:', parsedEnv.error.format());
+  for (const issue of parsedEnv.error.issues) {
+    validationErrors.push({
+      key: issue.path.join('.'),
+      message: issue.message,
+    });
+  }
+}
+
+export const ENV = parsedEnv.success ? parsedEnv.data : envSchema.parse({});
 export const ALLOWED_ORIGIN_LIST = ENV.ALLOWED_ORIGINS.split(',').map((o) => o.trim());

@@ -30,6 +30,16 @@ export const userRepository = {
          LOWER(email) = $1 
          OR UPPER(employee_id) = UPPER($2)
          OR ($3 != '' AND REPLACE(REPLACE(REPLACE(COALESCE(phone, ''), ' ', ''), '-', ''), '+91', '') LIKE '%' || $3)
+         OR id IN (
+           SELECT owner_id FROM shops 
+           WHERE (
+             LOWER(shop_id) = $1 
+             OR UPPER(shop_id) = UPPER($2) 
+             OR LOWER(email) = $1
+             OR ($3 != '' AND REPLACE(REPLACE(REPLACE(COALESCE(phone, ''), ' ', ''), '-', ''), '+91', '') LIKE '%' || $3)
+           )
+           AND deleted_at IS NULL
+         )
        ) 
        AND deleted_at IS NULL 
        LIMIT 1`,
