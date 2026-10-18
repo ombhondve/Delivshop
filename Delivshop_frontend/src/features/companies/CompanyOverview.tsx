@@ -33,7 +33,6 @@ import { Button } from '../../components/common/Button';
 import { useNavigation } from '../../context/NavigationContext';
 import { AddCompanyModal } from './AddCompanyModal';
 import { EditCompanyModal } from './EditCompanyModal';
-import { CompanyDetailModal } from './CompanyDetailModal';
 import { CompanyStatusDialog } from './CompanyStatusDialog';
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
@@ -66,8 +65,6 @@ export const CompanyOverview: React.FC = () => {
 
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [selectedForDetails, setSelectedForDetails] = useState<Company | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedForEdit, setSelectedForEdit] = useState<Company | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedForStatus, setSelectedForStatus] = useState<Company | null>(null);
@@ -135,29 +132,6 @@ export const CompanyOverview: React.FC = () => {
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
-
-  // Handle route deep linking /companies/:companyId
-  useEffect(() => {
-    if (companyId) {
-      // Find in existing items or fetch directly
-      const found = data.items.find((c) => c.id === companyId || c.companyCode === companyId);
-      if (found) {
-        setSelectedForDetails(found);
-        setIsDetailsOpen(true);
-      } else {
-        api.companies.get(companyId)
-          .then((comp) => {
-            if (comp) {
-              setSelectedForDetails(comp);
-              setIsDetailsOpen(true);
-            }
-          })
-          .catch((err) => {
-            console.warn('Could not load company for deep link:', err.message);
-          });
-      }
-    }
-  }, [companyId, data.items]);
 
   const handleRefreshAll = () => {
     fetchStats();
@@ -916,10 +890,10 @@ export const CompanyOverview: React.FC = () => {
                       {/* Column 9: Actions */}
                       <td style={{ padding: '6px 10px', textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          {/* View Details */}
+                          {/* View Full Page Details */}
                           <button
                             type="button"
-                            onClick={() => navigate(`/companies/${company.id}`)}
+                            onClick={() => navigate(`/admin/companies/${company.id}`)}
                             className="btn btn-secondary btn-table-action"
                             style={{
                               display: 'inline-flex',
@@ -1182,31 +1156,6 @@ export const CompanyOverview: React.FC = () => {
         onCompanyUpdated={() => {
           fetchStats();
           fetchCompanies();
-        }}
-      />
-
-      <CompanyDetailModal
-        company={selectedForDetails}
-        isOpen={isDetailsOpen}
-        onClose={() => {
-          setIsDetailsOpen(false);
-          setSelectedForDetails(null);
-          // If we were on /companies/:companyId, replace state
-          if (companyId) {
-            navigate('/companies');
-          }
-        }}
-        onEdit={(company: Company) => {
-          setSelectedForDetails(null);
-          setIsDetailsOpen(false);
-          setSelectedForEdit(company);
-          setIsEditOpen(true);
-        }}
-        onToggleStatus={(company: Company) => {
-          setSelectedForDetails(null);
-          setIsDetailsOpen(false);
-          setSelectedForStatus(company);
-          setIsStatusOpen(true);
         }}
       />
 

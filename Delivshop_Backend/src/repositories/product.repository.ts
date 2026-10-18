@@ -101,9 +101,9 @@ export const productRepository = {
       paramIdx++;
     }
 
-    // Company filter
+    // Company filter (supports UUID or company code)
     if (params.companyId) {
-      conditions.push(`p.company_id = $${paramIdx}`);
+      conditions.push(`(p.company_id::text = $${paramIdx} OR c.company_code = $${paramIdx})`);
       values.push(params.companyId);
       paramIdx++;
     }

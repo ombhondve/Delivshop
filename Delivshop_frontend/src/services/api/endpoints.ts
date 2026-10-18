@@ -41,6 +41,10 @@ import {
   BulkReminderResponse,
   ReminderHistoryItem,
   CreateAdminOrderPayload,
+  PickupRecord,
+  SupplierBill,
+  SupplierPayment,
+  SupplierFinancialSummary,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -105,6 +109,102 @@ export const api = {
         method: 'DELETE',
         body: JSON.stringify({ reason }),
       });
+    },
+
+    async getFinancialSummary(companyId: string): Promise<SupplierFinancialSummary> {
+      return apiClient<SupplierFinancialSummary>(`companies/${companyId}/financial-summary`);
+    },
+
+    async listPickups(companyId: string, params: any = {}): Promise<PaginatedResult<PickupRecord>> {
+      const query = new URLSearchParams();
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+      if (params.status) query.set('status', params.status);
+      if (params.startDate) query.set('startDate', params.startDate);
+      if (params.endDate) query.set('endDate', params.endDate);
+      if (params.routeId) query.set('routeId', params.routeId);
+      if (params.isBilled !== undefined) query.set('isBilled', String(params.isBilled));
+      const qs = query.toString();
+      return apiClient<PaginatedResult<PickupRecord>>(`companies/${companyId}/pickups${qs ? `?${qs}` : ''}`);
+    },
+
+    async verifyPickup(companyId: string, pickupId: string, payload: any): Promise<PickupRecord> {
+      return apiClient<PickupRecord>(`companies/${companyId}/pickups/${pickupId}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async listBills(companyId: string, params: any = {}): Promise<PaginatedResult<SupplierBill>> {
+      const query = new URLSearchParams();
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+      if (params.status) query.set('status', params.status);
+      if (params.paymentStatus) query.set('paymentStatus', params.paymentStatus);
+      if (params.startDate) query.set('startDate', params.startDate);
+      if (params.endDate) query.set('endDate', params.endDate);
+      const qs = query.toString();
+      return apiClient<PaginatedResult<SupplierBill>>(`companies/${companyId}/bills${qs ? `?${qs}` : ''}`);
+    },
+
+    async getBill(companyId: string, billId: string): Promise<SupplierBill> {
+      return apiClient<SupplierBill>(`companies/${companyId}/bills/${billId}`);
+    },
+
+    async generateBill(companyId: string, payload: any): Promise<SupplierBill> {
+      return apiClient<SupplierBill>(`companies/${companyId}/bills/generate`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async recordPayment(companyId: string, billId: string, payload: any): Promise<{ payment: SupplierPayment; bill: SupplierBill }> {
+      return apiClient<{ payment: SupplierPayment; bill: SupplierBill }>(`companies/${companyId}/bills/${billId}/payments`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async downloadPickupSummaryPdf(companyId: string, pickupId: string, pickupReference = 'pickup'): Promise<void> {
+      const token = tokenStore.getAccessToken();
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const url = `${apiUrl.replace(/\/+$/, '')}/companies/${companyId}/pickups/${pickupId}/summary-pdf`;
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to generate Pickup Summary PDF (${res.status} ${res.statusText})`);
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `pickup_summary_${pickupReference}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    },
+
+    async downloadSupplierBillPdf(companyId: string, billId: string, billNumber = 'bill'): Promise<void> {
+      const token = tokenStore.getAccessToken();
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const url = `${apiUrl.replace(/\/+$/, '')}/companies/${companyId}/bills/${billId}/pdf`;
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to generate Supplier Bill PDF (${res.status} ${res.statusText})`);
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `supplier_bill_${billNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
     },
   },
 

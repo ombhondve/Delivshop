@@ -30,6 +30,10 @@ export interface CompanyRecord {
   country: string;
   status: CompanyStatus;
   notes?: string | null;
+  payment_terms?: string | null;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_ifsc?: string | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
   created_by?: string | null;
@@ -59,6 +63,10 @@ export interface Company {
   country: string;
   latitude?: number | null;
   longitude?: number | null;
+  paymentTerms?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankIfsc?: string | null;
   status: CompanyStatus;
   notes?: string | null;
   createdBy?: string | null;
