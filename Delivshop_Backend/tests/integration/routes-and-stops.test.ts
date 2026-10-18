@@ -31,7 +31,7 @@ describe('Delivery Routes, Shop Sequences, and Versioning Suite', () => {
       });
     });
 
-    const shopsRes = await dbPool.query('SELECT id FROM shops ORDER BY created_at ASC LIMIT 2');
+    const shopsRes = await dbPool.query("SELECT id FROM shops WHERE status = 'ACTIVE' AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 2");
     testShopId1 = shopsRes.rows[0]?.id;
     if (shopsRes.rows.length < 2) {
       const userRes = await dbPool.query('SELECT id FROM users LIMIT 1');
@@ -50,6 +50,9 @@ describe('Delivery Routes, Shop Sequences, and Versioning Suite', () => {
 
   afterAll(async () => {
     if (testRouteId) {
+      await dbPool.query('DELETE FROM delivery_runs WHERE route_id = $1', [testRouteId]);
+      await dbPool.query('DELETE FROM route_stops WHERE route_id = $1', [testRouteId]);
+      await dbPool.query('DELETE FROM route_versions WHERE route_id = $1', [testRouteId]);
       await dbPool.query('DELETE FROM routes WHERE id = $1', [testRouteId]);
     }
     await new Promise<void>((resolve) => {

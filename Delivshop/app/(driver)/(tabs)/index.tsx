@@ -21,6 +21,7 @@ import { DriverHeader } from '@/components/driver/DriverHeader';
 import { MetricCard } from '@/components/driver/MetricCard';
 import { StatusBadge } from '@/components/driver/StatusBadge';
 import { DeliveryRun, DriverAttendance, VehicleInspection, CollectionSummary } from '@/types/driver.types';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function DriverDashboardScreen() {
   const { user } = useAuth();
@@ -393,7 +394,7 @@ export default function DriverDashboardScreen() {
         <View style={[styles.metricsGrid, { marginTop: 10 }]}>
           <MetricCard
             label="Collections"
-            value={`₹${(collectionSummary?.totalCollected || 0).toLocaleString('en-IN')}`}
+            value={formatCurrency(collectionSummary?.totalCollected || 0)}
             subtitle={`${collectionSummary?.totalReceiptsCount || 0} payments`}
             iconName="cash-outline"
             variant="amber"

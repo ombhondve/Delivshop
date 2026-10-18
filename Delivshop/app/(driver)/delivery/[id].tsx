@@ -25,6 +25,7 @@ import { QuantityCounter } from '@/components/driver/QuantityCounter';
 import { ConfirmModal } from '@/components/driver/ConfirmModal';
 import { PaymentMethod, DeliveryOrderItem } from '@/types/driver.types';
 import { useAuth } from '@/features/auth/AuthContext';
+import { formatCurrency } from '@/utils/formatters';
 
 interface ItemDeliveryState {
   productId: string;
@@ -272,7 +273,7 @@ export default function ShopDeliveryScreen() {
         'Delivery Completed!',
         `Successfully delivered to ${delivery?.shop_name || 'shop'}.\n${
           collectPayment && parseFloat(paymentAmount) > 0
-            ? `Receipt generated for ₹${parseFloat(paymentAmount).toFixed(2)}.`
+            ? `Receipt generated for ${formatCurrency(paymentAmount)}.`
             : ''
         }`,
         [{ text: 'OK', onPress: () => router.back() }]
@@ -485,11 +486,11 @@ export default function ShopDeliveryScreen() {
                         <View style={{ flex: 1 }}>
                           <Text style={styles.itemName}>{item.productName}</Text>
                           <Text style={styles.itemMeta}>
-                            Ordered: {item.orderedQty} {item.unit} • ₹{item.unitPrice.toFixed(2)} / {item.unit}
+                            Ordered: {item.orderedQty} {item.unit} • {formatCurrency(item.unitPrice)} / {item.unit}
                           </Text>
                         </View>
                         <Text style={styles.itemSubtotal}>
-                          ₹{(item.deliveredQty * item.unitPrice).toFixed(2)}
+                          {formatCurrency(item.deliveredQty * item.unitPrice)}
                         </Text>
                       </View>
 
@@ -567,7 +568,7 @@ export default function ShopDeliveryScreen() {
                   onPress={() => setActiveStep('PAYMENT')}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.stepNextBtnText}>Proceed to Payment (₹{calculatedTotal.toFixed(2)}) →</Text>
+                  <Text style={styles.stepNextBtnText}>Proceed to Payment ({formatCurrency(calculatedTotal)}) →</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -577,9 +578,9 @@ export default function ShopDeliveryScreen() {
               <View style={styles.stepContainer}>
                 <View style={styles.paymentSummaryCard}>
                   <Text style={styles.paymentCardLabel}>AUTHORITATIVE ORDER DUE</Text>
-                  <Text style={styles.paymentCardAmount}>₹{Number(delivery.total || calculatedTotal).toFixed(2)}</Text>
+                  <Text style={styles.paymentCardAmount}>{formatCurrency(delivery.total || calculatedTotal)}</Text>
                   <Text style={styles.paymentCardSub}>
-                    Delivered Items Value: ₹{calculatedTotal.toFixed(2)}
+                    Delivered Items Value: {formatCurrency(calculatedTotal)}
                   </Text>
                 </View>
 
@@ -759,7 +760,7 @@ export default function ShopDeliveryScreen() {
                     <Text style={styles.summaryLabel}>Payment to Record:</Text>
                     <Text style={[styles.summaryVal, { color: DelivColors.emeraldGreen, fontWeight: '700' }]}>
                       {collectPayment && parseFloat(paymentAmount) > 0
-                        ? `₹${parseFloat(paymentAmount).toFixed(2)} (${paymentMethod})`
+                        ? `${formatCurrency(paymentAmount)} (${paymentMethod})`
                         : 'None (Credit Account)'}
                     </Text>
                   </View>
@@ -801,7 +802,7 @@ export default function ShopDeliveryScreen() {
       <ConfirmModal
         visible={confirmModalVisible}
         title="Confirm Shop Delivery"
-        message={`Are you sure you want to finalize delivery for ${delivery.shop_name}?\n\n• Delivered: ${itemsState.reduce((s, i) => s + i.deliveredQty, 0)} items\n• Payment: ₹${collectPayment ? paymentAmount : '0.00'}\n• Receiver: ${recipientName}`}
+        message={`Are you sure you want to finalize delivery for ${delivery.shop_name}?\n\n• Delivered: ${itemsState.reduce((s, i) => s + i.deliveredQty, 0)} items\n• Payment: ${formatCurrency(collectPayment ? paymentAmount : 0)}\n• Receiver: ${recipientName}`}
         confirmText="Yes, Complete Delivery"
         cancelText="Review Again"
         onConfirm={handleExecuteCompletion}

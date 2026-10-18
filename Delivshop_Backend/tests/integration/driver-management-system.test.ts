@@ -228,7 +228,7 @@ describe('DELIVSHOP Driver Management System - End-to-End Suite', () => {
   it('9. Driver can record cash/UPI collection for authorized stop and receipt is generated', async () => {
     // Create a temporary run for testing collections
     const veh = await dbPool.query("SELECT id FROM vehicles WHERE is_active = TRUE LIMIT 1");
-    const route = await dbPool.query("SELECT id FROM routes WHERE status = 'ACTIVE' LIMIT 1");
+    const route = await dbPool.query("SELECT id FROM routes WHERE status IN ('ACTIVE', 'PUBLISHED') AND deleted_at IS NULL LIMIT 1");
 
     const runRes = await dbPool.query(
       `INSERT INTO delivery_runs (

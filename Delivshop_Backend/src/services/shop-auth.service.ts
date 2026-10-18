@@ -12,17 +12,30 @@ export const shopAuthService = {
    */
   async login(credentials: { shopId: string; password: string }, ipAddress?: string) {
     const identifier = credentials.shopId.trim();
+    const normalizedId = identifier.toLowerCase();
+    const digits = identifier.replace(/\D/g, '');
+    const tenDigits = digits.length >= 10 ? digits.slice(-10) : '';
 
-    // Find shop by shop_id or email
+    // Find shop by shop_id (case-insensitive), email, or phone
     const shopRes = await query(
       `SELECT s.*, u.id as user_id, u.email as user_email, u.password_hash, u.is_active as user_active,
-              sa.must_change_password, sa.failed_login_attempts, sa.locked_until
+              sa.id as shop_account_id, COALESCE(sa.must_change_password, false) as must_change_password, 
+              COALESCE(sa.failed_login_attempts, 0) as failed_login_attempts, sa.locked_until
        FROM shops s
        JOIN users u ON s.owner_id = u.id
-       JOIN shop_accounts sa ON s.id = sa.shop_id
-       WHERE (s.shop_id = $1 OR LOWER(s.email) = LOWER($1) OR LOWER(u.email) = LOWER($1))
+       LEFT JOIN shop_accounts sa ON s.id = sa.shop_id
+       WHERE (
+         LOWER(s.shop_id) = $1 
+         OR LOWER(s.email) = $1 
+         OR LOWER(u.email) = $1
+         OR ($2 != '' AND (
+           REPLACE(REPLACE(COALESCE(s.phone, ''), ' ', ''), '-', '') LIKE '%' || $2
+           OR REPLACE(REPLACE(COALESCE(u.phone, ''), ' ', ''), '-', '') LIKE '%' || $2
+         ))
+       )
+       AND s.deleted_at IS NULL
        LIMIT 1`,
-      [identifier]
+      [normalizedId, tenDigits]
     );
 
     if (shopRes.rowCount === 0) {
@@ -31,6 +44,16 @@ export const shopAuthService = {
     }
 
     const row = shopRes.rows[0];
+
+    // Ensure shop_accounts entry exists for shops created before migration 002
+    if (!row.shop_account_id) {
+      await query(
+        `INSERT INTO shop_accounts (shop_id, user_id, must_change_password)
+         VALUES ($1, $2, FALSE)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [row.id, row.user_id]
+      );
+    }
 
     // Check account status
     if (row.status === 'INACTIVE' || !row.user_active) {

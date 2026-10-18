@@ -3,10 +3,12 @@ import Constants from 'expo-constants';
 import { SecureTokenStorage } from '@/utils/storage';
 import { ApiResponse, ApiErrorResponse } from '@/types/api';
 
+export const PRODUCTION_API_URL = 'https://delivshop-vuw7.vercel.app/api';
+
 /**
  * Dynamically resolves the backend API Base URL.
- * Automatically detects the Metro packager host IP in Expo Go and development builds,
- * so physical devices connect seamlessly to the developer machine without manual IP configuration.
+ * In production releases, strictly requires a secure HTTPS endpoint (defaults to PRODUCTION_API_URL).
+ * In development / Expo Go, supports explicit env vars, Metro host IP auto-discovery, and local fallbacks.
  */
 export function getApiBaseUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
@@ -19,9 +21,16 @@ export function getApiBaseUrl(): string {
 
   const metroIp = hostUri ? hostUri.split(':')[0] : null;
 
-  // 1. If explicit env URL provided:
+  // 1. Production Mode Check: Never expose private IPs or localhost in production builds
+  if (!__DEV__) {
+    if (envUrl && envUrl.startsWith('https://')) {
+      return envUrl;
+    }
+    return PRODUCTION_API_URL;
+  }
+
+  // 2. Development Mode: If explicit env URL provided:
   if (envUrl) {
-    // If running on a physical native device via Expo Go but envUrl was set to localhost / 127.0.0.1:
     const isLoopback = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
     if (isLoopback && Platform.OS !== 'web' && metroIp && metroIp !== 'localhost' && metroIp !== '127.0.0.1') {
       // Intelligently substitute localhost with the actual host computer LAN IP
@@ -30,16 +39,20 @@ export function getApiBaseUrl(): string {
     return envUrl;
   }
 
-  // 2. If running in Expo Go / development mode with Metro packager IP detected:
+  // 3. Development Mode: Auto-detect Metro packager host IP
   if (metroIp && metroIp !== 'localhost' && metroIp !== '127.0.0.1') {
     return `http://${metroIp}:5000/api`;
   }
 
-  // 3. Platform-specific fallbacks (Android Emulator vs Web/Local)
+  // 4. Android Emulator fallback vs Web/Local/Production
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:5000/api';
   }
-  return 'http://localhost:5000/api';
+  if (Platform.OS === 'web') {
+    return 'http://localhost:5000/api';
+  }
+
+  return PRODUCTION_API_URL;
 }
 
 export class ApiClientError extends Error {
@@ -61,10 +74,13 @@ interface RequestOptions extends RequestInit {
   timeout?: number;
 }
 
-export async function apiClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+async function executeFetch<T>(
+  targetBaseUrl: string,
+  endpoint: string,
+  options: RequestOptions
+): Promise<T> {
   const { requiresAuth = true, headers: customHeaders, timeout = 15000, ...restOptions } = options;
-
-  const baseUrl = getApiBaseUrl().replace(/\/+$/, '');
+  const baseUrl = targetBaseUrl.replace(/\/+$/, '');
   const cleanEndpoint = endpoint.replace(/^\/+/, '');
   const url = `${baseUrl}/${cleanEndpoint}`;
 
@@ -81,7 +97,6 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
     }
   }
 
-  // Enforce a strict timeout using AbortController so requests never hang indefinitely
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
@@ -97,13 +112,13 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   } catch (networkError: any) {
     if (networkError.name === 'AbortError' || networkError.message?.includes('aborted')) {
       throw new ApiClientError(
-        `Connection timed out (${Math.round(timeout / 1000)}s) connecting to ${url}. Please verify your device and computer are on the same Wi-Fi network and backend is running.`,
+        `Connection timed out (${Math.round(timeout / 1000)}s) connecting to ${url}.`,
         0,
         'TIMEOUT'
       );
     }
     throw new ApiClientError(
-      `Unable to connect to Delivshop backend at ${url}. Please verify the backend server is running and accessible on this network.`,
+      `Unable to connect to Delivshop backend at ${url}.`,
       0,
       'NETWORK_ERROR'
     );
@@ -126,3 +141,44 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   const successResponse = data as ApiResponse<T>;
   return successResponse.data ?? (data as T);
 }
+
+export async function apiClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const primaryBaseUrl = getApiBaseUrl();
+
+  try {
+    return await executeFetch<T>(primaryBaseUrl, endpoint, options);
+  } catch (err: any) {
+    // If primary local URL fails with network/timeout error, and primary is not the production cloud URL,
+    // automatically failover to verified deployed production cloud backend
+    const isLocalUrl =
+      primaryBaseUrl.includes('192.168.') ||
+      primaryBaseUrl.includes('localhost') ||
+      primaryBaseUrl.includes('127.0.0.1') ||
+      primaryBaseUrl.includes('10.0.2.2');
+
+    const isNetworkOrTimeout = err.status === 0 || err.code === 'NETWORK_ERROR' || err.code === 'TIMEOUT';
+
+    if (isLocalUrl && isNetworkOrTimeout && primaryBaseUrl !== PRODUCTION_API_URL) {
+      console.warn(
+        `[ApiClient] Local backend at ${primaryBaseUrl} unreachable (${err.message}). Failing over to production cloud backend at ${PRODUCTION_API_URL}...`
+      );
+      try {
+        return await executeFetch<T>(PRODUCTION_API_URL, endpoint, options);
+      } catch (cloudErr: any) {
+        // If the cloud backend responded with a real HTTP status (e.g. 401 Invalid Credentials, 429 Rate Limit, etc.),
+        // rethrow that specific error directly so the UI displays the actual server message instead of a false network failure.
+        if (cloudErr instanceof ApiClientError && cloudErr.status > 0) {
+          throw cloudErr;
+        }
+        throw new ApiClientError(
+          `Unable to connect to Delivshop backend. (Local host ${primaryBaseUrl} and Cloud fallback ${PRODUCTION_API_URL} unreachable). Please verify your internet connection.`,
+          0,
+          'NETWORK_ERROR'
+        );
+      }
+    }
+
+    throw err;
+  }
+}
+

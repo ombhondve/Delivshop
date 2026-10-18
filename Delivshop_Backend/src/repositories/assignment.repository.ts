@@ -247,7 +247,7 @@ export const assignmentRepository = {
       errors.push('The selected delivery route does not exist.');
     } else {
       const r = routeRes.rows[0];
-      if (r.status !== 'ACTIVE') {
+      if (r.status !== 'ACTIVE' && r.status !== 'PUBLISHED') {
         errors.push(`Route "${r.name}" is in ${r.status} status and cannot be dispatched.`);
       }
       if (r.stop_count === 0) {

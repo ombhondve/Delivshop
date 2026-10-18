@@ -50,8 +50,8 @@ describe('Assignments Secure Deletion & Operational Lifecycle Test Suite', () =>
       await dbPool.query("UPDATE vehicle_documents SET expiry_date = '2028-12-31' WHERE vehicle_id = $1", [vehicleId]);
     }
 
-    // Query active route
-    const routeRes = await dbPool.query("SELECT id FROM routes WHERE status = 'ACTIVE' AND deleted_at IS NULL LIMIT 1");
+    // Query active or published route
+    const routeRes = await dbPool.query("SELECT id FROM routes WHERE status IN ('ACTIVE', 'PUBLISHED') AND deleted_at IS NULL LIMIT 1");
     routeId = routeRes.rows[0]?.id;
 
     // Clean up any test runs from previous test attempts

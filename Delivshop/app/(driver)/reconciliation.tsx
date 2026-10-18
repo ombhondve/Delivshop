@@ -21,6 +21,7 @@ import { MetricCard } from '@/components/driver/MetricCard';
 import { QuantityCounter } from '@/components/driver/QuantityCounter';
 import { ConfirmModal } from '@/components/driver/ConfirmModal';
 import { DeliveryRun, CollectionSummary } from '@/types/driver.types';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function ReconciliationScreen() {
   const router = useRouter();
@@ -124,9 +125,7 @@ export default function ReconciliationScreen() {
 
       Alert.alert(
         'Reconciliation Verified',
-        `End-of-day reconciliation successfully recorded in depot warehouse ledger.\n\nVariance: ₹${cashDiscrepancy.toFixed(
-          2
-        )}`,
+        `End-of-day reconciliation successfully recorded in depot warehouse ledger.\n\nVariance: ${formatCurrency(cashDiscrepancy)}`,
         [
           {
             text: 'Proceed to Clock Out',
@@ -269,12 +268,12 @@ export default function ReconciliationScreen() {
           <View style={styles.balanceGrid}>
             <View style={styles.balanceItem}>
               <Text style={styles.balanceItemLabel}>Cash Collected</Text>
-              <Text style={styles.balanceItemVal}>₹{cashVal.toFixed(2)}</Text>
+              <Text style={styles.balanceItemVal}>{formatCurrency(cashVal)}</Text>
             </View>
             <View style={styles.balanceItem}>
               <Text style={styles.balanceItemLabel}>UPI Collections</Text>
               <Text style={[styles.balanceItemVal, { color: DelivColors.emeraldGreen }]}>
-                ₹{(parseFloat(upiCollected) || 0).toFixed(2)}
+                {formatCurrency(parseFloat(upiCollected) || 0)}
               </Text>
             </View>
           </View>
@@ -311,8 +310,8 @@ export default function ReconciliationScreen() {
                   ]}
                 >
                   {cashDiscrepancy < 0
-                    ? `Cash Shortage: -₹${Math.abs(cashDiscrepancy).toFixed(2)}`
-                    : `Cash Excess: +₹${cashDiscrepancy.toFixed(2)}`}
+                    ? `Cash Shortage: -${formatCurrency(Math.abs(cashDiscrepancy))}`
+                    : `Cash Excess: +${formatCurrency(cashDiscrepancy)}`}
                 </Text>
                 <Text style={styles.varianceSub}>
                   {cashDiscrepancy < 0
@@ -359,8 +358,8 @@ export default function ReconciliationScreen() {
         title="Confirm Reconciliation"
         message={`Are you sure you want to finalize end-of-day reconciliation for Run #${
           activeRun?.run_code || ''
-        }?\n\n• Completed Stops: ${stopsCompleted} / ${stopsPlanned}\n• Cash Deposited: ₹${depositVal.toFixed(
-          2
+        }?\n\n• Completed Stops: ${stopsCompleted} / ${stopsPlanned}\n• Cash Deposited: ${formatCurrency(
+          depositVal
         )}\n• Crates Handover: ${cratesReturned} returned`}
         confirmText="Confirm & Finalize"
         cancelText="Review"

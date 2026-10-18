@@ -3,18 +3,19 @@ import { userRepository } from '../repositories/user.repository.js';
 import { hashPassword } from '../utils/password.js';
 import { auditService } from '../services/audit.service.js';
 import { logger } from '../utils/logger.js';
-import { dbPool } from '../config/database.js';
+import { dbPool, query } from '../config/database.js';
 
 export interface ProvisionAdminOptions {
   email: string;
   password: string;
   name?: string;
   phone?: string;
+  forceReset?: boolean;
 }
 
 export interface ProvisionAdminResult {
   success: boolean;
-  action: 'CREATED' | 'PRESERVED' | 'FAILED';
+  action: 'CREATED' | 'PRESERVED' | 'RESET' | 'FAILED';
   email: string;
   role: string;
   message: string;
@@ -89,6 +90,30 @@ export async function provisionAdmin(options: ProvisionAdminOptions): Promise<Pr
   // Idempotent check: verify if account with this email already exists
   const existingUser = await userRepository.findByEmail(email);
   if (existingUser) {
+    if (options.forceReset) {
+      const passwordHash = await hashPassword(password);
+      await query(
+        `UPDATE users SET password_hash = $1, is_active = TRUE, updated_at = NOW() WHERE id = $2`,
+        [passwordHash, existingUser.id]
+      );
+      await auditService.log({
+        actorId: existingUser.id,
+        action: 'ADMIN_PASSWORD_RESET',
+        entityType: 'user',
+        entityId: existingUser.id,
+        details: { email: existingUser.email, role: existingUser.role },
+      });
+      const resetMsg = `Administrator password successfully updated for "${existingUser.email}".`;
+      logger.info(`[Admin Provisioning] ${resetMsg} (Role: ${existingUser.role})`);
+      return {
+        success: true,
+        action: 'RESET',
+        email: existingUser.email,
+        role: existingUser.role,
+        message: resetMsg,
+      };
+    }
+
     const msg = `Admin account with email "${email}" already exists. Preserving existing record and password without changes.`;
     logger.info(`[Admin Provisioning] ${msg} (Role: ${existingUser.role})`);
     return {
@@ -148,6 +173,8 @@ function parseCliArgs(): Partial<ProvisionAdminOptions> {
       options.name = arg.substring('--name='.length);
     } else if (arg.startsWith('--phone=')) {
       options.phone = arg.substring('--phone='.length);
+    } else if (arg === '--reset' || arg === '--force' || arg === '--force-reset') {
+      options.forceReset = true;
     }
   }
   return options;
@@ -191,7 +218,7 @@ export async function runCli(): Promise<void> {
   }
 
   try {
-    const result = await provisionAdmin({ email, password, name, phone });
+    const result = await provisionAdmin({ email, password, name, phone, forceReset: cliArgs.forceReset });
     console.log(`\n✅ ${result.message}`);
     console.log(`Action: ${result.action}`);
     console.log(`Email:  ${result.email}`);

@@ -4,6 +4,11 @@ import { authApi } from '@/services/api/authApi';
 import { SecureTokenStorage } from '@/utils/storage';
 import { CacheManager } from '@/services/offline/cacheManager';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CACHED_USER_KEY = '@delivshop_auth_user';
+const CACHED_SHOP_KEY = '@delivshop_auth_shop';
+
 interface AuthContextType {
   user: User | null;
   shop: any | null;
@@ -36,21 +41,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const token = await SecureTokenStorage.getAccessToken();
         if (token) {
-          const profile = await authApi.getProfile();
-          setUser(profile);
-          if (profile.role === 'SHOP') {
-            try {
-              const shopProfile = await authApi.getShopProfile();
-              setShop(shopProfile);
-            } catch {
-              // Graceful fallback
+          // Pre-populate with cached session if available for fast offline startup
+          try {
+            const cachedUserRaw = await AsyncStorage.getItem(CACHED_USER_KEY);
+            const cachedShopRaw = await AsyncStorage.getItem(CACHED_SHOP_KEY);
+            if (cachedUserRaw) {
+              setUser(JSON.parse(cachedUserRaw));
+            }
+            if (cachedShopRaw) {
+              setShop(JSON.parse(cachedShopRaw));
+            }
+          } catch {
+            // Non-fatal cache read failure
+          }
+
+          // Fetch fresh profile from backend
+          try {
+            const profile = await authApi.getProfile();
+            setUser(profile);
+            await AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(profile));
+
+            if (profile.role === 'SHOP') {
+              try {
+                const shopProfile = await authApi.getShopProfile();
+                setShop(shopProfile);
+                await AsyncStorage.setItem(CACHED_SHOP_KEY, JSON.stringify(shopProfile));
+              } catch {
+                // Graceful fallback for shop profile
+              }
+            }
+          } catch (apiErr: any) {
+            // Only clear credentials if backend explicitly rejects the token (HTTP 401 or 403)
+            if (apiErr?.status === 401 || apiErr?.status === 403) {
+              await SecureTokenStorage.clearTokens();
+              await AsyncStorage.removeItem(CACHED_USER_KEY);
+              await AsyncStorage.removeItem(CACHED_SHOP_KEY);
+              setUser(null);
+              setShop(null);
+            } else {
+              // Network error, offline, or timeout: retain local session so user is not locked out
+              console.warn('[AuthContext] Profile refresh skipped due to network/offline status. Preserving cached session.');
             }
           }
         }
       } catch {
-        await SecureTokenStorage.clearTokens();
-        setUser(null);
-        setShop(null);
+        // Unexpected storage error
       } finally {
         setIsLoading(false);
       }
@@ -63,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const authRes = await authApi.login(credentials);
       setUser(authRes.user);
+      await AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(authRes.user));
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!res.mustChangePassword && res.user) {
         setUser(res.user);
         setShop(res.shop || null);
+        await AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(res.user));
+        if (res.shop) {
+          await AsyncStorage.setItem(CACHED_SHOP_KEY, JSON.stringify(res.shop));
+        }
       }
       return res;
     } finally {
@@ -89,6 +129,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.user) {
         setUser(res.user);
         setShop(res.shop || null);
+        await AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(res.user));
+        if (res.shop) {
+          await AsyncStorage.setItem(CACHED_SHOP_KEY, JSON.stringify(res.shop));
+        }
       }
     } finally {
       setIsLoading(false);
@@ -104,11 +148,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authApi.logout();
     } finally {
       await SecureTokenStorage.clearTokens();
+      await AsyncStorage.removeItem(CACHED_USER_KEY);
+      await AsyncStorage.removeItem(CACHED_SHOP_KEY);
       setUser(null);
       setShop(null);
       setIsLoading(false);
     }
   };
+
 
   return (
     <AuthContext.Provider

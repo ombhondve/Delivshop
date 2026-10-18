@@ -5,14 +5,14 @@ import { validateRequest } from '../middleware/validate.middleware.js';
 import { registerSchema, loginSchema } from '../schemas/auth.schema.js';
 import { shopLoginSchema, completeSetupSchema } from '../schemas/shop.schema.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { authRateLimiter } from '../middleware/rateLimiter.middleware.js';
+import { authRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter.middleware.js';
 
 const router = Router();
 
 // General User Auth
 router.post('/register', authRateLimiter, validateRequest(registerSchema), authController.register);
 router.post('/login', authRateLimiter, validateRequest(loginSchema), authController.login);
-router.post('/refresh', authRateLimiter, authController.refresh);
+router.post('/refresh', refreshRateLimiter, authController.refresh);
 router.get('/me', authenticate, authController.getProfile);
 router.post('/logout', authenticate, authController.logout);
 

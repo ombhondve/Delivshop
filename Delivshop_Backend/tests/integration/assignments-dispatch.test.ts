@@ -58,8 +58,8 @@ describe('Assignments & Daily Delivery Runs Dispatch Suite', () => {
       }
     }
 
-    // Query active route
-    const routeRes = await dbPool.query("SELECT id FROM routes WHERE status = 'ACTIVE' AND deleted_at IS NULL LIMIT 1");
+    // Query active or published route
+    const routeRes = await dbPool.query("SELECT id FROM routes WHERE status IN ('ACTIVE', 'PUBLISHED') AND deleted_at IS NULL LIMIT 1");
     routeId = routeRes.rows[0]?.id;
   });
 

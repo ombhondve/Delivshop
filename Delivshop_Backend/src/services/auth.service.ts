@@ -65,10 +65,10 @@ export const authService = {
   async login(credentials: { email: string; password: string }, ipAddress?: string) {
     let user = await userRepository.findByEmail(credentials.email);
     if (!user) {
-      user = await userRepository.findByEmployeeId(credentials.email);
+      user = await userRepository.findByIdentifier(credentials.email);
     }
     if (!user) {
-      // Intentionally uniform error to prevent email enumeration
+      // Intentionally uniform error to prevent user enumeration
       throw new Error('Invalid email or password');
     }
 

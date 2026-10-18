@@ -15,18 +15,31 @@ export const userRepository = {
     return res.rows[0] || null;
   },
 
-  async findByEmailOrEmployeeId(identifier: string): Promise<UserRecord | null> {
+  async findByIdentifier(identifier: string): Promise<UserRecord | null> {
     const clean = identifier.trim();
+    const cleanLower = clean.toLowerCase();
+    const digits = clean.replace(/\D/g, '');
+    const tenDigits = digits.length >= 10 ? digits.slice(-10) : '';
+
     const res = await query<UserRecord>(
       `SELECT id, email, password_hash, name, role, phone, employee_id, vehicle_number, vehicle_type, 
               assigned_route, license_number, license_expiry, joining_date, emergency_contact, notes, 
               is_active, created_at, updated_at, deleted_at, deleted_by, deletion_reason 
        FROM users 
-       WHERE (LOWER(email) = LOWER($1) OR UPPER(employee_id) = UPPER($1)) AND deleted_at IS NULL 
+       WHERE (
+         LOWER(email) = $1 
+         OR UPPER(employee_id) = UPPER($2)
+         OR ($3 != '' AND REPLACE(REPLACE(REPLACE(COALESCE(phone, ''), ' ', ''), '-', ''), '+91', '') LIKE '%' || $3)
+       ) 
+       AND deleted_at IS NULL 
        LIMIT 1`,
-      [clean]
+      [cleanLower, clean, tenDigits]
     );
     return res.rows[0] || null;
+  },
+
+  async findByEmailOrEmployeeId(identifier: string): Promise<UserRecord | null> {
+    return this.findByIdentifier(identifier);
   },
 
   async findByEmployeeId(employeeId: string): Promise<UserRecord | null> {

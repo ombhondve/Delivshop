@@ -19,6 +19,7 @@ import { driverApi } from '@/services/api/driverApi';
 import { DelivColors } from '@/constants/theme';
 import { DriverHeader } from '@/components/driver/DriverHeader';
 import { DeliveryRun, CollectionSummary } from '@/types/driver.types';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function ShiftEndScreen() {
   const { user } = useAuth();
@@ -146,7 +147,7 @@ export default function ShiftEndScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Total Cash / UPI Handover</Text>
             <Text style={[styles.infoValueBold, { color: DelivColors.emeraldGreen }]}>
-              ₹{(colSummary?.totalCollected || 0).toLocaleString('en-IN')}
+              {formatCurrency(colSummary?.totalCollected || 0)}
             </Text>
           </View>
           <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>

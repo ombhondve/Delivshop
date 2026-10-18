@@ -1,6 +1,13 @@
 import { ApiResponse } from '../../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const PRODUCTION_API_URL = 'https://delivshop-vuw7.vercel.app/api';
+const rawApiUrl = (import.meta as any).env?.VITE_API_URL?.trim();
+const API_BASE_URL = rawApiUrl
+  ? ((import.meta as any).env?.PROD && (rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1'))
+      ? PRODUCTION_API_URL
+      : rawApiUrl)
+  : ((import.meta as any).env?.PROD ? PRODUCTION_API_URL : 'http://localhost:5000/api');
+
 
 const ACCESS_TOKEN_KEY = 'delivshop_access_token';
 const REFRESH_TOKEN_KEY = 'delivshop_refresh_token';
@@ -121,6 +128,10 @@ let refreshPromise: Promise<string | null> | null = null;
 
 async function performTokenRefresh(): Promise<string | null> {
   const refreshToken = tokenStore.getRefreshToken();
+  if (!refreshToken) {
+    // If no refresh token exists in storage, do not send empty POST to backend
+    return null;
+  }
   const refreshUrl = `${API_BASE_URL.replace(/\/$/, '')}/auth/refresh`;
 
   try {
@@ -131,7 +142,7 @@ async function performTokenRefresh(): Promise<string | null> {
         Accept: 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify({ refreshToken: refreshToken || undefined }),
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.ok) {
@@ -167,6 +178,12 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
     const token = tokenStore.get();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // If no access token exists and no refresh token exists, reject locally
+      const refreshToken = tokenStore.getRefreshToken();
+      if (!refreshToken) {
+        throw new ApiError('Authentication required: please log in.', 401);
+      }
     }
   }
 

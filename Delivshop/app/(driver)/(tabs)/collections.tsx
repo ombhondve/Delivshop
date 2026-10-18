@@ -24,6 +24,7 @@ import { DriverHeader } from '@/components/driver/DriverHeader';
 import { StatusBadge } from '@/components/driver/StatusBadge';
 import { MetricCard } from '@/components/driver/MetricCard';
 import { DeliveryCollection, CollectionSummary, PaymentMethod, DeliveryRun } from '@/types/driver.types';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function DriverCollectionsScreen() {
   const { user } = useAuth();
@@ -118,7 +119,7 @@ export default function DriverCollectionsScreen() {
 
       Alert.alert(
         'Collection Issued',
-        `Successfully recorded ₹${numAmount.toLocaleString('en-IN')} payment from ${selectedShopName}.`
+        `Successfully recorded ${formatCurrency(numAmount)} payment from ${selectedShopName}.`
       );
       setModalVisible(false);
       await fetchData();
@@ -158,7 +159,7 @@ export default function DriverCollectionsScreen() {
 
           <View style={styles.amountCol}>
             <Text style={styles.amountText}>
-              ₹{parseFloat(String(item.amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              {formatCurrency(item.amount)}
             </Text>
             <View style={styles.methodTag}>
               <Text style={styles.methodText}>{item.payment_method}</Text>
@@ -203,15 +204,15 @@ export default function DriverCollectionsScreen() {
       <View style={styles.metricsContainer}>
         <MetricCard
           label="Total Collected"
-          value={`₹${(summary?.totalCollected || 0).toLocaleString('en-IN')}`}
+          value={formatCurrency(summary?.totalCollected || 0)}
           subtitle={`${summary?.totalReceiptsCount || 0} receipts issued`}
           iconName="wallet-outline"
           variant="emerald"
         />
         <MetricCard
           label="Cash In Hand"
-          value={`₹${(summary?.cashCollected || 0).toLocaleString('en-IN')}`}
-          subtitle={`₹${(summary?.upiCollected || 0).toLocaleString('en-IN')} via UPI`}
+          value={formatCurrency(summary?.cashCollected || 0)}
+          subtitle={`${formatCurrency(summary?.upiCollected || 0)} via UPI`}
           iconName="cash-outline"
           variant="amber"
         />

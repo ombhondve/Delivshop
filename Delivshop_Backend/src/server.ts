@@ -7,8 +7,8 @@ const app = createApp();
 
 // Only start HTTP listener if not running in a serverless environment (e.g. Vercel) and not testing
 if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
-  const server = app.listen(ENV.PORT, async () => {
-    logger.info(`🚀 Delivshop API Server active on port ${ENV.PORT} [${ENV.NODE_ENV}]`);
+  const server = app.listen(ENV.PORT, '0.0.0.0', async () => {
+    logger.info(`🚀 Delivshop API Server active on port ${ENV.PORT} [${ENV.NODE_ENV}] (bound to 0.0.0.0 for LAN access)`);
     logger.info(`🔒 Security headers (Helmet) & CORS restrictions initialized`);
 
     // Check database connectivity
