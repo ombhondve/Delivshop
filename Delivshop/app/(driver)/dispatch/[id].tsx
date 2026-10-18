@@ -165,7 +165,7 @@ export default function DispatchDetailsScreen() {
     try {
       const items = (selectedPickupStop.products || []).map((p) => {
         const entered = parseFloat(collectedQuantities[p.productId] || '0') || 0;
-        const shortage = entered < p.requiredQuantity ? (shortageReasons[p.productId] || 'Supplier stock shortage') : null;
+        const shortage = entered < p.requiredQuantity ? (shortageReasons[p.productId] || 'Supplier shortage at pickup') : null;
         return {
           productId: p.productId,
           collectedQuantity: entered,
@@ -202,7 +202,7 @@ export default function DispatchDetailsScreen() {
     if (!dispatch) return;
     setTransitioning(true);
     try {
-      const updated = await driverApi.updateDispatchStatus(dispatch.id, 'IN_PROGRESS', 'Driver departed depot');
+      const updated = await driverApi.updateDispatchStatus(dispatch.id, 'IN_PROGRESS', 'Driver commenced delivery route');
       setDispatch(updated);
       Alert.alert('Route Departed', 'Delivery run is now in progress. Follow the sequenced stops.');
     } catch (err: any) {
@@ -338,7 +338,7 @@ export default function DispatchDetailsScreen() {
             <View>
               <Text style={styles.runCodeText}>{dispatch.run_code}</Text>
               <Text style={styles.routeCityText}>
-                {dispatch.route_city || 'Pune'} Depot • {dispatch.delivery_date}
+                {dispatch.route_city || 'Pune'} Sector • {dispatch.delivery_date}
               </Text>
             </View>
             <StatusBadge status={dispatch.status} size="medium" />
@@ -397,7 +397,7 @@ export default function DispatchDetailsScreen() {
               ) : (
                 <View style={styles.btnRow}>
                   <Ionicons name="play" size={18} color={DelivColors.white} />
-                  <Text style={styles.startRunBtnText}>Depart Depot & Start Route</Text>
+                  <Text style={styles.startRunBtnText}>Start Delivery Route</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -768,7 +768,7 @@ export default function DispatchDetailsScreen() {
                         <Text style={styles.shortageLabel}>Shortage Reason:</Text>
                         <TextInput
                           style={styles.shortageInput}
-                          placeholder="Reason (e.g. out of stock, damaged)"
+                          placeholder="Reason (e.g. supplier shortage, packaging defect)"
                           placeholderTextColor={DelivColors.textMuted}
                           value={shortageReasons[product.productId] || ''}
                           onChangeText={(val) =>

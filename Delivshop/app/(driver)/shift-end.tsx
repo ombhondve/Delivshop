@@ -29,7 +29,7 @@ export default function ShiftEndScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [activeRun, setActiveRun] = useState<DeliveryRun | null>(null);
   const [colSummary, setColSummary] = useState<CollectionSummary | null>(null);
-  const [notes, setNotes] = useState('All depot drop-offs finished. Empty crates returned to bay.');
+  const [notes, setNotes] = useState('All supplier pickups and shop deliveries finished. Empty crates accounted for.');
   const [finalOdometer, setFinalOdometer] = useState('');
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function ShiftEndScreen() {
           </View>
           <View style={styles.bannerTextWrap}>
             <Text style={styles.bannerTitle}>Daily Shift Checkout</Text>
-            <Text style={styles.bannerSub}>Depot Handover & Attendance Sign-off</Text>
+            <Text style={styles.bannerSub}>Shift Handover & Attendance Sign-off</Text>
           </View>
         </View>
 
@@ -173,10 +173,10 @@ export default function ShiftEndScreen() {
 
         {/* Handover Remarks */}
         <View style={styles.infoCard}>
-          <Text style={styles.cardHeading}>DEPOT HANDOVER REMARKS</Text>
+          <Text style={styles.cardHeading}>SHIFT HANDOVER REMARKS</Text>
           <TextInput
             style={[styles.inputField, { height: 70, textAlignVertical: 'top' }]}
-            placeholder="Handover notes, crate returns, depot bay inspection notes..."
+            placeholder="Handover notes, crate returns, route completion notes..."
             placeholderTextColor={DelivColors.textMuted}
             multiline
             numberOfLines={3}

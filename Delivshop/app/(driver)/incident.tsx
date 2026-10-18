@@ -29,9 +29,9 @@ import {
 const CATEGORIES: { label: string; value: IncidentCategory; icon: any }[] = [
   { label: 'Shop Closed / Merchant Away', value: 'SHOP_CLOSED', icon: 'storefront-outline' },
   { label: 'Delivery Refused by Merchant', value: 'DELIVERY_REFUSED', icon: 'close-circle-outline' },
-  { label: 'Partial Delivery / Stock Shortage', value: 'PARTIAL_DELIVERY', icon: 'cube-outline' },
+  { label: 'Partial Delivery / Quantity Shortage', value: 'PARTIAL_DELIVERY', icon: 'cube-outline' },
   { label: 'Damaged / Spoiled Products', value: 'DAMAGED_PRODUCTS', icon: 'alert-circle-outline' },
-  { label: 'Missing / Discrepant Stock', value: 'MISSING_STOCK', icon: 'search-outline' },
+  { label: 'Missing / Discrepant Items', value: 'MISSING_STOCK', icon: 'search-outline' },
   { label: 'Vehicle Breakdown / Puncture', value: 'VEHICLE_BREAKDOWN', icon: 'construct-outline' },
   { label: 'Road Obstruction / Traffic Delay', value: 'ROUTE_OBSTRUCTION', icon: 'warning-outline' },
   { label: 'Payment Discrepancy', value: 'PAYMENT_DISCREPANCY', icon: 'cash-outline' },

@@ -125,7 +125,7 @@ export default function ReconciliationScreen() {
 
       Alert.alert(
         'Reconciliation Verified',
-        `End-of-day reconciliation successfully recorded in depot warehouse ledger.\n\nVariance: ${formatCurrency(cashDiscrepancy)}`,
+        `End-of-day reconciliation successfully recorded in dispatch settlement ledger.\n\nVariance: ${formatCurrency(cashDiscrepancy)}`,
         [
           {
             text: 'Proceed to Clock Out',
@@ -175,7 +175,7 @@ export default function ReconciliationScreen() {
         <View style={styles.bannerCard}>
           <Ionicons name="shield-checkmark" size={28} color={DelivColors.lightEmerald} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.bannerTitle}>Depot Settlement Checklist</Text>
+            <Text style={styles.bannerTitle}>Shift Settlement Checklist</Text>
             <Text style={styles.bannerSub}>
               Verify stop completions, crates handover, and cash balances before ending shift.
             </Text>
@@ -221,7 +221,7 @@ export default function ReconciliationScreen() {
           <View style={styles.counterRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.counterTitle}>Dispatched Crates</Text>
-              <Text style={styles.counterSub}>Total loaded from depot</Text>
+              <Text style={styles.counterSub}>Total loaded from supplier collections</Text>
             </View>
             <QuantityCounter
               value={cratesDispatched}
@@ -247,7 +247,7 @@ export default function ReconciliationScreen() {
           <View style={styles.counterRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.counterTitle}>Empty Crates Returned</Text>
-              <Text style={styles.counterSub}>Returning to depot inventory</Text>
+              <Text style={styles.counterSub}>Empty crates returned from route</Text>
             </View>
             <QuantityCounter
               value={cratesReturned}
@@ -279,7 +279,7 @@ export default function ReconciliationScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>ACTUAL PHYSICAL CASH DEPOSITED AT DEPOT (₹) *</Text>
+            <Text style={styles.inputLabel}>ACTUAL PHYSICAL CASH SETTLED / DEPOSITED (₹) *</Text>
             <TextInput
               style={styles.textInputLarge}
               keyboardType="numeric"
@@ -326,7 +326,7 @@ export default function ReconciliationScreen() {
             <Text style={styles.inputLabel}>SETTLEMENT NOTES / REMARKS</Text>
             <TextInput
               style={[styles.textInput, { height: 70, textAlignVertical: 'top' }]}
-              placeholder="e.g. Returned 2 empty crates; depot cashier confirmed cash deposit"
+              placeholder="e.g. Returned 2 empty crates; cashier confirmed cash deposit"
               multiline
               value={handoverNotes}
               onChangeText={setHandoverNotes}

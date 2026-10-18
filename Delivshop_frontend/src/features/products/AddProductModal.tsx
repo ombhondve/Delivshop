@@ -162,14 +162,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       errs.purchaseCost = 'Purchase cost cannot be negative';
     }
 
-    if (initialStock < 0 || isNaN(initialStock)) {
-      errs.initialStock = 'Initial stock cannot be negative';
-    }
-
-    if (initialStock > 0 && !initialExpiryDate) {
-      errs.initialExpiryDate = 'Expiry date is required when initial opening stock is entered';
-    }
-
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -230,12 +222,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         purchaseCost: Number(purchaseCost),
         price: Number(price),
         minStockThreshold: Number(minStockThreshold),
-        reorderQuantity: Number(reorderQuantity),
         taxRate: Number(taxRate),
         isTaxInclusive,
         minSellingPrice: minSellingPrice ? Number(minSellingPrice) : undefined,
-        trackInventory: true,
-        trackBatches: true,
+        trackInventory: false,
+        trackBatches: false,
         storageTemperature: storageTemperature || undefined,
         shelfLifeDays: shelfLifeDays ? Number(shelfLifeDays) : undefined,
         fatPercentage: fatPercentage ? Number(fatPercentage) : undefined,
@@ -793,148 +784,19 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             </div>
           </div>
 
-          {/* Section 5: Stock Configuration & Opening Balance */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              <Boxes size={16} color="var(--color-primary)" />
+          {/* Section 5: Direct Supply Distribution Model */}
+          <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <Building2 size={16} color="var(--color-primary)" />
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                5. Stock & Opening Inventory Configuration
+                5. Direct Supplier-to-Shop Distribution
               </h3>
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Initial Stock Quantity
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={initialStock}
-                  onChange={(e) => setInitialStock(parseInt(e.target.value, 10) || 0)}
-                  placeholder="0"
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #A7AE9F',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Low Stock Threshold
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={minStockThreshold}
-                  onChange={(e) => setMinStockThreshold(parseInt(e.target.value, 10) || 0)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #A7AE9F',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Reorder Level Quantity
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={reorderQuantity}
-                  onChange={(e) => setReorderQuantity(parseInt(e.target.value, 10) || 0)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #A7AE9F',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* If initial stock > 0, show opening batch fields */}
-            {initialStock > 0 && (
-              <div
-                style={{
-                  backgroundColor: '#F0FDF4',
-                  border: '1px solid #BBF7D0',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                }}
-              >
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#166534' }}>
-                  Opening Batch & Expiry Entry (Will be recorded in Inventory Ledger)
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                      Batch Number (Auto-assigned if empty)
-                    </label>
-                    <input
-                      type="text"
-                      value={initialBatchNumber}
-                      onChange={(e) => setInitialBatchNumber(e.target.value)}
-                      placeholder="e.g. BATCH-20261015"
-                      style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #A7AE9F',
-                        fontSize: '13px',
-                        backgroundColor: '#FFFFFF',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                      Expiry Date <span style={{ color: '#EF4444' }}>*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={initialExpiryDate}
-                      onChange={(e) => setInitialExpiryDate(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        border: `1px solid ${errors.initialExpiryDate ? '#EF4444' : '#A7AE9F'}`,
-                        fontSize: '13px',
-                        backgroundColor: '#FFFFFF',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                    {errors.initialExpiryDate && (
-                      <span style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                        {errors.initialExpiryDate}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            <p style={{ fontSize: '12.5px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+              Delivshop operates without warehouse inventory. When shops place orders, requirements are aggregated by supplier and collected by drivers for direct delivery runs. No inward warehouse stocking is required.
+            </p>
           </div>
+
 
           {/* Section 6: Dairy Quality Specifications */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

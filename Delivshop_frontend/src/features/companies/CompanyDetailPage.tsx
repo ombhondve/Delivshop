@@ -621,14 +621,13 @@ export const CompanyDetailPage: React.FC<CompanyDetailPageProps> = ({ companyId 
                   <th>Pack Size & Unit</th>
                   <th style={{ textAlign: 'right' }}>Agreed Supplier Price (₹)</th>
                   <th style={{ textAlign: 'center' }}>Tax Rate</th>
-                  <th style={{ textAlign: 'center' }}>Central Stock</th>
+                  <th style={{ textAlign: 'center' }}>Fulfillment Model</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {productsData.items.map((prod) => {
                   const isProdActive = prod.isActive ?? prod.is_active ?? true;
-                  const stock = prod.stockQuantity ?? (prod as any).stock_quantity ?? 0;
                   const purchasePrice = Number(prod.purchaseCost ?? (prod as any).purchase_cost ?? 0);
                   const tax = Number(prod.taxRate ?? (prod as any).tax_rate ?? 0);
 
@@ -664,13 +663,13 @@ export const CompanyDetailPage: React.FC<CompanyDetailPageProps> = ({ companyId 
                           style={{
                             fontSize: '11.5px',
                             fontWeight: 700,
-                            color: stock <= 10 ? '#D97706' : '#059669',
-                            backgroundColor: stock <= 10 ? '#FEF3C7' : '#DCFCE7',
+                            color: '#059669',
+                            backgroundColor: '#DCFCE7',
                             padding: '2px 8px',
                             borderRadius: '10px',
                           }}
                         >
-                          {stock} in stock
+                          Direct Supply
                         </span>
                       </td>
                       <td>
@@ -689,8 +688,8 @@ export const CompanyDetailPage: React.FC<CompanyDetailPageProps> = ({ companyId 
 
       {/* SECTION 3: Pickup Schedules and Pickup Records */}
       <Card
-        title="Pickup Schedules & Inward Verification Records"
-        subtitle="Operational intake records from delivery runs and direct pickups. Tracks Required vs Collected vs Accepted quantities."
+        title="Pickup Schedules & Supplier Collection Verification Records"
+        subtitle="Operational collection records from delivery runs and direct supplier pickups. Tracks Required vs Collected vs Accepted quantities."
         style={{ marginBottom: '24px' }}
       >
         {/* Filters Toolbar */}

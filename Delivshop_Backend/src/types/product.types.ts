@@ -114,10 +114,14 @@ export interface Product {
 export interface ProductSummaryStats {
   totalProducts: number;
   activeProducts: number;
+  inactiveProducts?: number;
+  supplierAssignedProducts?: number;
+  categoriesCount?: number;
   lowStockItems: number;
   outOfStockItems: number;
   expiringSoonItems: number;
 }
+
 
 export interface ProductFilterParams {
   page?: number;

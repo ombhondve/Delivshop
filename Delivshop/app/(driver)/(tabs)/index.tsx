@@ -132,7 +132,7 @@ export default function DriverDashboardScreen() {
           </View>
           <View style={styles.actionBtnContent}>
             <Text style={styles.primaryBtnTitle}>Start Daily Shift</Text>
-            <Text style={styles.primaryBtnSub}>Check-in at depot & verify daily roster</Text>
+            <Text style={styles.primaryBtnSub}>Check-in for shift & verify daily roster</Text>
           </View>
           <Ionicons name="arrow-forward" size={18} color={DelivColors.white} />
         </TouchableOpacity>
@@ -184,7 +184,7 @@ export default function DriverDashboardScreen() {
             </View>
             <View style={styles.actionBtnContent}>
               <Text style={styles.primaryBtnTitle}>Start Assigned Route</Text>
-              <Text style={styles.primaryBtnSub}>Review route stops & depart depot</Text>
+              <Text style={styles.primaryBtnSub}>Review pickup & delivery stops to begin run</Text>
             </View>
             <Ionicons name="arrow-forward" size={18} color={DelivColors.white} />
           </TouchableOpacity>
@@ -351,7 +351,7 @@ export default function DriverDashboardScreen() {
           <View style={styles.identityDetails}>
             <Text style={styles.driverName}>{user?.name || 'Driver'}</Text>
             <Text style={styles.driverMeta}>
-              {user?.phone || 'Fleet Logistics Personnel'} • Pune Depot
+              {user?.phone || 'Fleet Logistics Personnel'} • Pune Operations
             </Text>
             <View style={styles.badgeRow}>
               <View style={styles.roleTag}>
@@ -473,7 +473,7 @@ export default function DriverDashboardScreen() {
             <Ionicons name="calendar-outline" size={32} color={DelivColors.textMuted} />
             <Text style={styles.emptyRunTitle}>No Dispatches Assigned Today</Text>
             <Text style={styles.emptyRunSub}>
-              Contact your logistics dispatcher or depot coordinator to receive today's route assignment.
+              Contact your logistics dispatcher or fleet coordinator to receive today's route assignment.
             </Text>
           </View>
         )}

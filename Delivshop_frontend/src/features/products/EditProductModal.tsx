@@ -543,13 +543,11 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Low Stock Threshold
+                  GST Tax Rate (%)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={minStockThreshold}
-                  onChange={(e) => setMinStockThreshold(parseInt(e.target.value, 10) || 0)}
+                <select
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(Number(e.target.value))}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
@@ -557,8 +555,14 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                     border: '1px solid #A7AE9F',
                     fontSize: '14px',
                     boxSizing: 'border-box',
+                    backgroundColor: '#FFFFFF',
                   }}
-                />
+                >
+                  <option value={0}>0% (Exempt / Fresh Milk)</option>
+                  <option value={5}>5% (Packaged Paneer / Curd)</option>
+                  <option value={12}>12% (Ghee / Butter / Cheese)</option>
+                  <option value={18}>18% (Flavoured Drinks / Condensed)</option>
+                </select>
               </div>
             </div>
           </div>

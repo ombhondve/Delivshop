@@ -28,7 +28,7 @@ export default function ShiftStartScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [activeRun, setActiveRun] = useState<DeliveryRun | null>(null);
-  const [notes, setNotes] = useState('Reported at Depot');
+  const [notes, setNotes] = useState('Reported for Shift');
   const [readyCheck, setReadyCheck] = useState(true);
   const [gpsStatus, setGpsStatus] = useState<string | null>(null);
 
@@ -161,7 +161,7 @@ export default function ShiftStartScreen() {
             <Ionicons name="time-outline" size={24} color={DelivColors.deepEmerald} />
           </View>
           <View style={styles.bannerTextWrap}>
-            <Text style={styles.bannerTitle}>Depot Attendance Check-In</Text>
+            <Text style={styles.bannerTitle}>Shift Attendance Check-In</Text>
             <Text style={styles.bannerSub}>
               {new Date().toLocaleDateString('en-IN', {
                 weekday: 'long',
@@ -187,7 +187,7 @@ export default function ShiftStartScreen() {
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Reporting Location</Text>
-            <Text style={styles.infoValue}>Pune Central Cold Depot</Text>
+            <Text style={styles.infoValue}>Pune Logistics Hub</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Assigned Run</Text>
@@ -232,7 +232,7 @@ export default function ShiftStartScreen() {
             style={styles.notesInput}
             value={notes}
             onChangeText={setNotes}
-            placeholder="Depot check-in remarks..."
+            placeholder="Shift check-in remarks..."
             placeholderTextColor={DelivColors.textMuted}
           />
         </View>

@@ -39,7 +39,7 @@ interface ItemDeliveryState {
 }
 
 const SHORTAGE_REASONS = [
-  'Short supply at depot',
+  'Supplier shortage at pickup',
   'Damaged / leaked in transit',
   'Customer refused extra quantity',
   'Packaging defect / souring',
@@ -420,7 +420,7 @@ export default function ShopDeliveryScreen() {
             <Ionicons name="checkmark-circle" size={36} color={DelivColors.emeraldGreen} />
             <Text style={styles.completedNoticeTitle}>Delivery Completed & Verified</Text>
             <Text style={styles.completedNoticeSub}>
-              This order has already been fulfilled and reconciled with the warehouse dispatch ledger.
+              This order has already been fulfilled and reconciled with the direct delivery dispatch record.
             </Text>
           </View>
         ) : (

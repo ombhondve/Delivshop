@@ -7,6 +7,10 @@ export interface Product {
   price: number;
   stockQuantity?: number;
   stock_quantity?: number;
+  unit?: string;
+  unit_of_measure?: string;
+  pack_size?: string;
+  packSize?: string;
   category: string;
   isActive?: boolean;
   is_active?: boolean;

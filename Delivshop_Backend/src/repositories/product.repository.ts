@@ -477,6 +477,9 @@ export const productRepository = {
       SELECT
         COUNT(*)::text AS total_products,
         COUNT(*) FILTER (WHERE is_active = true)::text AS active_products,
+        COUNT(*) FILTER (WHERE is_active = false)::text AS inactive_products,
+        COUNT(DISTINCT company_id) FILTER (WHERE company_id IS NOT NULL)::text AS supplier_assigned_products,
+        COUNT(DISTINCT category)::text AS categories_count,
         COUNT(*) FILTER (WHERE stock_quantity <= min_stock_threshold AND stock_quantity > 0)::text AS low_stock_items,
         COUNT(*) FILTER (WHERE stock_quantity = 0)::text AS out_of_stock_items,
         COUNT(DISTINCT p.id) FILTER (
@@ -499,6 +502,9 @@ export const productRepository = {
     return {
       totalProducts: parseInt(row.total_products || '0', 10),
       activeProducts: parseInt(row.active_products || '0', 10),
+      inactiveProducts: parseInt(row.inactive_products || '0', 10),
+      supplierAssignedProducts: parseInt(row.supplier_assigned_products || '0', 10),
+      categoriesCount: parseInt(row.categories_count || '0', 10),
       lowStockItems: parseInt(row.low_stock_items || '0', 10),
       outOfStockItems: parseInt(row.out_of_stock_items || '0', 10),
       expiringSoonItems: parseInt(row.expiring_soon_items || '0', 10),

@@ -622,6 +622,9 @@ export interface CompanyFilterQuery {
 export interface ProductSummaryStats {
   totalProducts: number;
   activeProducts: number;
+  inactiveProducts?: number;
+  supplierAssignedProducts?: number;
+  categoriesCount?: number;
   lowStockItems: number;
   outOfStockItems: number;
   expiringSoonItems: number;

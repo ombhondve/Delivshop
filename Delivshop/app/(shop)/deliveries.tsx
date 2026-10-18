@@ -153,7 +153,7 @@ export default function ShopDeliveriesScreen() {
                 ? 'Delivery Completed'
                 : item.status === 'EN_ROUTE_DROPOFF'
                 ? 'Vehicle In Transit to Store'
-                : 'Central Depot Processing'}
+                : 'Supplier Collection & Dispatch'}
             </Text>
           </View>
           {item.estimated_minutes && (

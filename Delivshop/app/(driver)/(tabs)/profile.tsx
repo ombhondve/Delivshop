@@ -131,7 +131,7 @@ export default function DriverProfileScreen() {
             <Text style={styles.sectionTitle}>ASSIGNED FLEET VEHICLE (READ-ONLY)</Text>
           </View>
           <Text style={styles.readOnlyNotice}>
-            Vehicle allocation is controlled centrally by Depot Logistics Administration.
+            Vehicle allocation is controlled centrally by Fleet Logistics Administration.
           </Text>
 
           {vehicle ? (
@@ -199,8 +199,8 @@ export default function DriverProfileScreen() {
             </Text>
           </View>
           <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-            <Text style={styles.detailLabel}>Registered Depot</Text>
-            <Text style={styles.detailValue}>{p?.city || 'Pune Central Cold Depot'}</Text>
+            <Text style={styles.detailLabel}>Operating Hub</Text>
+            <Text style={styles.detailValue}>{p?.city || 'Pune Logistics Hub'}</Text>
           </View>
         </View>
 
@@ -253,8 +253,8 @@ export default function DriverProfileScreen() {
             style={styles.menuRow}
             onPress={() => {
               Alert.alert(
-                'Depot Fleet Dispatcher',
-                'Emergency Logistics Hotline: +91 20 2567 8900\nDepot Manager: +91 98220 11990\nHours: 24/7 Cold-Chain Support'
+                'Logistics Fleet Dispatcher',
+                'Emergency Logistics Hotline: +91 20 2567 8900\nFleet Manager: +91 98220 11990\nHours: 24/7 Cold-Chain Support'
               );
             }}
             activeOpacity={0.7}
@@ -263,7 +263,7 @@ export default function DriverProfileScreen() {
               <Ionicons name="call-outline" size={18} color={DelivColors.emeraldGreen} />
             </View>
             <View style={styles.menuTextCol}>
-              <Text style={styles.menuTitle}>Depot Dispatch Hotline</Text>
+              <Text style={styles.menuTitle}>Logistics Dispatch Hotline</Text>
               <Text style={styles.menuSub}>Call central fleet support and maintenance team</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={DelivColors.textMuted} />

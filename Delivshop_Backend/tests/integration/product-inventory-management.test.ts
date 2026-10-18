@@ -293,7 +293,7 @@ describe('Products & Inventory Management API & Security Suite', () => {
     expect(body.data.reorderQuantity).toBe(80);
   });
 
-  it('should process inward stock receipt and atomically increment stock and batch', async () => {
+  it('should reject inward warehouse stock receipt with retirement explanation (400 Bad Request)', async () => {
     const receiptPayload = {
       productId: createdProductId,
       companyId: activeCompanyId,
@@ -313,17 +313,14 @@ describe('Products & Inventory Management API & Security Suite', () => {
       body: JSON.stringify(receiptPayload),
     });
 
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.movement).toBeDefined();
-    expect(body.data.movement.movementType).toBe('PURCHASE_RECEIPT');
-    expect(body.data.movement.quantityChange).toBe(50);
-    expect(body.data.movement.newStock).toBe(200); // 150 previous + 50 received
-    expect(body.data.product.stockQuantity).toBe(200);
+    expect(body.success).toBe(false);
+    expect(body.message).toMatch(/retired/i);
+    expect(body.message).toMatch(/direct supplier-to-shop/i);
   });
 
-  it('should process stock adjustment and update inventory ledger', async () => {
+  it('should reject warehouse stock adjustment with direct supplier-to-shop fulfillment notice (400 Bad Request)', async () => {
     const adjustPayload = {
       productId: createdProductId,
       batchId: createdBatchId,
@@ -342,36 +339,13 @@ describe('Products & Inventory Management API & Security Suite', () => {
       body: JSON.stringify(adjustPayload),
     });
 
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.movement.movementType).toBe('DAMAGE_WRITE_OFF');
-    expect(body.data.movement.quantityChange).toBe(-10);
-    expect(body.data.movement.newStock).toBe(190); // 200 - 10
-    expect(body.data.product.stockQuantity).toBe(190);
-  });
-
-  it('should prevent stock adjustment that would result in negative stock', async () => {
-    const adjustPayload = {
-      productId: createdProductId,
-      adjustmentType: 'DECREASE',
-      quantityChange: -99999, // Exceeds current stock (190)
-      reason: 'Illegal reduction test',
-    };
-
-    const res = await fetch(`${baseUrl}/api/inventory/adjustments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminToken}`,
-      },
-      body: JSON.stringify(adjustPayload),
-    });
-
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.message).toContain('negative stock');
+    expect(body.success).toBe(false);
+    expect(body.message).toMatch(/retired/i);
+    expect(body.message).toMatch(/discrepanc/i);
   });
+
 
   it('should fetch audit stock ledger movements', async () => {
     const res = await fetch(`${baseUrl}/api/inventory/movements?productId=${createdProductId}`, {
@@ -380,8 +354,9 @@ describe('Products & Inventory Management API & Security Suite', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.data.items.length).toBeGreaterThanOrEqual(3); // OPENING_STOCK, PURCHASE_RECEIPT, DAMAGE_WRITE_OFF
+    expect(body.data.items.length).toBeGreaterThanOrEqual(1); // Preserves initial opening stock movement for audit
   });
+
 
   it('should allow ADMIN to activate or deactivate product', async () => {
     const res = await fetch(`${baseUrl}/api/products/${createdProductId}/status`, {

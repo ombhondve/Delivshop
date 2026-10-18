@@ -117,7 +117,7 @@ export default function VehicleInspectionScreen() {
       if (!allPassed) {
         Alert.alert(
           'Vehicle Inspection Failed',
-          `Inspection #${result.inspection_code} recorded. Vehicle flagged with reported defects. Please report immediately to the depot fleet manager before departing.`,
+          `Inspection #${result.inspection_code} recorded. Vehicle flagged with reported defects. Please report immediately to the fleet logistics supervisor before departing.`,
           [
             {
               text: 'Acknowledge',

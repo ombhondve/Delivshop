@@ -148,15 +148,11 @@ export default function ShopOrdersScreen() {
             <Ionicons name="calendar-outline" size={14} color="#64748B" />
             {item.confirmed_delivery_date ? (
               <Text style={[styles.deliveryStatusText, { color: '#047857', fontWeight: '600' }]}>
-                Confirmed: {formatDate(item.confirmed_delivery_date)}
-              </Text>
-            ) : item.requested_delivery_date ? (
-              <Text style={[styles.deliveryStatusText, { color: '#B45309', fontWeight: '500' }]}>
-                Requested: {formatDate(item.requested_delivery_date)}
+                Delivery: {formatDate(item.confirmed_delivery_date)}
               </Text>
             ) : (
-              <Text style={styles.deliveryStatusText}>
-                {item.delivery_status || 'Pending Assignment'}
+              <Text style={[styles.deliveryStatusText, { color: '#B45309', fontWeight: '500' }]}>
+                Delivery date not confirmed
               </Text>
             )}
           </View>
@@ -339,14 +335,12 @@ export default function ShopOrdersScreen() {
                       <Text style={styles.detailVal}>{formatDate(selectedOrder.requested_delivery_date)}</Text>
                     </View>
                   )}
-                  {selectedOrder.confirmed_delivery_date && (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailKey}>Confirmed Date:</Text>
-                      <Text style={[styles.detailVal, { color: '#047857', fontWeight: '700' }]}>
-                        {formatDate(selectedOrder.confirmed_delivery_date)}
-                      </Text>
-                    </View>
-                  )}
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailKey}>Confirmed Delivery:</Text>
+                    <Text style={[styles.detailVal, { color: selectedOrder.confirmed_delivery_date ? '#047857' : '#B45309', fontWeight: '700' }]}>
+                      {selectedOrder.confirmed_delivery_date ? formatDate(selectedOrder.confirmed_delivery_date) : 'Delivery date not confirmed'}
+                    </Text>
+                  </View>
                   {selectedOrder.delivery_window && (
                     <View style={styles.detailRow}>
                       <Text style={styles.detailKey}>Delivery Window:</Text>

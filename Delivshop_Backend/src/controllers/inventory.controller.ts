@@ -2,12 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import { inventoryService } from '../services/inventory.service.js';
 import { sendSuccess } from '../utils/response.js';
 import { InventoryFilterParams } from '../types/product.types.js';
+import { AppError } from '../utils/errors.js';
 
 export const inventoryController = {
   async receiveStock(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await inventoryService.receiveStock(req.body, req.user?.id, req.ip);
-      sendSuccess(res, result, 'Stock receipt processed successfully', 201);
+      throw new AppError(
+        'Warehouse inward stock receipts are retired. Delivshop operates on a direct supplier-to-shop distribution model without warehouse inventory stock balances. Products are collected directly from suppliers for scheduled delivery runs.',
+        400
+      );
     } catch (err) {
       next(err);
     }
@@ -15,8 +18,10 @@ export const inventoryController = {
 
   async adjustStock(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await inventoryService.adjustStock(req.body, req.user?.id, req.ip);
-      sendSuccess(res, result, 'Stock adjustment recorded successfully');
+      throw new AppError(
+        'Warehouse stock adjustments are retired. Delivshop operates on a direct supplier-to-shop distribution model without warehouse inventory stock balances. Operational discrepancies must be recorded through supplier pickup verification or shop delivery reconciliation.',
+        400
+      );
     } catch (err) {
       next(err);
     }

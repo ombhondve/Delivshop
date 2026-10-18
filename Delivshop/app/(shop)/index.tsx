@@ -158,7 +158,7 @@ export default function ShopDashboardScreen() {
             </View>
             <View>
               <Text style={styles.orderBtnTitle}>Place Milk & Dairy Order</Text>
-              <Text style={styles.orderBtnSubtitle}>Daily stock replenishment & delivery booking</Text>
+              <Text style={styles.orderBtnSubtitle}>Daily product supply & direct delivery booking</Text>
             </View>
           </View>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
@@ -258,7 +258,7 @@ export default function ShopDashboardScreen() {
             <Ionicons name="cart-outline" size={36} color="#94A3B8" />
             <Text style={styles.emptyTitle}>No Orders Placed Yet</Text>
             <Text style={styles.emptySubtitle}>
-              Tap the button above to place your first dairy stock replenishment order.
+              Tap the button above to place your first direct dairy delivery order.
             </Text>
           </View>
         ) : (
