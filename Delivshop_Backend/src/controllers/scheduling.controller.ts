@@ -21,6 +21,20 @@ export const schedulingController = {
       const orderCrates = req.query.crates ? parseFloat(req.query.crates as string) : 1;
       const availability = await schedulingService.getDeliveryAvailability(shopId, orderCrates);
 
+      if (req.user?.role === 'SHOP') {
+        const sanitized = {
+          shopId: availability.shopId,
+          shopName: availability.shopName,
+          hasRouteCoverage: availability.hasRouteCoverage,
+          allowUnscheduledOrders: availability.allowUnscheduledOrders,
+          policyMessage: 'Orders are received for supplier review. Delivery route and date will be scheduled and confirmed by logistics.',
+          defaultDeliveryWindow: availability.defaultDeliveryWindow,
+          availableDates: [], // Shop never selects published runs or delivery dates
+        };
+        sendSuccess(res, sanitized);
+        return;
+      }
+
       sendSuccess(res, availability);
     } catch (err: any) {
       if (err.statusCode && err.statusCode < 500) {

@@ -2,6 +2,76 @@ import { query, dbPool } from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import { parseProductPackaging } from '../utils/packaging.js';
 
+export function sanitizeOrderForShop(order: any): any {
+  if (!order) return order;
+
+  // Authoritative Delivery Date Visibility Rules:
+  // Case A: Route not assigned (order.route_id is null/undefined)
+  //   - Hide delivery date completely (confirmed_delivery_date: null)
+  //   - Display only: 'Pending'
+  // Case B: Route assigned, delivery date not confirmed (order.route_id is NOT null AND order.confirmed_delivery_date is null)
+  //   - Hide delivery date completely (confirmed_delivery_date: null)
+  //   - Display only: 'Scheduling'
+  // Case C: Route assigned, delivery date confirmed (order.route_id is NOT null AND order.confirmed_delivery_date is NOT null)
+  //   - Display the actual confirmed delivery date saved by the Admin (read-only)
+  //   - customer_delivery_status: confirmed date string (e.g. '2026-10-25')
+
+  const hasRoute = Boolean(order.route_id);
+  const isDateConfirmed = Boolean(hasRoute && order.confirmed_delivery_date);
+
+  let customerDeliveryStatus = 'Pending';
+  let confirmedDate: string | null = null;
+  let deliveryWindow: string | null = null;
+
+  if (!hasRoute) {
+    customerDeliveryStatus = 'Pending';
+    confirmedDate = null;
+    deliveryWindow = null;
+  } else if (!isDateConfirmed) {
+    customerDeliveryStatus = 'Scheduling';
+    confirmedDate = null;
+    deliveryWindow = null;
+  } else {
+    confirmedDate = typeof order.confirmed_delivery_date === 'string'
+      ? order.confirmed_delivery_date.slice(0, 10)
+      : new Date(order.confirmed_delivery_date).toISOString().slice(0, 10);
+    customerDeliveryStatus = confirmedDate || 'Confirmed';
+    deliveryWindow = order.delivery_window || null;
+  }
+
+  // Strictly remove internal route and dispatch details from shop view
+  const {
+    route_name,
+    route_code,
+    route_id,
+    delivery_run_id,
+    delivery_run_stop_id,
+    run_code,
+    run_delivery_date,
+    requested_delivery_date,
+    scheduling_notes,
+    scheduled_by,
+    scheduled_at,
+    delivery_status, // Never leak internal PENDING_ASSIGNMENT
+    ...safeFields
+  } = order;
+
+  return {
+    ...safeFields,
+    confirmed_delivery_date: confirmedDate,
+    customer_delivery_status: customerDeliveryStatus,
+    scheduling_status: customerDeliveryStatus === 'Pending'
+      ? 'PENDING'
+      : customerDeliveryStatus === 'Scheduling'
+      ? 'SCHEDULING'
+      : 'SCHEDULED',
+    delivery_window: deliveryWindow,
+    // Reveal driver info only if confirmed and assigned
+    driver_name: isDateConfirmed ? order.driver_name || null : null,
+    driver_phone: isDateConfirmed ? order.driver_phone || null : null,
+  };
+}
+
 export const orderRepository = {
   async findById(orderId: string): Promise<any | null> {
     const res = await query(
@@ -79,7 +149,7 @@ export const orderRepository = {
        ORDER BY o.created_at DESC`,
       [shopId]
     );
-    return res.rows;
+    return res.rows.map(sanitizeOrderForShop);
   },
 
   async createOrder(params: {
@@ -91,17 +161,21 @@ export const orderRepository = {
     requestedDeliveryDate?: string;
     deliveryRunId?: string;
     deliveryWindow?: string;
+    isShopRole?: boolean;
   }): Promise<any> {
+    const isShopRole = Boolean(params.isShopRole);
     const {
       shopId,
       userId,
       items,
       deliveryAddress,
       idempotencyKey,
-      requestedDeliveryDate,
-      deliveryRunId,
-      deliveryWindow,
     } = params;
+
+    // Strict Security Rule: Shop users must NEVER control delivery dates or delivery runs
+    const requestedDeliveryDate = isShopRole ? undefined : params.requestedDeliveryDate;
+    const deliveryRunId = isShopRole ? undefined : params.deliveryRunId;
+    const deliveryWindow = isShopRole ? undefined : params.deliveryWindow;
 
     const client = await dbPool.connect();
     try {
@@ -455,17 +529,110 @@ export const orderRepository = {
 
       await client.query('COMMIT');
 
-      return {
+      const resultOrder = {
         ...order,
         shop_name: shop.name,
         items: validatedItems,
         isDuplicateReplay: false,
         scheduling_status: schedulingStatus,
-        requested_delivery_date: requestedDeliveryDate || null,
+        requested_delivery_date: null,
         confirmed_delivery_date: confirmedDeliveryDate,
         delivery_window: finalDeliveryWindow,
         notice: scheduledNotice,
       };
+
+      if (isShopRole) {
+        return sanitizeOrderForShop(resultOrder);
+      }
+      return resultOrder;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async assignRoute(orderId: string, routeId: string, actorId?: string, ipAddress?: string): Promise<any> {
+    const client = await dbPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 1. Lock and fetch order
+      const orderRes = await client.query(
+        `SELECT o.*, s.name as shop_name FROM orders o JOIN shops s ON o.shop_id = s.id WHERE o.id = $1 FOR UPDATE`,
+        [orderId]
+      );
+      if (!orderRes.rows[0]) {
+        throw new AppError('Order not found', 404);
+      }
+      const order = orderRes.rows[0];
+
+      if (order.status === 'DELIVERED' || order.status === 'CANCELLED') {
+        throw new AppError(`Cannot assign route to order in "${order.status}" status`, 400);
+      }
+
+      // 2. Validate route
+      const routeRes = await client.query(
+        `SELECT id, name, route_code, status FROM routes WHERE id = $1 AND deleted_at IS NULL`,
+        [routeId]
+      );
+      if (!routeRes.rows[0]) {
+        throw new AppError('Target route not found', 404);
+      }
+      const route = routeRes.rows[0];
+
+      // 3. Update order route_id
+      // Route assignment and delivery-date confirmation are strictly separate operations.
+      // Route assignment alone must not falsely mark delivery date as confirmed!
+      await client.query(
+        `UPDATE orders
+         SET route_id = $1,
+             updated_at = NOW()
+         WHERE id = $2`,
+        [route.id, order.id]
+      );
+
+      // 4. Ensure shop is a stop in route_stops for this route
+      const stopCheck = await client.query(
+        `SELECT id FROM route_stops WHERE route_id = $1 AND shop_id = $2 LIMIT 1`,
+        [route.id, order.shop_id]
+      );
+      if (!stopCheck.rows[0]) {
+        const maxSeqRes = await client.query(
+          `SELECT COALESCE(MAX(stop_sequence), 0)::int as max_seq FROM route_stops WHERE route_id = $1`,
+          [route.id]
+        );
+        const nextSeq = (maxSeqRes.rows[0]?.max_seq || 0) + 1;
+        await client.query(
+          `INSERT INTO route_stops (route_id, shop_id, stop_sequence, service_time_minutes)
+           VALUES ($1, $2, $3, 10)`,
+          [route.id, order.shop_id, nextSeq]
+        );
+      }
+
+      // 5. Audit trail in order_scheduling_history
+      await client.query(
+        `INSERT INTO order_scheduling_history (
+           order_id, action, previous_delivery_date, new_delivery_date,
+           previous_delivery_run_id, new_delivery_run_id, previous_status, new_status,
+           reason, actor_id
+         ) VALUES ($1, 'ROUTE_ASSIGNED', $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          order.id,
+          order.confirmed_delivery_date,
+          order.confirmed_delivery_date,
+          order.delivery_run_id,
+          order.delivery_run_id,
+          order.scheduling_status,
+          order.scheduling_status,
+          `Assigned to route "${route.name}" (${route.route_code})`,
+          actorId || null,
+        ]
+      );
+
+      await client.query('COMMIT');
+      return await this.findById(order.id);
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;

@@ -74,14 +74,20 @@ export default function ShopDeliveriesScreen() {
       case 'FAILED':
       case 'CANCELLED':
         return '#B91C1C';
-      case 'PENDING_ASSIGNMENT':
-      default:
+      case 'Scheduling':
+      case 'SCHEDULING':
         return '#B45309';
+      case 'Pending':
+      case 'PENDING':
+      default:
+        return '#64748B';
     }
   };
 
   const renderDeliveryItem = ({ item }: { item: any }) => {
-    const statusColor = getDeliveryStatusColor(item.status);
+    const rawStatus = item.status === 'PENDING_ASSIGNMENT' ? 'Pending' : (item.status || 'Pending');
+    const displayStatus = rawStatus.replace(/_/g, ' ');
+    const statusColor = getDeliveryStatusColor(rawStatus);
     const hasCoordinates =
       item.current_latitude !== null &&
       item.current_latitude !== undefined &&
@@ -97,34 +103,45 @@ export default function ShopDeliveriesScreen() {
           </View>
           <View style={[styles.badge, { backgroundColor: statusColor + '18' }]}>
             <Text style={[styles.badgeText, { color: statusColor }]}>
-              {item.status?.replace(/_/g, ' ') || 'PENDING'}
+              {displayStatus}
             </Text>
           </View>
         </View>
 
-        {/* Assigned Driver Box */}
-        <View style={styles.driverBox}>
-          <View style={styles.driverIconCircle}>
-            <Ionicons name="person" size={16} color="#16805D" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.driverTitle}>Assigned Logistics Driver</Text>
-            <Text style={styles.driverName}>
-              {item.driver_name || 'Fleet Driver Awaiting Allocation'}
-            </Text>
+        {/* Assigned Driver Box (Only shown if genuinely assigned) */}
+        {item.driver_name && (
+          <View style={styles.driverBox}>
+            <View style={styles.driverIconCircle}>
+              <Ionicons name="person" size={16} color="#16805D" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.driverTitle}>Assigned Logistics Driver</Text>
+              <Text style={styles.driverName}>{item.driver_name}</Text>
+              {item.driver_phone && (
+                <Text style={styles.driverPhone}>Contact: {item.driver_phone}</Text>
+              )}
+            </View>
             {item.driver_phone && (
-              <Text style={styles.driverPhone}>Contact: {item.driver_phone}</Text>
+              <TouchableOpacity
+                style={styles.callButton}
+                onPress={() => Linking.openURL(`tel:${item.driver_phone}`)}
+              >
+                <Ionicons name="call" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
             )}
           </View>
-          {item.driver_phone && (
-            <TouchableOpacity
-              style={styles.callButton}
-              onPress={() => Linking.openURL(`tel:${item.driver_phone}`)}
-            >
-              <Ionicons name="call" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
-        </View>
+        )}
+
+        {/* Confirmed Delivery Date */}
+        {item.confirmed_delivery_date && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 4 }}>
+            <Ionicons name="calendar-outline" size={14} color="#047857" />
+            <Text style={{ fontSize: 13, color: '#047857', fontWeight: '600' }}>
+              Confirmed Date: {formatDate(item.confirmed_delivery_date)}
+              {item.delivery_window ? ` (${item.delivery_window})` : ''}
+            </Text>
+          </View>
+        )}
 
         {/* Dispatch Notes */}
         {item.notes ? (

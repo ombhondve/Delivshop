@@ -496,11 +496,33 @@ export const shopRepository = {
     const shop = await this.findByIdOrShopId(shopId);
     if (!shop) return [];
     const res = await query(
-      `SELECT d.*, o.order_number, u.name as driver_name, u.phone as driver_phone
+      `SELECT d.id, d.order_id, d.created_at, d.updated_at, d.current_latitude, d.current_longitude,
+              d.estimated_minutes, d.delivered_at, o.order_number, o.total,
+              CASE 
+                WHEN o.confirmed_delivery_date IS NOT NULL AND d.status::text NOT IN ('PENDING_ASSIGNMENT') THEN d.status::text
+                WHEN o.route_id IS NOT NULL THEN 'Scheduling'
+                ELSE 'Pending'
+              END as status,
+              CASE 
+                WHEN o.confirmed_delivery_date IS NOT NULL AND o.route_id IS NOT NULL THEN u.name
+                ELSE NULL
+              END as driver_name,
+              CASE 
+                WHEN o.confirmed_delivery_date IS NOT NULL AND o.route_id IS NOT NULL THEN u.phone
+                ELSE NULL
+              END as driver_phone,
+              CASE
+                WHEN o.confirmed_delivery_date IS NOT NULL AND o.route_id IS NOT NULL THEN o.confirmed_delivery_date
+                ELSE NULL
+              END as confirmed_delivery_date,
+              CASE
+                WHEN o.confirmed_delivery_date IS NOT NULL AND o.route_id IS NOT NULL THEN o.delivery_window
+                ELSE NULL
+              END as delivery_window
        FROM deliveries d
        JOIN orders o ON d.order_id = o.id
        LEFT JOIN users u ON d.driver_id = u.id
-       WHERE o.shop_id = $1
+       WHERE (o.shop_id = $1 OR o.shop_id IN (SELECT id FROM shops WHERE shop_id = $1))
        ORDER BY d.created_at DESC`,
       [shop.id]
     );

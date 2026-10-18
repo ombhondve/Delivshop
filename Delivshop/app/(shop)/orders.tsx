@@ -85,10 +85,40 @@ export default function ShopOrdersScreen() {
     });
   }, [orders, activeFilter, searchQuery]);
 
+const getShopOrderVisibility = (order: any) => {
+  // Case C: Route assigned, delivery date confirmed
+  if (order.confirmed_delivery_date) {
+    return {
+      statusLabel: order.status || 'Confirmed',
+      deliveryDateLabel: formatDate(order.confirmed_delivery_date),
+      showDeliveryDate: true,
+      caseType: 'CASE_C' as const,
+    };
+  }
+
+  // Case B: Route assigned, delivery date not confirmed
+  if (order.route_id || order.customer_delivery_status === 'Scheduling' || order.scheduling_status === 'SCHEDULING') {
+    return {
+      statusLabel: 'Scheduling',
+      deliveryDateLabel: null,
+      showDeliveryDate: false,
+      caseType: 'CASE_B' as const,
+    };
+  }
+
+  // Case A: Route not assigned
+  return {
+    statusLabel: 'Pending',
+    deliveryDateLabel: null,
+    showDeliveryDate: false,
+    caseType: 'CASE_A' as const,
+  };
+};
+
   const renderOrderItem = ({ item }: { item: any }) => {
     const orderNumber = item.order_number || `ORD-${item.id?.slice(0, 8)}`;
     const lineItems = Array.isArray(item.items) ? item.items : [];
-    const itemCount = lineItems.length;
+    const visibility = getShopOrderVisibility(item);
 
     return (
       <TouchableOpacity
@@ -102,27 +132,21 @@ export default function ShopOrdersScreen() {
             <Text style={styles.orderDateText}>{formatDate(item.created_at)}</Text>
           </View>
           <View style={styles.cardHeaderBadges}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '1A' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                {item.status}
-              </Text>
-            </View>
-            {item.scheduling_status === 'AWAITING_SCHEDULING' && (
-              <View style={[styles.schedulingBadge, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="time-outline" size={11} color="#D97706" />
-                <Text style={[styles.schedulingBadgeText, { color: '#B45309' }]}>Awaiting Schedule</Text>
+            {visibility.caseType === 'CASE_A' && (
+              <View style={[styles.statusBadge, { backgroundColor: '#F1F5F9' }]}>
+                <Text style={[styles.statusText, { color: '#64748B' }]}>Pending</Text>
               </View>
             )}
-            {item.scheduling_status === 'SCHEDULED' && (
-              <View style={[styles.schedulingBadge, { backgroundColor: '#ECFDF5' }]}>
-                <Ionicons name="checkmark-circle-outline" size={11} color="#059669" />
-                <Text style={[styles.schedulingBadgeText, { color: '#047857' }]}>Scheduled</Text>
+            {visibility.caseType === 'CASE_B' && (
+              <View style={[styles.statusBadge, { backgroundColor: '#FEF3C7' }]}>
+                <Text style={[styles.statusText, { color: '#B45309' }]}>Scheduling</Text>
               </View>
             )}
-            {item.scheduling_status === 'OUT_FOR_DELIVERY' && (
-              <View style={[styles.schedulingBadge, { backgroundColor: '#EFF6FF' }]}>
-                <Ionicons name="bicycle-outline" size={11} color="#2563EB" />
-                <Text style={[styles.schedulingBadgeText, { color: '#1D4ED8' }]}>Out for Delivery</Text>
+            {visibility.caseType === 'CASE_C' && (
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '1A' }]}>
+                <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                  {item.status}
+                </Text>
               </View>
             )}
           </View>
@@ -145,14 +169,16 @@ export default function ShopOrdersScreen() {
 
         <View style={styles.cardFooter}>
           <View style={styles.deliveryStatusRow}>
-            <Ionicons name="calendar-outline" size={14} color="#64748B" />
-            {item.confirmed_delivery_date ? (
-              <Text style={[styles.deliveryStatusText, { color: '#047857', fontWeight: '600' }]}>
-                Delivery: {formatDate(item.confirmed_delivery_date)}
-              </Text>
+            {visibility.showDeliveryDate ? (
+              <>
+                <Ionicons name="calendar-outline" size={14} color="#047857" />
+                <Text style={[styles.deliveryStatusText, { color: '#047857', fontWeight: '600' }]}>
+                  Delivery: {visibility.deliveryDateLabel}
+                </Text>
+              </>
             ) : (
-              <Text style={[styles.deliveryStatusText, { color: '#B45309', fontWeight: '500' }]}>
-                Delivery date not confirmed
+              <Text style={[styles.deliveryStatusText, { color: visibility.caseType === 'CASE_B' ? '#B45309' : '#64748B', fontWeight: '600' }]}>
+                {visibility.statusLabel}
               </Text>
             )}
           </View>
@@ -271,103 +297,106 @@ export default function ShopOrdersScreen() {
               </View>
 
               <ScrollView style={styles.modalBody}>
-                {/* Status Progress */}
-                <View style={styles.statusBox}>
-                  <Text style={styles.statusBoxLabel}>Current Fulfillment Status</Text>
-                  <View style={styles.statusValueRow}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(selectedOrder.status) }]} />
-                    <Text style={[styles.statusValueText, { color: getStatusColor(selectedOrder.status) }]}>
-                      {selectedOrder.status}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Route Scheduling Banner */}
-                {selectedOrder.scheduling_status === 'AWAITING_SCHEDULING' ? (
-                  <View style={styles.modalAwaitingBox}>
-                    <View style={styles.modalAwaitingHeader}>
-                      <Ionicons name="time" size={18} color="#D97706" />
-                      <Text style={styles.modalAwaitingTitle}>Awaiting Supplier Scheduling</Text>
-                    </View>
-                    <Text style={styles.modalAwaitingMsg}>
-                      Your order has been received. The delivery date will be confirmed by the supplier.
-                    </Text>
-                    {selectedOrder.requested_delivery_date && (
-                      <Text style={styles.modalRequestedDateText}>
-                        Requested Delivery Date: {formatDate(selectedOrder.requested_delivery_date)}
-                      </Text>
-                    )}
-                  </View>
-                ) : selectedOrder.confirmed_delivery_date ? (
-                  <View style={styles.modalScheduledBox}>
-                    <View style={styles.modalScheduledHeader}>
-                      <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                      <Text style={styles.modalScheduledTitle}>Confirmed Delivery Schedule</Text>
-                    </View>
-                    <View style={styles.modalScheduledRow}>
-                      <Text style={styles.modalScheduledDateLabel}>Delivery Date:</Text>
-                      <Text style={styles.modalScheduledDateVal}>{formatDate(selectedOrder.confirmed_delivery_date)}</Text>
-                    </View>
-                    {selectedOrder.delivery_window && (
-                      <View style={styles.modalScheduledRow}>
-                        <Text style={styles.modalScheduledDateLabel}>Delivery Window:</Text>
-                        <Text style={styles.modalScheduledDateVal}>{selectedOrder.delivery_window}</Text>
+                {(() => {
+                  const modalVis = getShopOrderVisibility(selectedOrder);
+                  return (
+                    <>
+                      {/* Status Progress */}
+                      <View style={styles.statusBox}>
+                        <Text style={styles.statusBoxLabel}>Status</Text>
+                        <View style={styles.statusValueRow}>
+                          <View
+                            style={[
+                              styles.statusDot,
+                              {
+                                backgroundColor: modalVis.showDeliveryDate
+                                  ? getStatusColor(selectedOrder.status)
+                                  : modalVis.caseType === 'CASE_B'
+                                  ? '#B45309'
+                                  : '#64748B',
+                              },
+                            ]}
+                          />
+                          <Text
+                            style={[
+                              styles.statusValueText,
+                              {
+                                color: modalVis.showDeliveryDate
+                                  ? getStatusColor(selectedOrder.status)
+                                  : modalVis.caseType === 'CASE_B'
+                                  ? '#B45309'
+                                  : '#64748B',
+                              },
+                            ]}
+                          >
+                            {modalVis.statusLabel}
+                          </Text>
+                        </View>
                       </View>
-                    )}
-                    <Text style={styles.modalScheduledNote}>
-                      Allocated to cold-chain delivery vehicle with verified crate capacity.
-                    </Text>
-                  </View>
-                ) : null}
 
-                {/* Delivery Information */}
-                <View style={styles.detailSection}>
-                  <Text style={styles.sectionHeading}>Delivery Information</Text>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailKey}>Scheduling State:</Text>
-                    <Text style={[styles.detailVal, { fontWeight: '700' }]}>
-                      {selectedOrder.scheduling_status ? selectedOrder.scheduling_status.replace(/_/g, ' ') : 'PENDING'}
-                    </Text>
-                  </View>
-                  {selectedOrder.requested_delivery_date && (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailKey}>Requested Date:</Text>
-                      <Text style={styles.detailVal}>{formatDate(selectedOrder.requested_delivery_date)}</Text>
-                    </View>
-                  )}
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailKey}>Confirmed Delivery:</Text>
-                    <Text style={[styles.detailVal, { color: selectedOrder.confirmed_delivery_date ? '#047857' : '#B45309', fontWeight: '700' }]}>
-                      {selectedOrder.confirmed_delivery_date ? formatDate(selectedOrder.confirmed_delivery_date) : 'Delivery date not confirmed'}
-                    </Text>
-                  </View>
-                  {selectedOrder.delivery_window && (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailKey}>Delivery Window:</Text>
-                      <Text style={styles.detailVal}>{selectedOrder.delivery_window}</Text>
-                    </View>
-                  )}
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailKey}>Dispatch Status:</Text>
-                    <Text style={styles.detailVal}>{selectedOrder.delivery_status || 'PENDING ASSIGNMENT'}</Text>
-                  </View>
-                  {selectedOrder.driver_name && (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailKey}>Assigned Driver:</Text>
-                      <Text style={styles.detailVal}>{selectedOrder.driver_name}</Text>
-                    </View>
-                  )}
-                  {selectedOrder.delivery_address && (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailKey}>Destination:</Text>
-                      <Text style={styles.detailVal}>
-                        {typeof selectedOrder.delivery_address === 'string'
-                          ? selectedOrder.delivery_address
-                          : `${selectedOrder.delivery_address.street || ''}, ${selectedOrder.delivery_address.city || ''}`}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+                      {/* Confirmed Delivery Schedule (Only Case C) */}
+                      {modalVis.showDeliveryDate && (
+                        <View style={styles.modalScheduledBox}>
+                          <View style={styles.modalScheduledHeader}>
+                            <Ionicons name="checkmark-circle" size={18} color="#059669" />
+                            <Text style={styles.modalScheduledTitle}>Confirmed Delivery Schedule</Text>
+                          </View>
+                          <View style={styles.modalScheduledRow}>
+                            <Text style={styles.modalScheduledDateLabel}>Delivery Date:</Text>
+                            <Text style={styles.modalScheduledDateVal}>{modalVis.deliveryDateLabel}</Text>
+                          </View>
+                          {selectedOrder.delivery_window && (
+                            <View style={styles.modalScheduledRow}>
+                              <Text style={styles.modalScheduledDateLabel}>Delivery Window:</Text>
+                              <Text style={styles.modalScheduledDateVal}>{selectedOrder.delivery_window}</Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Delivery Information */}
+                      <View style={styles.detailSection}>
+                        <Text style={styles.sectionHeading}>Delivery Information</Text>
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailKey}>Fulfillment Status:</Text>
+                          <Text style={[styles.detailVal, { fontWeight: '700' }]}>
+                            {modalVis.statusLabel}
+                          </Text>
+                        </View>
+                        {modalVis.showDeliveryDate && (
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailKey}>Delivery Date:</Text>
+                            <Text style={[styles.detailVal, { color: '#047857', fontWeight: '700' }]}>
+                              {modalVis.deliveryDateLabel}
+                            </Text>
+                          </View>
+                        )}
+                        {modalVis.showDeliveryDate && selectedOrder.delivery_window && (
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailKey}>Delivery Window:</Text>
+                            <Text style={styles.detailVal}>{selectedOrder.delivery_window}</Text>
+                          </View>
+                        )}
+                        {modalVis.showDeliveryDate && selectedOrder.driver_name && (
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailKey}>Assigned Driver:</Text>
+                            <Text style={styles.detailVal}>{selectedOrder.driver_name}</Text>
+                          </View>
+                        )}
+                        {selectedOrder.delivery_address && (
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailKey}>Destination:</Text>
+                            <Text style={styles.detailVal}>
+                              {typeof selectedOrder.delivery_address === 'string'
+                                ? selectedOrder.delivery_address
+                                : `${selectedOrder.delivery_address.street || ''}, ${selectedOrder.delivery_address.city || ''}`}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </>
+                  );
+                })()}
 
                 {/* Items Breakdown */}
                 <View style={styles.detailSection}>

@@ -12,6 +12,7 @@ import {
   scheduleOrderSchema,
   rescheduleOrderSchema,
   updateSchedulingSettingsSchema,
+  assignRouteSchema,
 } from '../schemas/order.schema.js';
 
 const router = Router();
@@ -115,6 +116,15 @@ router.post(
   orderController.registerDeviceToken
 );
 
+
+// Order Route Assignment Operation (Admin & Supplier)
+router.post(
+  '/:orderId/assign-route',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  validateRequest(assignRouteSchema),
+  orderController.assignRoute
+);
 
 // Order Scheduling & Rescheduling Operations
 router.post(

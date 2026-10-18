@@ -31,7 +31,7 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
   onClose,
   onScheduled,
 }) => {
-  const [activeTab, setActiveTab] = useState<'EXISTING_RUN' | 'CREATE_RUN'>('EXISTING_RUN');
+  const [activeTab, setActiveTab] = useState<'EXISTING_RUN' | 'CREATE_RUN' | 'ASSIGN_ROUTE'>('EXISTING_RUN');
   const [selectedRunId, setSelectedRunId] = useState<string>('');
   const [deliveryWindow, setDeliveryWindow] = useState<string>('');
   const [publishRunNow, setPublishRunNow] = useState<boolean>(true);
@@ -39,7 +39,7 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // New Run Creation State
+  // New Run Creation & Route Assignment State
   const [routes, setRoutes] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -80,9 +80,9 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
     }
   }, [order]);
 
-  // Load resources for "Create New Run"
+  // Load resources for "Create New Run" & "Assign Route Only"
   useEffect(() => {
-    if (!isOpen || activeTab !== 'CREATE_RUN') return;
+    if (!isOpen) return;
 
     let isMounted = true;
     async function loadData() {
@@ -94,11 +94,12 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
         ]);
 
         if (!isMounted) return;
-        setRoutes(Array.isArray(rList) ? rList : []);
+        const validRoutes = Array.isArray(rList) ? rList : [];
+        setRoutes(validRoutes);
         setDrivers(Array.isArray(dList) ? dList : []);
         setVehicles(Array.isArray(vList?.data) ? vList.data : (Array.isArray(vList) ? vList : []));
 
-        if (rList?.[0] && !selectedRouteId) setSelectedRouteId(rList[0].id);
+        if (validRoutes[0] && !selectedRouteId) setSelectedRouteId(validRoutes[0].id);
       } catch (e) {
         console.warn('Failed to load scheduling resources', e);
       }
@@ -106,7 +107,7 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
 
     loadData();
     return () => { isMounted = false; };
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
   // Real-time conflict validation for new run creation
   useEffect(() => {
@@ -219,6 +220,26 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
       onClose();
     } catch (err: any) {
       setErrorMsg(err?.message || 'Failed to create run and schedule order.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAssignRoute = async () => {
+    if (!selectedRouteId) {
+      setErrorMsg('Please select a route to assign to this order.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMsg(null);
+
+    try {
+      await api.orders.assignRoute(order.id, selectedRouteId);
+      onScheduled();
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to assign route to order.');
     } finally {
       setSubmitting(false);
     }
@@ -390,6 +411,22 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
               }}
             >
               + Create New Delivery Run & Schedule
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('ASSIGN_ROUTE')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '6px 12px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                color: activeTab === 'ASSIGN_ROUTE' ? '#047857' : '#64748B',
+                borderBottom: activeTab === 'ASSIGN_ROUTE' ? '2px solid #047857' : '2px solid transparent',
+              }}
+            >
+              Assign Route Only (Awaiting Schedule)
             </button>
           </div>
 
@@ -657,70 +694,134 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
             </div>
           )}
 
-          {/* Delivery Window & Audit Notes */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '14px', marginTop: '4px' }}>
-            <div>
-              <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                Delivery Time Window:
-              </label>
-              <input
-                type="text"
-                value={deliveryWindow}
-                onChange={(e) => setDeliveryWindow(e.target.value)}
-                placeholder="06:00 AM - 09:00 AM"
-                style={{
-                  width: '100%',
-                  padding: '7px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
-                  fontSize: '13px',
-                }}
-              />
-            </div>
+          {/* TAB 3: Assign Route Only */}
+          {activeTab === 'ASSIGN_ROUTE' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', padding: '12px 16px', fontSize: '12.5px', color: '#1E40AF' }}>
+                <div style={{ fontWeight: 700, marginBottom: '4px' }}>Route Assignment Without Run Scheduling</div>
+                Assigning a route categorizes this order for logistics. The shop app status will immediately update to <strong>Scheduling</strong>, with delivery dates strictly hidden until confirmed by a delivery run.
+              </div>
 
-            <div>
-              <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                Scheduling Notes (Preserved in Audit Log):
-              </label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Prioritized early morning drop per shop request"
-                style={{
-                  width: '100%',
-                  padding: '7px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
-                  fontSize: '13px',
-                }}
-              />
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '8px' }}>
+                  Select Delivery Route:
+                </label>
+                {routes.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                    Loading active routes...
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {routes.map((r) => {
+                      const isSelected = selectedRouteId === r.id;
+                      return (
+                        <div
+                          key={r.id}
+                          onClick={() => setSelectedRouteId(r.id)}
+                          style={{
+                            border: isSelected ? '2px solid #047857' : '1px solid #CBD5E1',
+                            backgroundColor: isSelected ? '#F0FDF4' : '#FFFFFF',
+                            borderRadius: '8px',
+                            padding: '10px 14px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '13px', color: '#0F172A' }}>
+                              {r.name} ({r.code})
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748B' }}>
+                              {r.city || 'Regional'} • {r.stop_count || r.stops_count || 0} stops • Est. {r.estimated_duration_mins || 120} mins
+                            </div>
+                          </div>
+                          <input
+                            type="radio"
+                            name="selectedRouteRadio"
+                            checked={isSelected}
+                            onChange={() => setSelectedRouteId(r.id)}
+                            style={{ accentColor: '#047857', width: '16px', height: '16px', cursor: 'pointer' }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Delivery Window & Audit Notes (For Runs) */}
+          {activeTab !== 'ASSIGN_ROUTE' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '14px', marginTop: '4px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Delivery Time Window:
+                </label>
+                <input
+                  type="text"
+                  value={deliveryWindow}
+                  onChange={(e) => setDeliveryWindow(e.target.value)}
+                  placeholder="06:00 AM - 09:00 AM"
+                  style={{
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '13px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Scheduling Notes (Preserved in Audit Log):
+                </label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g. Prioritized early morning drop per shop request"
+                  style={{
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '13px',
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Confirmation & Publication Option */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: '#F8FAFC',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-            }}
-          >
-            <input
-              type="checkbox"
-              id="chk-publish-run"
-              checked={publishRunNow}
-              onChange={(e) => setPublishRunNow(e.target.checked)}
-              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#047857' }}
-            />
-            <label htmlFor="chk-publish-run" style={{ fontSize: '12px', fontWeight: 600, color: '#1E293B', cursor: 'pointer' }}>
-              Publish Run Immediately & Send Confirmed Delivery Date Notification to Shop Owner
-            </label>
-          </div>
+          {activeTab !== 'ASSIGN_ROUTE' && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: '#F8FAFC',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              <input
+                type="checkbox"
+                id="chk-publish-run"
+                checked={publishRunNow}
+                onChange={(e) => setPublishRunNow(e.target.checked)}
+                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#047857' }}
+              />
+              <label htmlFor="chk-publish-run" style={{ fontSize: '12px', fontWeight: 600, color: '#1E293B', cursor: 'pointer' }}>
+                Publish Run Immediately & Send Confirmed Delivery Date Notification to Shop Owner
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer */}
@@ -740,11 +841,15 @@ export const ScheduleOrderModal: React.FC<ScheduleOrderModalProps> = ({
 
           <Button
             variant="primary"
-            onClick={activeTab === 'EXISTING_RUN' ? handleScheduleExisting : handleCreateAndSchedule}
-            disabled={submitting || (activeTab === 'EXISTING_RUN' && !selectedRunId)}
+            onClick={activeTab === 'EXISTING_RUN' ? handleScheduleExisting : activeTab === 'CREATE_RUN' ? handleCreateAndSchedule : handleAssignRoute}
+            disabled={submitting || (activeTab === 'EXISTING_RUN' && !selectedRunId) || (activeTab === 'ASSIGN_ROUTE' && !selectedRouteId)}
             style={{ backgroundColor: '#047857', borderColor: '#047857', fontWeight: 700 }}
           >
-            {submitting ? 'Processing Allocation...' : 'Confirm Delivery Schedule →'}
+            {submitting
+              ? 'Processing...'
+              : activeTab === 'ASSIGN_ROUTE'
+              ? 'Save Route Assignment (Shop Status: Scheduling) →'
+              : 'Confirm Delivery Schedule →'}
           </Button>
         </div>
       </div>

@@ -44,9 +44,6 @@ export interface CreateOrderPayload {
     postalCode: string;
     notes?: string;
   };
-  requestedDeliveryDate?: string;
-  deliveryRunId?: string;
-  deliveryWindow?: string;
 }
 
 export const shopApi = {

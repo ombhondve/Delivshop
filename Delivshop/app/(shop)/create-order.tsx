@@ -35,14 +35,9 @@ export default function CreateOrderScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [successOrder, setSuccessOrder] = useState<any | null>(null);
 
-  // Delivery Availability & Route Scheduling State
+  // Delivery Availability State
   const [availability, setAvailability] = useState<DeliveryAvailabilityResponse | null>(null);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedWindow, setSelectedWindow] = useState<string>('');
-  const [customRequestedDate, setCustomRequestedDate] = useState<string>('');
-  const [isCustomDateRequested, setIsCustomDateRequested] = useState<boolean>(false);
 
   // Delivery address from profile
   const deliveryAddress = useMemo(() => ({
@@ -144,7 +139,7 @@ export default function CreateOrderScreen() {
   const deliveryFee = 0;
   const orderTotal = subtotal + deliveryFee;
 
-  // Fetch genuine route-based availability whenever the review modal opens
+  // Check general service status whenever the review modal opens
   useEffect(() => {
     if (!reviewModalVisible) return;
     let isMounted = true;
@@ -155,35 +150,9 @@ export default function CreateOrderScreen() {
         const estCrates = Math.max(1, Math.ceil(totalQuantity / 12));
         const avail = await shopApi.getDeliveryAvailability(estCrates);
         if (!isMounted) return;
-
         setAvailability(avail);
-
-        const openRun = avail.availableDates.find((d) => d.isAvailable);
-        if (openRun) {
-          setSelectedRunId(openRun.deliveryRunId);
-          setSelectedDate(openRun.date);
-          setSelectedWindow(openRun.deliveryWindow);
-          setIsCustomDateRequested(false);
-        } else {
-          // No published run: default requested date to tomorrow
-          const d = new Date();
-          d.setDate(d.getDate() + 1);
-          const tomorrow = d.toISOString().slice(0, 10);
-          setSelectedRunId(null);
-          setSelectedDate(tomorrow);
-          setCustomRequestedDate(tomorrow);
-          setSelectedWindow(avail.defaultDeliveryWindow || '06:00 AM - 09:00 AM');
-          setIsCustomDateRequested(true);
-        }
       } catch (e) {
-        console.warn('Availability check failed, defaulting to unscheduled request', e);
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        const tomorrow = d.toISOString().slice(0, 10);
-        setSelectedRunId(null);
-        setSelectedDate(tomorrow);
-        setCustomRequestedDate(tomorrow);
-        setIsCustomDateRequested(true);
+        console.warn('Availability check notice', e);
       } finally {
         if (isMounted) setLoadingAvailability(false);
       }
@@ -193,16 +162,11 @@ export default function CreateOrderScreen() {
     return () => { isMounted = false; };
   }, [reviewModalVisible, totalQuantity]);
 
-  // Order submission with Idempotency Key, Route-Based Availability & Offline queue
+  // Order submission with Idempotency Key & Offline queue
+  // Shop role NEVER controls delivery dates: date assignment is strictly performed by Admin operations
   const handleConfirmOrder = async () => {
     if (cartItems.length === 0) {
       Alert.alert('Empty Cart', 'Please add at least one dairy item to your order.');
-      return;
-    }
-
-    // Check policy: if ordering without published runs is blocked by policy
-    if (availability && !availability.allowUnscheduledOrders && (!selectedRunId || isCustomDateRequested)) {
-      Alert.alert('Delivery Schedule Required', availability.policyMessage);
       return;
     }
 
@@ -217,18 +181,12 @@ export default function CreateOrderScreen() {
       orderTotal
     );
 
-    const payloadDate = isCustomDateRequested ? customRequestedDate : selectedDate;
-    const payloadRunId = (!isCustomDateRequested && selectedRunId) ? selectedRunId : undefined;
-
-    // 2. Dispatch to backend API with Idempotency-Key and Route Scheduling parameters
+    // 2. Dispatch to backend API with Idempotency-Key
     try {
       const result = await shopApi.createOrder(
         {
           items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
           deliveryAddress,
-          requestedDeliveryDate: payloadDate || undefined,
-          deliveryRunId: payloadRunId,
-          deliveryWindow: selectedWindow || undefined,
         },
         pendingOrder.idempotencyKey
       );
@@ -450,144 +408,17 @@ export default function CreateOrderScreen() {
                 </View>
               </View>
 
-              {/* Delivery Date & Route Scheduling Selection */}
+              {/* Delivery Scheduling Notice */}
               <View style={styles.schedulingSection}>
-                <View style={styles.schedulingHeaderRow}>
-                  <Ionicons name="calendar-outline" size={18} color="#16805D" />
-                  <Text style={styles.schedulingSectionTitle}>Delivery Schedule & Route Availability</Text>
+                <View style={styles.unscheduledNoticeRow}>
+                  <Ionicons name="information-circle-outline" size={20} color="#16805D" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.unscheduledTitle}>Logistics Delivery Scheduling</Text>
+                    <Text style={styles.unscheduledMsg}>
+                      Your order will be scheduled and confirmed by our supplier logistics team upon submission.
+                    </Text>
+                  </View>
                 </View>
-
-                {loadingAvailability ? (
-                  <View style={styles.availLoadingBox}>
-                    <ActivityIndicator size="small" color="#16805D" />
-                    <Text style={styles.availLoadingText}>Checking cold-chain route availability & truck capacity...</Text>
-                  </View>
-                ) : availability ? (
-                  <View>
-                    {/* Route coverage note */}
-                    <View style={[styles.coverageBanner, !availability.hasRouteCoverage && styles.coverageBannerWarn]}>
-                      <Ionicons
-                        name={availability.hasRouteCoverage ? 'checkmark-circle-outline' : 'alert-circle-outline'}
-                        size={16}
-                        color={availability.hasRouteCoverage ? '#16805D' : '#D97706'}
-                      />
-                      <Text style={[styles.coverageText, !availability.hasRouteCoverage && styles.coverageTextWarn]}>
-                        {availability.hasRouteCoverage
-                          ? `Route Service: ${availability.coveredRoutes?.[0]?.name || 'Assigned Zone'}`
-                          : 'No active route template currently covers this address.'}
-                      </Text>
-                    </View>
-
-                    {/* Published Runs List */}
-                    {availability.availableDates.length > 0 && !isCustomDateRequested ? (
-                      <View style={styles.runsContainer}>
-                        <Text style={styles.runsPromptText}>Select a confirmed delivery run:</Text>
-                        {availability.availableDates.map((dateOption) => {
-                          const isSelected = selectedRunId === dateOption.deliveryRunId && selectedDate === dateOption.date;
-                          return (
-                            <TouchableOpacity
-                              key={dateOption.deliveryRunId || dateOption.date}
-                              style={[styles.dateCard, isSelected && styles.dateCardActive]}
-                              onPress={() => {
-                                setSelectedRunId(dateOption.deliveryRunId);
-                                setSelectedDate(dateOption.date);
-                                setSelectedWindow(dateOption.deliveryWindow);
-                                setIsCustomDateRequested(false);
-                              }}
-                            >
-                              <View style={styles.dateCardTop}>
-                                <View style={{ flex: 1 }}>
-                                  <Text style={[styles.dateText, isSelected && styles.dateTextActive]}>
-                                    {formatDate(dateOption.date)}
-                                  </Text>
-                                  <Text style={styles.windowText}>Window: {dateOption.deliveryWindow}</Text>
-                                </View>
-                                <View style={styles.guaranteedBadge}>
-                                  <Ionicons name="shield-checkmark" size={12} color="#16805D" />
-                                  <Text style={styles.guaranteedBadgeText}>Confirmed Run</Text>
-                                </View>
-                              </View>
-                              <View style={styles.dateCardBottom}>
-                                <Text style={styles.capacityText}>
-                                  {dateOption.availableCrates} crates left • Cutoff: {dateOption.cutoffTime}
-                                </Text>
-                                <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
-                                  {isSelected && <View style={styles.radioInnerCircle} />}
-                                </View>
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-
-                        <TouchableOpacity
-                          style={styles.customDateToggle}
-                          onPress={() => {
-                            setIsCustomDateRequested(true);
-                            setSelectedRunId(null);
-                          }}
-                        >
-                          <Ionicons name="calendar" size={14} color="#16805D" />
-                          <Text style={styles.customDateToggleText}>Request an alternative delivery date instead</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : null}
-
-                    {/* Unscheduled / Custom Date Requested Notice */}
-                    {(availability.availableDates.length === 0 || isCustomDateRequested) && (
-                      <View style={styles.unscheduledBox}>
-                        <View style={styles.unscheduledNoticeRow}>
-                          <Ionicons name="time-outline" size={20} color="#D97706" />
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.unscheduledTitle}>Awaiting Supplier Scheduling</Text>
-                            <Text style={styles.unscheduledMsg}>
-                              Your order has been received. The delivery date will be confirmed by the supplier.
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.customDateInputSection}>
-                          <Text style={styles.customDateLabel}>Preferred / Requested Delivery Date (YYYY-MM-DD):</Text>
-                          <TextInput
-                            style={styles.customDateInput}
-                            value={customRequestedDate}
-                            onChangeText={(text) => {
-                              setCustomRequestedDate(text);
-                              setSelectedDate(text);
-                            }}
-                            placeholder="YYYY-MM-DD (e.g. 2026-10-25)"
-                            placeholderTextColor="#94A3B8"
-                            autoCapitalize="none"
-                          />
-                        </View>
-
-                        {availability.availableDates.length > 0 && (
-                          <TouchableOpacity
-                            style={styles.backToRunsBtn}
-                            onPress={() => {
-                              setIsCustomDateRequested(false);
-                              const first = availability.availableDates[0];
-                              if (first) {
-                                setSelectedRunId(first.deliveryRunId);
-                                setSelectedDate(first.date);
-                                setSelectedWindow(first.deliveryWindow);
-                              }
-                            }}
-                          >
-                            <Text style={styles.backToRunsBtnText}>← Choose from published runs instead</Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    )}
-
-                    {/* Restricted by policy warning if applicable */}
-                    {!availability.allowUnscheduledOrders && availability.availableDates.length === 0 && (
-                      <View style={styles.policyWarningBox}>
-                        <Ionicons name="close-circle" size={16} color="#DC2626" />
-                        <Text style={styles.policyWarningText}>{availability.policyMessage}</Text>
-                      </View>
-                    )}
-                  </View>
-                ) : null}
               </View>
 
               <Text style={styles.summarySectionTitle}>Line Items ({cartItems.length})</Text>
@@ -667,37 +498,16 @@ export default function CreateOrderScreen() {
                 </Text>
               </View>
 
-              {/* Delivery Schedule Confirmation Card */}
-              {successOrder.scheduling_status === 'SCHEDULED' || successOrder.confirmed_delivery_date ? (
-                <View style={styles.successScheduledBox}>
-                  <View style={styles.successStatusRow}>
-                    <Ionicons name="checkmark-circle" size={18} color="#16805D" />
-                    <Text style={styles.successStatusScheduledTitle}>Confirmed Delivery Schedule</Text>
-                  </View>
-                  <Text style={styles.successScheduledDate}>
-                    {formatDate(successOrder.confirmed_delivery_date || selectedDate)}
-                  </Text>
-                  <Text style={styles.successScheduledWindow}>
-                    Delivery Window: {successOrder.delivery_window || selectedWindow || 'Standard Route Window'}
-                  </Text>
-                  <Text style={styles.successScheduledSub}>
-                    Allocated to cold-chain delivery vehicle.
-                  </Text>
+              {/* Delivery Schedule Status Notice */}
+              <View style={styles.successUnscheduledBox}>
+                <View style={styles.successStatusRow}>
+                  <Ionicons name="time" size={18} color="#D97706" />
+                  <Text style={styles.successStatusUnscheduledTitle}>Order Placed (Pending Schedule)</Text>
                 </View>
-              ) : (
-                <View style={styles.successUnscheduledBox}>
-                  <View style={styles.successStatusRow}>
-                    <Ionicons name="time" size={18} color="#D97706" />
-                    <Text style={styles.successStatusUnscheduledTitle}>Awaiting Supplier Confirmation</Text>
-                  </View>
-                  <Text style={styles.successUnscheduledMsg}>
-                    Your order has been received. The delivery date will be confirmed by the supplier.
-                  </Text>
-                  <Text style={styles.successRequestedDate}>
-                    Requested Date: {formatDate(successOrder.requested_delivery_date || selectedDate)}
-                  </Text>
-                </View>
-              )}
+                <Text style={styles.successUnscheduledMsg}>
+                  Your replenishment order has been registered. The delivery schedule will be confirmed by supplier logistics.
+                </Text>
+              </View>
 
               <Text style={styles.successNotes}>
                 Your replenishment order has been registered in the supplier dispatches ledger.

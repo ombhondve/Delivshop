@@ -40,7 +40,7 @@ export const deliveryRepository = {
        FROM deliveries d 
        JOIN orders o ON d.order_id = o.id 
        JOIN shops s ON o.shop_id = s.id 
-       WHERE d.driver_id = $1 
+       WHERE (d.driver_id = $1 OR o.delivery_run_id IN (SELECT id FROM delivery_runs WHERE driver_id = $1 AND deleted_at IS NULL))
        ORDER BY d.created_at DESC`,
       [driverId]
     );

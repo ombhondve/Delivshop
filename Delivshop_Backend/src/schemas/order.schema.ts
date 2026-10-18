@@ -75,3 +75,13 @@ export const updateSchedulingSettingsSchema = z.object({
   }),
 });
 
+export const assignRouteSchema = z.object({
+  params: z.object({
+    orderId: z.string().uuid('Invalid order ID'),
+  }),
+  body: z.object({
+    routeId: z.string().uuid('Invalid route ID'),
+  }),
+});
+
+

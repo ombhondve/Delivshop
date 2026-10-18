@@ -911,6 +911,13 @@ export const api = {
       return apiClient<{ orders: UnscheduledOrderRecord[]; count: number }>(`orders/unscheduled${qs ? `?${qs}` : ''}`);
     },
 
+    async assignRoute(orderId: string, routeId: string): Promise<any> {
+      return apiClient<any>(`orders/${orderId}/assign-route`, {
+        method: 'POST',
+        body: JSON.stringify({ routeId }),
+      });
+    },
+
     async schedule(
       orderId: string,
       payload: {

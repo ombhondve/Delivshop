@@ -5,7 +5,7 @@ import { sendSuccess, sendError } from '../utils/response.js';
 export const orderController = {
   async getOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const order = await orderService.getOrder(req.params.orderId);
+      const order = await orderService.getOrder(req.params.orderId, req.user?.role, req.user?.shopId);
       sendSuccess(res, order);
     } catch (err: any) {
       if (err.statusCode && err.statusCode < 500) {
@@ -29,6 +29,24 @@ export const orderController = {
     }
   },
 
+  async assignRoute(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const order = await orderService.assignRoute(
+        req.params.orderId,
+        req.body.routeId,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, order, 'Route successfully assigned to order');
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      next(err);
+    }
+  },
+
   async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const idempotencyKey =
@@ -36,7 +54,8 @@ export const orderController = {
         req.body.idempotencyKey ||
         undefined;
 
-      const shopId = req.user?.role === 'SHOP' && req.user.shopId ? req.user.shopId : req.body.shopId;
+      const isShop = req.user?.role === 'SHOP';
+      const shopId = (isShop && req.user?.shopId) ? req.user.shopId : req.body.shopId;
 
       const order = await orderService.createOrder(
         {
@@ -44,9 +63,10 @@ export const orderController = {
           items: req.body.items,
           deliveryAddress: req.body.deliveryAddress,
           idempotencyKey,
-          requestedDeliveryDate: req.body.requestedDeliveryDate,
-          deliveryRunId: req.body.deliveryRunId,
-          deliveryWindow: req.body.deliveryWindow,
+          requestedDeliveryDate: isShop ? undefined : req.body.requestedDeliveryDate,
+          deliveryRunId: isShop ? undefined : req.body.deliveryRunId,
+          deliveryWindow: isShop ? undefined : req.body.deliveryWindow,
+          isShopRole: isShop,
         },
         req.user!.id,
         req.ip

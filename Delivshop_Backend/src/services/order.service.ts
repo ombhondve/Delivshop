@@ -1,17 +1,29 @@
-import { orderRepository } from '../repositories/order.repository.js';
+import { orderRepository, sanitizeOrderForShop } from '../repositories/order.repository.js';
 import { auditService } from './audit.service.js';
 import { notificationService, ReminderResult } from './notification.service.js';
 import { AppError } from '../utils/errors.js';
 
 export const orderService = {
-  async getOrder(orderId: string) {
+  async getOrder(orderId: string, role?: string, userShopId?: string) {
     const order = await orderRepository.findById(orderId);
     if (!order) throw new AppError('Order not found', 404);
+
+    if (role === 'SHOP') {
+      if (userShopId && order.shop_id !== userShopId) {
+        throw new AppError('Forbidden: You do not have permission to access orders from another shop', 403);
+      }
+      return sanitizeOrderForShop(order);
+    }
+
     return order;
   },
 
   async getShopOrders(shopId: string) {
     return orderRepository.findByShopId(shopId);
+  },
+
+  async assignRoute(orderId: string, routeId: string, actorId?: string, ipAddress?: string) {
+    return orderRepository.assignRoute(orderId, routeId, actorId, ipAddress);
   },
 
   async createOrder(
@@ -23,6 +35,7 @@ export const orderService = {
       requestedDeliveryDate?: string;
       deliveryRunId?: string;
       deliveryWindow?: string;
+      isShopRole?: boolean;
     },
     userId: string,
     ipAddress?: string
@@ -36,6 +49,7 @@ export const orderService = {
       requestedDeliveryDate: data.requestedDeliveryDate,
       deliveryRunId: data.deliveryRunId,
       deliveryWindow: data.deliveryWindow,
+      isShopRole: data.isShopRole,
     });
 
     if (!order.isDuplicateReplay) {
