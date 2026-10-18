@@ -955,4 +955,228 @@ export const orderRepository = {
       },
     };
   },
+
+  /**
+   * Shop Order Tracking: Computes exact 3-card summary and paginated/filtered shop contact list with ordering & reminder status
+   */
+  async getShopOrderTracking(filters: {
+    date?: string;
+    search?: string;
+    orderStatus?: string;
+    reminderStatus?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    summary: {
+      reportingDate: string;
+      totalActiveShops: number;
+      shopsOrdered: number;
+      shopsNotOrdered: number;
+    };
+    shops: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+    };
+  }> {
+    const targetDate = filters.date && filters.date.trim()
+      ? filters.date.trim()
+      : new Date().toISOString().slice(0, 10);
+
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(filters.limit) || 50));
+    const offset = (page - 1) * limit;
+
+    // 1. Compute Exact Summary Cards across all active shops for this reporting date
+    const summaryRes = await query(
+      `WITH active_shops AS (
+         SELECT id FROM shops WHERE status = 'ACTIVE'
+       ),
+       ordered_shops AS (
+         SELECT DISTINCT o.shop_id
+         FROM orders o
+         JOIN active_shops a ON o.shop_id = a.id
+         WHERE o.status::text NOT IN ('CANCELLED', 'REJECTED')
+           AND (o.created_at::date = $1::date OR o.requested_delivery_date = $1::date)
+       )
+       SELECT 
+         (SELECT COUNT(*) FROM active_shops)::int as total_active_shops,
+         (SELECT COUNT(*) FROM ordered_shops)::int as shops_ordered,
+         ((SELECT COUNT(*) FROM active_shops) - (SELECT COUNT(*) FROM ordered_shops))::int as shops_not_ordered`,
+      [targetDate]
+    );
+
+    const totalActiveShops = Number(summaryRes.rows[0]?.total_active_shops || 0);
+    const shopsOrdered = Number(summaryRes.rows[0]?.shops_ordered || 0);
+    const shopsNotOrdered = Number(summaryRes.rows[0]?.shops_not_ordered || 0);
+
+    // 2. Build Filtered Query for Shop Rows
+    const queryParams: any[] = [targetDate];
+    const whereClauses: string[] = ["s.status = 'ACTIVE'"];
+
+    if (filters.search && filters.search.trim()) {
+      queryParams.push(`%${filters.search.trim()}%`);
+      whereClauses.push(
+        `(s.name ILIKE $${queryParams.length} OR s.shop_id ILIKE $${queryParams.length} OR s.phone ILIKE $${queryParams.length} OR s.owner_name ILIKE $${queryParams.length} OR s.delivery_contact_name ILIKE $${queryParams.length})`
+      );
+    }
+
+    if (filters.orderStatus && filters.orderStatus !== 'ALL') {
+      if (filters.orderStatus === 'ORDERED') {
+        whereClauses.push(`COALESCE(so.order_count, 0) > 0`);
+      } else if (filters.orderStatus === 'NOT_ORDERED') {
+        whereClauses.push(`COALESCE(so.order_count, 0) = 0`);
+      }
+    }
+
+    if (filters.reminderStatus && filters.reminderStatus !== 'ALL') {
+      if (filters.reminderStatus === 'SENT') {
+        whereClauses.push(`lr.id IS NOT NULL`);
+      } else if (filters.reminderStatus === 'NOT_SENT') {
+        whereClauses.push(`lr.id IS NULL`);
+      }
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countSql = `
+      WITH shop_orders AS (
+        SELECT 
+          o.shop_id,
+          COUNT(o.id) as order_count
+        FROM orders o
+        WHERE o.status::text NOT IN ('CANCELLED', 'REJECTED')
+          AND (o.created_at::date = $1::date OR o.requested_delivery_date = $1::date)
+        GROUP BY o.shop_id
+      ),
+      latest_reminders AS (
+        SELECT DISTINCT ON (shop_id) id, shop_id
+        FROM shop_order_reminders
+        WHERE reporting_date = $1::date
+        ORDER BY shop_id, created_at DESC
+      )
+      SELECT COUNT(*)::int as total
+      FROM shops s
+      LEFT JOIN shop_orders so ON s.id = so.shop_id
+      LEFT JOIN latest_reminders lr ON s.id = lr.shop_id
+      ${whereSql}
+    `;
+
+    const countRes = await query(countSql, queryParams);
+    const totalCount = Number(countRes.rows[0]?.total || 0);
+
+    // 3. Select shop details with pagination
+    queryParams.push(limit);
+    const limitIdx = queryParams.length;
+    queryParams.push(offset);
+    const offsetIdx = queryParams.length;
+
+    const dataSql = `
+      WITH shop_orders AS (
+        SELECT 
+          o.shop_id,
+          json_agg(
+            json_build_object(
+              'id', o.id,
+              'orderNumber', o.order_number,
+              'status', o.status::text,
+              'total', o.total,
+              'totalPackages', o.total_packages_count,
+              'totalVolumeLitres', o.total_volume_litres,
+              'createdAt', o.created_at,
+              'requestedDeliveryDate', o.requested_delivery_date
+            ) ORDER BY o.created_at DESC
+          ) as orders_list,
+          COUNT(o.id) as order_count
+        FROM orders o
+        WHERE o.status::text NOT IN ('CANCELLED', 'REJECTED')
+          AND (o.created_at::date = $1::date OR o.requested_delivery_date = $1::date)
+        GROUP BY o.shop_id
+      ),
+      latest_reminders AS (
+        SELECT DISTINCT ON (shop_id)
+          id, shop_id, reminder_type, status, channel, message, created_at, error_reason
+        FROM shop_order_reminders
+        WHERE reporting_date = $1::date
+        ORDER BY shop_id, created_at DESC
+      )
+      SELECT 
+        s.id,
+        s.shop_id as shop_code,
+        s.name,
+        s.owner_name,
+        s.phone,
+        s.delivery_contact_name,
+        s.delivery_contact_phone,
+        s.address,
+        s.area,
+        s.city,
+        s.status,
+        s.credit_limit,
+        s.outstanding_balance,
+        s.delivery_window,
+        CASE WHEN COALESCE(so.order_count, 0) > 0 THEN 'ORDERED' ELSE 'NOT_ORDERED' END as order_status,
+        COALESCE(so.orders_list, '[]'::json) as orders,
+        CASE WHEN lr.id IS NOT NULL THEN
+          json_build_object(
+            'id', lr.id,
+            'reminderType', lr.reminder_type,
+            'status', lr.status,
+            'channel', lr.channel,
+            'message', lr.message,
+            'createdAt', lr.created_at,
+            'errorReason', lr.error_reason
+          )
+        ELSE NULL END as last_reminder
+      FROM shops s
+      LEFT JOIN shop_orders so ON s.id = so.shop_id
+      LEFT JOIN latest_reminders lr ON s.id = lr.shop_id
+      ${whereSql}
+      ORDER BY 
+        (CASE WHEN COALESCE(so.order_count, 0) = 0 THEN 0 ELSE 1 END) ASC,
+        s.name ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataRes = await query(dataSql, queryParams);
+
+    const shops = dataRes.rows.map((row) => ({
+      id: row.id,
+      shopId: row.shop_code || row.id,
+      name: row.name,
+      ownerName: row.owner_name,
+      phone: row.delivery_contact_phone || row.phone,
+      deliveryContactName: row.delivery_contact_name,
+      deliveryContactPhone: row.delivery_contact_phone,
+      address: row.address,
+      area: row.area,
+      city: row.city,
+      status: row.status,
+      creditLimit: Number(row.credit_limit || 0),
+      outstandingBalance: Number(row.outstanding_balance || 0),
+      deliveryWindow: row.delivery_window,
+      orderStatus: row.order_status,
+      orders: row.orders || [],
+      lastReminder: row.last_reminder,
+    }));
+
+    return {
+      summary: {
+        reportingDate: targetDate,
+        totalActiveShops,
+        shopsOrdered,
+        shopsNotOrdered,
+      },
+      shops,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit) || 1,
+      },
+    };
+  },
 };
+

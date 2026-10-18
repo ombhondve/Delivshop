@@ -1,5 +1,6 @@
 import { orderRepository } from '../repositories/order.repository.js';
 import { auditService } from './audit.service.js';
+import { notificationService, ReminderResult } from './notification.service.js';
 import { AppError } from '../utils/errors.js';
 
 export const orderService = {
@@ -83,10 +84,8 @@ export const orderService = {
     driverId?: string;
     routeId?: string;
     date?: string;
-    startDate?: string;
-    endDate?: string;
+    page?: number;
     limit?: number;
-    offset?: number;
   }) {
     return orderRepository.listOrders(filters);
   },
@@ -102,6 +101,11 @@ export const orderService = {
     return orderRepository.getVolumeSummary(filters);
   },
 
+  /**
+   * Export Consolidated Dispatch Summary as CSV
+   * Strictly includes ONLY: Product Name, SKU, Packaging Type, Package Size, Total Packages, Total Volume (L)
+   * With Total Crates completely removed per operational requirements.
+   */
   async exportVolumeSummaryCsv(filters: {
     status?: string;
     deliveryDate?: string;
@@ -128,20 +132,19 @@ export const orderService = {
     lines.push(`Applied Filters,${escapeCsv(JSON.stringify(filters))}`);
     lines.push('');
 
-    // Section 1: Overview KPIs
+    // Section 1: Overview KPIs (No crate KPIs)
     lines.push('--- SUMMARY OVERVIEW ---');
     lines.push('Metric,Value,Unit');
     lines.push(`Total Eligible Orders,${overview.totalEligibleOrders},Orders`);
     lines.push(`Total Liquid Volume,${overview.totalLiquidVolumeLitres},Litres (L)`);
     lines.push(`Total Individual Packages,${overview.totalPackagesRequired},Packages`);
-    lines.push(`Total Crates Required,${overview.totalCratesRequired ?? 'Incomplete packaging config'},Crates`);
     lines.push(`Distinct Products,${overview.distinctProductsCount},Products`);
     lines.push(`Included Shops,${overview.includedShopsCount},Shops`);
     lines.push('');
 
-    // Section 2: Packaging Breakdown by Product
+    // Section 2: Packaging Breakdown by Product (Strictly 6 Columns, zero crates)
     lines.push('--- PACKAGING BREAKDOWN BY PRODUCT ---');
-    lines.push('Product Name,SKU,Packaging Type,Package Size,Total Packages,Total Volume (L),Total Crates,Units per Crate,Packaging Status');
+    lines.push('Product Name,SKU,Packaging Type,Package Size,Total Packages,Total Volume (L)');
     for (const p of packagingBreakdown) {
       lines.push([
         escapeCsv(p.productName),
@@ -150,16 +153,13 @@ export const orderService = {
         escapeCsv(p.packageSize),
         p.totalPackages,
         p.isLiquid ? (p.totalVolumeLitres != null ? `${p.totalVolumeLitres} L` : '0 L') : 'Not applicable (Sold by weight)',
-        p.totalCrates != null ? p.totalCrates : 'Unavailable',
-        p.crateCapacity != null ? p.crateCapacity : 'Not configured',
-        p.isCrateCapacityKnown ? 'Configured' : escapeCsv(p.missingConfigReason || 'Missing config'),
       ].join(','));
     }
     lines.push('');
 
-    // Section 3: Shop-Wise Summary
+    // Section 3: Shop-Wise Summary (Zero Crates)
     lines.push('--- SHOP-WISE ORDER SUMMARY ---');
-    lines.push('Shop Name,Shop ID,Order Number,Order Status,Dispatch Status,Driver,Delivery Route,Liquid Volume (L),Total Packages,Total Crates');
+    lines.push('Shop Name,Shop ID,Order Number,Order Status,Dispatch Status,Driver,Delivery Route,Liquid Volume (L),Total Packages');
     for (const s of shopWiseSummary) {
       lines.push([
         escapeCsv(s.shopName),
@@ -171,14 +171,13 @@ export const orderService = {
         escapeCsv(s.routeName),
         `${s.totalLiquidVolumeLitres} L`,
         s.totalPackages,
-        s.totalCrates != null ? s.totalCrates : 'Unavailable',
       ].join(','));
     }
     lines.push('');
 
-    // Section 4: Detailed Order Items
+    // Section 4: Detailed Order Items (Zero Crates)
     lines.push('--- ITEM-LEVEL PACKAGING BREAKDOWN ---');
-    lines.push('Order Number,Shop Name,Product Name,SKU,Package Size,Type,Quantity (Pkts),Volume (L),Crates,Unit Price,Total Price');
+    lines.push('Order Number,Shop Name,Product Name,SKU,Package Size,Type,Quantity (Pkts),Volume (L),Unit Price,Total Price');
     for (const s of shopWiseSummary) {
       for (const item of s.items || []) {
         lines.push([
@@ -190,7 +189,6 @@ export const orderService = {
           escapeCsv(item.packagingType),
           item.quantity,
           item.isLiquid ? (item.volumeLitres != null ? `${item.volumeLitres} L` : '0 L') : 'Not applicable',
-          item.cratesCount != null ? item.cratesCount : 'Unavailable',
           item.unitPrice,
           item.totalPrice,
         ].join(','));
@@ -198,5 +196,101 @@ export const orderService = {
     }
 
     return lines.join('\r\n');
+  },
+
+  /**
+   * Shop Order Tracking: Retrieves exact summary counts and filtered shops list
+   */
+  async getShopOrderTracking(filters: {
+    date?: string;
+    search?: string;
+    orderStatus?: string;
+    reminderStatus?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    return orderRepository.getShopOrderTracking(filters);
+  },
+
+  /**
+   * Send an order reminder to a single shop
+   */
+  async sendShopReminder(params: {
+    shopId: string;
+    reportingDate: string;
+    reminderType?: string;
+    customMessage?: string;
+    sentBy?: string;
+    idempotencyKey?: string;
+  }): Promise<ReminderResult> {
+    const res = await notificationService.sendShopReminder(params);
+
+    if (params.sentBy) {
+      await auditService.log({
+        actorId: params.sentBy,
+        action: 'ORDER_REMINDER_SENT',
+        entityType: 'shop',
+        entityId: res.shopId,
+        details: {
+          reportingDate: params.reportingDate,
+          status: res.status,
+          provider: res.provider,
+          channel: res.channel,
+          errorReason: res.errorReason,
+        },
+      });
+    }
+
+    return res;
+  },
+
+  /**
+   * Send bulk order reminders to multiple shops
+   */
+  async sendBulkReminders(params: {
+    shopIds: string[];
+    reportingDate: string;
+    reminderType?: string;
+    customMessage?: string;
+    sentBy?: string;
+  }) {
+    const result = await notificationService.sendBulkReminders(params);
+
+    if (params.sentBy) {
+      await auditService.log({
+        actorId: params.sentBy,
+        action: 'BULK_ORDER_REMINDERS_SENT',
+        entityType: 'bulk_action',
+        entityId: result.batchId,
+        details: {
+          totalRequested: result.totalRequested,
+          acceptedCount: result.acceptedCount,
+          failedCount: result.failedCount,
+          noDeviceCount: result.noDeviceCount,
+          reportingDate: params.reportingDate,
+        },
+      });
+    }
+
+    return result;
+  },
+
+  /**
+   * Get reminder history for a shop
+   */
+  async getReminderHistory(shopId: string, limit?: number) {
+    return notificationService.getReminderHistory(shopId, limit);
+  },
+
+  /**
+   * Register mobile device token for push notifications
+   */
+  async registerDeviceToken(params: {
+    shopId: string;
+    userId?: string;
+    fcmToken: string;
+    deviceType?: string;
+  }) {
+    return notificationService.registerDeviceToken(params);
   },
 };

@@ -29,11 +29,11 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { OrderVolumeSummaryModal } from './OrderVolumeSummaryModal';
 import { ScheduleOrderModal } from './ScheduleOrderModal';
 import { SchedulingHistoryModal } from './SchedulingHistoryModal';
 import { RescheduleOrderModal } from './RescheduleOrderModal';
 import { api } from '../../services/api/endpoints';
+import { useNavigation } from '../../context/NavigationContext';
 import { OrderDispatchRecord, UnscheduledOrderRecord } from '../../types';
 
 interface DisplayOrderItem {
@@ -200,13 +200,13 @@ const FALLBACK_DISPATCH_ORDERS: DisplayOrderRecord[] = [
 ];
 
 export const OrdersList: React.FC = () => {
+  const { navigate } = useNavigation();
   const [orders, setOrders] = useState<DisplayOrderRecord[]>(FALLBACK_DISPATCH_ORDERS);
   const [loading, setLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [selectedOrder, setSelectedOrder] = useState<DisplayOrderRecord | null>(null);
-  const [isVolumeSummaryOpen, setIsVolumeSummaryOpen] = useState<boolean>(false);
   const [newOrderNotice, setNewOrderNotice] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
@@ -503,11 +503,11 @@ export const OrdersList: React.FC = () => {
           </p>
         </div>
         <div className="page-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Prominent Order Volume Summary Button (Emerald & Ivory) */}
+          {/* Dedicated Shop Orders & Dispatch Page Navigation */}
           <Button
             variant="primary"
             icon={<Milk size={16} />}
-            onClick={() => setIsVolumeSummaryOpen(true)}
+            onClick={() => navigate('/admin/shop-orders')}
             id="btn-order-volume-summary"
             style={{
               backgroundColor: '#047857',
@@ -516,13 +516,13 @@ export const OrdersList: React.FC = () => {
               boxShadow: '0 2px 4px rgba(4, 120, 87, 0.2)',
             }}
           >
-            Order Volume Summary
+            Shop Orders & Dispatch
           </Button>
 
           <Button
             variant="secondary"
             icon={<Download size={15} />}
-            onClick={() => setIsVolumeSummaryOpen(true)}
+            onClick={() => navigate('/admin/shop-orders')}
           >
             Export Manifest
           </Button>
@@ -1454,11 +1454,7 @@ export const OrdersList: React.FC = () => {
         </div>
       )}
 
-      {/* 2. CONSOLIDATED ORDER VOLUME SUMMARY MODAL */}
-      <OrderVolumeSummaryModal
-        isOpen={isVolumeSummaryOpen}
-        onClose={() => setIsVolumeSummaryOpen(false)}
-      />
+
 
       {/* 3. SCHEDULE ORDER MODAL (UNSCHEDULED QUEUE WORKFLOW) */}
       <ScheduleOrderModal

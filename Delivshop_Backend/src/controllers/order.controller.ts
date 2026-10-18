@@ -169,4 +169,121 @@ export const orderController = {
       next(err);
     }
   },
+
+  async getShopOrderTracking(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const filters = {
+        date: (req.query.date as string) || (req.query.deliveryDate as string),
+        search: req.query.search as string,
+        orderStatus: req.query.orderStatus as string,
+        reminderStatus: req.query.reminderStatus as string,
+        page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 50,
+      };
+
+      const result = await orderService.getShopOrderTracking(filters);
+      sendSuccess(res, result);
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      next(err);
+    }
+  },
+
+  async sendShopReminder(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { shopId } = req.params;
+      const { reportingDate, reminderType, customMessage, idempotencyKey } = req.body;
+
+      const result = await orderService.sendShopReminder({
+        shopId,
+        reportingDate: reportingDate || new Date().toISOString().slice(0, 10),
+        reminderType,
+        customMessage,
+        sentBy: req.user?.id,
+        idempotencyKey: idempotencyKey || (req.headers['idempotency-key'] as string),
+      });
+
+      sendSuccess(res, result, 'Order reminder processed successfully');
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      next(err);
+    }
+  },
+
+  async sendBulkReminders(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { shopIds, reportingDate, reminderType, customMessage } = req.body;
+
+      if (!Array.isArray(shopIds) || shopIds.length === 0) {
+        sendError(res, 'shopIds array is required and must contain at least one shop ID', 400);
+        return;
+      }
+
+      const result = await orderService.sendBulkReminders({
+        shopIds,
+        reportingDate: reportingDate || new Date().toISOString().slice(0, 10),
+        reminderType,
+        customMessage,
+        sentBy: req.user?.id,
+      });
+
+      sendSuccess(res, result, `Bulk reminders processed for ${result.totalRequested} shops`);
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      next(err);
+    }
+  },
+
+  async getReminderHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { shopId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+
+      const history = await orderService.getReminderHistory(shopId, limit);
+      sendSuccess(res, history);
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      next(err);
+    }
+  },
+
+  async registerDeviceToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { shopId, fcmToken, deviceType } = req.body;
+      const effectiveShopId = req.user?.role === 'SHOP' && req.user.shopId ? req.user.shopId : shopId;
+
+      if (!effectiveShopId || !fcmToken) {
+        sendError(res, 'shopId and fcmToken are required', 400);
+        return;
+      }
+
+      const registered = await orderService.registerDeviceToken({
+        shopId: effectiveShopId,
+        userId: req.user?.id,
+        fcmToken,
+        deviceType,
+      });
+
+      sendSuccess(res, registered, 'Device token registered successfully', 201);
+    } catch (err: any) {
+      if (err.statusCode && err.statusCode < 500) {
+        sendError(res, err.message, err.statusCode);
+        return;
+      }
+      next(err);
+    }
+  },
 };
+

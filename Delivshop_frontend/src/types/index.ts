@@ -1373,5 +1373,116 @@ export interface OrderSchedulingAuditRecord {
   created_at: string;
 }
 
+export interface ShopOrderInfo {
+  id: string;
+  orderNumber: string;
+  status: string;
+  total: number;
+  totalPackages: number;
+  totalVolumeLitres: number;
+  createdAt: string;
+  requestedDeliveryDate?: string | null;
+}
+
+export interface ShopReminderInfo {
+  id: string;
+  reminderType: string;
+  status: 'ACCEPTED_FOR_DISPATCH' | 'DELIVERED' | 'FAILED' | 'NO_DEVICE_REGISTERED';
+  channel: string;
+  message: string;
+  createdAt: string;
+  errorReason?: string | null;
+}
+
+export interface ShopOrderTrackingRecord {
+  id: string;
+  shopId: string;
+  name: string;
+  ownerName: string | null;
+  phone: string | null;
+  deliveryContactName: string | null;
+  deliveryContactPhone: string | null;
+  address: string;
+  area: string | null;
+  city: string | null;
+  status: 'ACTIVE' | 'INACTIVE';
+  creditLimit: number;
+  outstandingBalance: number;
+  deliveryWindow?: string | null;
+  orderStatus: 'ORDERED' | 'NOT_ORDERED';
+  orders: ShopOrderInfo[];
+  lastReminder: ShopReminderInfo | null;
+}
+
+export interface ShopOrderTrackingSummary {
+  reportingDate: string;
+  totalActiveShops: number;
+  shopsOrdered: number;
+  shopsNotOrdered: number;
+}
+
+export interface ShopOrderTrackingResponse {
+  summary: ShopOrderTrackingSummary;
+  shops: ShopOrderTrackingRecord[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+  };
+}
+
+export interface BulkReminderResponse {
+  batchId: string;
+  totalRequested: number;
+  acceptedCount: number;
+  failedCount: number;
+  noDeviceCount: number;
+  results: Array<{
+    shopId: string;
+    shopName: string;
+    status: 'ACCEPTED_FOR_DISPATCH' | 'DELIVERED' | 'FAILED' | 'NO_DEVICE_REGISTERED';
+    provider: string;
+    messageId?: string;
+    errorReason?: string;
+    channel: string;
+    reminderId?: string;
+  }>;
+}
+
+export interface ReminderHistoryItem {
+  id: string;
+  shopId: string;
+  reportingDate: string;
+  reminderType: string;
+  channel: string;
+  recipientPhone: string | null;
+  recipientName: string | null;
+  message: string;
+  status: string;
+  provider: string;
+  providerMessageId: string | null;
+  errorReason: string | null;
+  createdAt: string;
+  deliveredAt: string | null;
+  sentByName: string;
+}
+
+export interface CreateAdminOrderPayload {
+  shopId: string;
+  items: Array<{ productId: string; quantity: number }>;
+  deliveryAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    notes?: string;
+  };
+  requestedDeliveryDate?: string;
+  deliveryRunId?: string;
+  deliveryWindow?: string;
+  idempotencyKey?: string;
+}
+
+
 
 

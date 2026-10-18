@@ -37,6 +37,10 @@ import {
   UnscheduledOrderRecord,
   OrderSchedulingAuditRecord,
   PickupRequirementsResponse,
+  ShopOrderTrackingResponse,
+  BulkReminderResponse,
+  ReminderHistoryItem,
+  CreateAdminOrderPayload,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -900,6 +904,65 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ status, notes }),
       });
+    },
+
+    async create(payload: CreateAdminOrderPayload): Promise<any> {
+      return apiClient<any>('orders', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async getShopOrderTracking(params: {
+      date?: string;
+      search?: string;
+      orderStatus?: string;
+      reminderStatus?: string;
+      page?: number;
+      limit?: number;
+    } = {}): Promise<ShopOrderTrackingResponse> {
+      const query = new URLSearchParams();
+      if (params.date) query.set('date', params.date);
+      if (params.search) query.set('search', params.search);
+      if (params.orderStatus) query.set('orderStatus', params.orderStatus);
+      if (params.reminderStatus) query.set('reminderStatus', params.reminderStatus);
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+
+      const qs = query.toString();
+      return apiClient<ShopOrderTrackingResponse>(`orders/shop-tracking${qs ? `?${qs}` : ''}`);
+    },
+
+    async sendShopReminder(
+      shopId: string,
+      payload: {
+        reportingDate: string;
+        reminderType?: string;
+        customMessage?: string;
+        idempotencyKey?: string;
+      }
+    ): Promise<any> {
+      return apiClient<any>(`orders/reminders/shop/${shopId}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async sendBulkReminders(payload: {
+      shopIds: string[];
+      reportingDate: string;
+      reminderType?: string;
+      customMessage?: string;
+    }): Promise<BulkReminderResponse> {
+      return apiClient<BulkReminderResponse>('orders/reminders/send', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async getReminderHistory(shopId: string, limit?: number): Promise<ReminderHistoryItem[]> {
+      const qs = limit ? `?limit=${limit}` : '';
+      return apiClient<ReminderHistoryItem[]>(`orders/reminders/history/${shopId}${qs}`);
     },
   },
 };

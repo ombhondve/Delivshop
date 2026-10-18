@@ -25,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onOpenMobileSidebar }
     shops: { title: 'Shop Management', category: 'Distribution Network' },
     products: { title: 'Products & Inventory', category: 'Catalog Management' },
     orders: { title: 'Orders Dispatch', category: 'Order Fulfillment' },
+    'shop-orders': { title: 'Shop Orders & Dispatch', category: 'Order Fulfillment' },
     deliveries: { title: 'Delivery Fleet', category: 'Logistics Tracking' },
     collections: { title: 'Payments & Ledger', category: 'Finance & Invoicing' },
     reports: { title: 'Audit & Reports', category: 'System Compliance' },

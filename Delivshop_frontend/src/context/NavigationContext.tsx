@@ -125,6 +125,8 @@ export function parsePath(pathname: string): {
     '/admin/products': 'products',
     '/orders': 'orders',
     '/admin/orders': 'orders',
+    '/shop-orders': 'shop-orders',
+    '/admin/shop-orders': 'shop-orders',
     '/deliveries': 'deliveries',
     '/admin/deliveries': 'deliveries',
     '/drivers': 'drivers',

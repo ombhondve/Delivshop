@@ -9,6 +9,7 @@ import { ShopOverview } from '../features/shops/ShopOverview';
 import { ShopDetailPage } from '../features/shops/ShopDetailPage';
 import { ProductCatalog } from '../features/products/ProductCatalog';
 import { OrdersList } from '../features/orders/OrdersList';
+import { ShopOrdersDispatchPage } from '../features/orders/ShopOrdersDispatchPage';
 import { DeliveriesTracking } from '../features/deliveries/DeliveriesTracking';
 import { ReportsSummary } from '../features/reports/ReportsSummary';
 import { DriversRoster } from '../features/drivers/DriversRoster';
@@ -109,6 +110,8 @@ const MainContent: React.FC = () => {
         return <ProductCatalog />;
       case 'orders':
         return <OrdersList />;
+      case 'shop-orders':
+        return <ShopOrdersDispatchPage />;
       case 'deliveries':
         return <DeliveriesTracking />;
       case 'collections':

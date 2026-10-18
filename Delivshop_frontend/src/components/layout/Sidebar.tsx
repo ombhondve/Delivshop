@@ -32,6 +32,7 @@ export type ActiveTab =
   | 'companies'
   | 'products'
   | 'orders'
+  | 'shop-orders'
   | 'deliveries'
   | 'collections';
 
@@ -69,6 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'companies', label: 'Companies', icon: <Building2 size={18} /> },
     { id: 'products', label: 'Products & Stock', icon: <Package size={18} /> },
     { id: 'orders', label: 'Orders Dispatch', icon: <ClipboardList size={18} /> },
+    { id: 'shop-orders', label: 'Shop Orders & Dispatch', icon: <Milk size={18} /> },
     { id: 'collections', label: 'Payments & Ledger', icon: <Wallet size={18} /> },
   ];
 

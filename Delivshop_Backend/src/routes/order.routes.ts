@@ -77,6 +77,45 @@ router.get(
   orderController.exportVolumeSummaryCsv
 );
 
+// Shop Order Tracking Summary & Filtered Shop List
+router.get(
+  '/shop-tracking',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  orderController.getShopOrderTracking
+);
+
+// Individual & Bulk Reminders
+router.post(
+  '/reminders/send',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  orderController.sendBulkReminders
+);
+
+router.post(
+  '/reminders/shop/:shopId',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  orderController.sendShopReminder
+);
+
+router.get(
+  '/reminders/history/:shopId',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER', 'SHOP'),
+  orderController.getReminderHistory
+);
+
+// Mobile App FCM Device Token Registration
+router.post(
+  '/devices/register',
+  authenticate,
+  authorizeRoles('SHOP', 'ADMIN'),
+  orderController.registerDeviceToken
+);
+
+
 // Order Scheduling & Rescheduling Operations
 router.post(
   '/:orderId/schedule',
