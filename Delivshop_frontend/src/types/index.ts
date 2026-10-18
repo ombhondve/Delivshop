@@ -445,6 +445,8 @@ export interface Company {
   state: string;
   postalCode: string;
   country: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status: CompanyStatus;
   notes?: string | null;
   createdBy?: string | null;
@@ -480,6 +482,8 @@ export interface CreateCompanyPayload {
   state?: string;
   postalCode: string;
   country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string;
   status?: CompanyStatus;
 }
@@ -503,8 +507,101 @@ export interface UpdateCompanyPayload {
   state?: string;
   postalCode?: string;
   country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string | null;
   status?: CompanyStatus;
+}
+
+export interface PickupShopContribution {
+  shopId: string;
+  shopCode: string;
+  shopName: string;
+  orderId: string;
+  orderNumber: string;
+  quantity: number;
+}
+
+export interface PickupProductItem {
+  productId: string;
+  productName: string;
+  sku: string;
+  unit: string;
+  packSize: string;
+  requiredQuantity: number;
+  collectedQuantity: number;
+  outstandingQuantity: number;
+  unitPrice?: number;
+  totalPrice?: number;
+  status: 'PENDING' | 'COLLECTED' | 'SHORTAGE' | 'PARTIAL';
+  shortageReason?: string | null;
+  shopBreakdown: PickupShopContribution[];
+}
+
+export interface CompanyPickupStop {
+  companyId: string;
+  companyCode: string;
+  companyName: string;
+  companyType: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  addressLine1: string;
+  city: string;
+  postalCode: string;
+  latitude: number | null;
+  longitude: number | null;
+  hasCoordinates: boolean;
+  hasGpsCoordinates?: boolean;
+  stopSequence: number;
+  status: 'PENDING' | 'ARRIVED' | 'COLLECTED' | 'SHORTAGE' | 'SKIPPED';
+  pickupStatus?: 'PENDING' | 'ARRIVED' | 'COLLECTED' | 'SHORTAGE' | 'SKIPPED' | 'DISCREPANCY';
+  companyAddress?: string;
+  arrivalTime?: string | null;
+  completedTime?: string | null;
+  verifiedDistanceMeters?: number | null;
+  discrepancyReason?: string | null;
+  totalRequiredUnits: number;
+  totalCollectedUnits: number;
+  products: PickupProductItem[];
+}
+
+export interface AggregatedPickupProduct {
+  productId: string;
+  productName: string;
+  productSku?: string;
+  unit: string;
+  totalRequiredQuantity: number;
+  totalCollectedQuantity: number;
+  totalOutstandingQuantity: number;
+  suppliersCount: number;
+}
+
+export interface PickupRequirementsResponse {
+  runId?: string;
+  runCode?: string;
+  routeId?: string;
+  routeName?: string;
+  deliveryDate?: string;
+  driverId?: string;
+  driverName?: string;
+  vehicleRegistration?: string;
+  totalPickups: number;
+  completedPickups: number;
+  totalProductsCount: number;
+  totalRequiredUnits: number;
+  totalCollectedUnits: number;
+  supplierPickups: CompanyPickupStop[];
+  aggregatedProducts: AggregatedPickupProduct[];
+  summary: {
+    totalCompanies: number;
+    totalProducts: number;
+    totalRequiredUnits: number;
+    totalCollectedUnits: number;
+    progressPercent: number;
+    totalShopsCount: number;
+  };
+  companies: CompanyPickupStop[];
 }
 
 export interface CompanyFilterQuery {

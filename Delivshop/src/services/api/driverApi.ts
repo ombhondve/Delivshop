@@ -14,6 +14,7 @@ import {
   ReconciliationPayload,
   DeliveryReconciliation,
   AssignedVehicle,
+  DriverPickupsResponse,
 } from '@/types/driver.types';
 
 export const driverApi = {
@@ -196,5 +197,35 @@ export const driverApi = {
       method: 'POST',
       body: JSON.stringify({ latitude, longitude }),
     }).catch(() => ({ success: false }));
+  },
+
+  // 10. Supplier Pickups (Part H, I, J)
+  async getAssignedPickups(runId: string): Promise<DriverPickupsResponse> {
+    return apiClient<DriverPickupsResponse>(`deliveries/runs/${runId}/pickups`);
+  },
+
+  async verifyPickupProximity(
+    runId: string,
+    companyId: string,
+    coords: { latitude: number; longitude: number; accuracy?: number }
+  ): Promise<any> {
+    return apiClient(`deliveries/runs/${runId}/pickups/${companyId}/verify-proximity`, {
+      method: 'POST',
+      body: JSON.stringify(coords),
+    });
+  },
+
+  async confirmPickup(
+    runId: string,
+    companyId: string,
+    payload: {
+      items: { productId: string; collectedQuantity: number; shortageReason?: string | null }[];
+      notes?: string;
+    }
+  ): Promise<any> {
+    return apiClient(`deliveries/runs/${runId}/pickups/${companyId}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 };

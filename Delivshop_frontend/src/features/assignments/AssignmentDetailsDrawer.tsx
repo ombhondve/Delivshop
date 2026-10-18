@@ -3,10 +3,19 @@ import {
   X, Truck, User, Navigation, Calendar, Clock, 
   CheckCircle2, AlertTriangle, AlertCircle, Phone, 
   MapPin, RefreshCw, Check, ShieldCheck, ChevronRight,
-  Package, FileText, Ban, PlayCircle, Trash2
+  Package, FileText, Ban, PlayCircle, Trash2,
+  Building2, ChevronDown, ExternalLink
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
-import { DeliveryRun, DeliveryRunStop } from '../../types';
+import {
+  DeliveryRun,
+  DeliveryRunStop,
+  PickupRequirementsResponse,
+  AggregatedPickupProduct,
+  CompanyPickupStop,
+  PickupProductItem,
+  PickupShopContribution,
+} from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
@@ -28,6 +37,9 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
   onRunUpdated,
 }) => {
   const [run, setRun] = useState<DeliveryRun | null>(null);
+  const [pickupRequirements, setPickupRequirements] = useState<PickupRequirementsResponse | null>(null);
+  const [pickupLoading, setPickupLoading] = useState(false);
+  const [expandedShopProduct, setExpandedShopProduct] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -76,6 +88,19 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
     } finally {
       setLoading(false);
     }
+
+    // Load pickup requirements automatically
+    try {
+      setPickupLoading(true);
+      const pRes: any = await api.assignments.getPickupRequirements(id);
+      const pData = pRes?.data || pRes;
+      setPickupRequirements(pData);
+    } catch (pErr: any) {
+      console.warn('Could not load pickup requirements for run:', pErr?.message);
+      setPickupRequirements(null);
+    } finally {
+      setPickupLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -83,6 +108,7 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
       loadRunDetails(runId);
     } else {
       setRun(null);
+      setPickupRequirements(null);
       setError(null);
     }
   }, [isOpen, runId, loadRunDetails]);
@@ -552,6 +578,467 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                   </div>
                 </div>
 
+              </div>
+
+              {/* PART G: Supplier Pickups & Product Quantities (Calculated Automatically) */}
+              <div
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '10px',
+                  border: '1px solid #D6D3C8',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '16px 20px',
+                    borderBottom: '1px solid #D6D3C8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: '#F0FDF4',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        backgroundColor: '#059669',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Building2 size={20} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#065F46', margin: 0 }}>
+                          Supplier Pickups & Required Quantities
+                        </h3>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            backgroundColor: '#D1FAE5',
+                            color: '#065F46',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            border: '1px solid #6EE7B7',
+                          }}
+                        >
+                          Auto-Calculated Backend Totals
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#047857', margin: '2px 0 0 0' }}>
+                        Authoritatively aggregated from eligible orders for shops on this delivery run
+                      </p>
+                    </div>
+                  </div>
+
+                  {pickupRequirements && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ textAlign: 'right', fontSize: '12px' }}>
+                        <div style={{ fontWeight: 700, color: '#1E293B' }}>
+                          {pickupRequirements.completedPickups} / {pickupRequirements.totalPickups} Suppliers Collected
+                        </div>
+                        <div style={{ color: '#64748B' }}>
+                          {pickupRequirements.totalCollectedUnits} / {pickupRequirements.totalRequiredUnits} Total Units
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          border: '3px solid #10B981',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: '#047857',
+                          backgroundColor: '#FFFFFF',
+                        }}
+                      >
+                        {pickupRequirements.totalRequiredUnits > 0
+                          ? Math.round((pickupRequirements.totalCollectedUnits / pickupRequirements.totalRequiredUnits) * 100)
+                          : 0}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {pickupLoading ? (
+                    <div style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>
+                      <RefreshCw size={22} className="spin-icon" style={{ margin: '0 auto 8px auto' }} />
+                      <p style={{ fontSize: '13px', margin: 0 }}>Calculating supplier pickup quantities from route orders...</p>
+                    </div>
+                  ) : !pickupRequirements || pickupRequirements.supplierPickups.length === 0 ? (
+                    <div
+                      style={{
+                        padding: '24px',
+                        textAlign: 'center',
+                        backgroundColor: '#F8FAFC',
+                        borderRadius: '8px',
+                        border: '1px dashed #CBD5E1',
+                        color: '#64748B',
+                      }}
+                    >
+                      <Package size={28} style={{ margin: '0 auto 8px auto', opacity: 0.6 }} />
+                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
+                        No Supplier Pickups Required
+                      </div>
+                      <p style={{ fontSize: '12.5px', margin: '4px 0 0 0' }}>
+                        No products from active supplier companies are ordered by the shops mapped to this delivery run.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 1. Route-Wide Aggregated Totals Summary */}
+                      {pickupRequirements.aggregatedProducts && pickupRequirements.aggregatedProducts.length > 0 && (
+                        <div
+                          style={{
+                            padding: '14px 16px',
+                            backgroundColor: '#F8FAFC',
+                            borderRadius: '8px',
+                            border: '1px solid #E2E8F0',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Route-Wide Aggregated Product Demand ({pickupRequirements.aggregatedProducts.length} Products)
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748B' }}>
+                              Summed across all supplying companies
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                            {pickupRequirements.aggregatedProducts.map((agg: AggregatedPickupProduct) => (
+                              <div
+                                key={agg.productId}
+                                style={{
+                                  padding: '10px 12px',
+                                  backgroundColor: '#FFFFFF',
+                                  borderRadius: '6px',
+                                  border: '1px solid #CBD5E1',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <div>
+                                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }}>
+                                    {agg.productName}
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
+                                    {agg.productSku || 'SKU-—'}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#047857' }}>
+                                    {agg.totalRequiredQuantity} <span style={{ fontSize: '11px', fontWeight: 500 }}>{agg.unit}</span>
+                                  </div>
+                                  <div style={{ fontSize: '10.5px', color: agg.totalOutstandingQuantity > 0 ? '#D97706' : '#059669' }}>
+                                    {agg.totalCollectedQuantity} collected
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 2. Breakdown per Supplier Company */}
+                      {pickupRequirements.supplierPickups.map((supplier: CompanyPickupStop) => (
+                        <div
+                          key={supplier.companyId}
+                          style={{
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '8px',
+                            backgroundColor: '#FFFFFF',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {/* Supplier Header */}
+                          <div
+                            style={{
+                              padding: '14px 16px',
+                              backgroundColor: '#F8FAFC',
+                              borderBottom: '1px solid #E2E8F0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              flexWrap: 'wrap',
+                              gap: '10px',
+                            }}
+                          >
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: '#0F172A' }}>
+                                  {supplier.companyName}
+                                </h4>
+                                {supplier.companyCode && (
+                                  <code
+                                    style={{
+                                      fontSize: '11px',
+                                      backgroundColor: '#E2E8F0',
+                                      padding: '1px 5px',
+                                      borderRadius: '4px',
+                                      color: '#334155',
+                                    }}
+                                  >
+                                    {supplier.companyCode}
+                                  </code>
+                                )}
+                                <span
+                                  style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: '10px',
+                                    backgroundColor:
+                                      supplier.status === 'COLLECTED'
+                                        ? '#D1FAE5'
+                                        : supplier.status === 'ARRIVED'
+                                        ? '#DBEAFE'
+                                        : supplier.status === 'SHORTAGE'
+                                        ? '#FEE2E2'
+                                        : '#F1F5F9',
+                                    color:
+                                      supplier.status === 'COLLECTED'
+                                        ? '#065F46'
+                                        : supplier.status === 'ARRIVED'
+                                        ? '#1E40AF'
+                                        : supplier.status === 'SHORTAGE'
+                                        ? '#991B1B'
+                                        : '#475569',
+                                  }}
+                                >
+                                  {supplier.status}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <MapPin size={13} color="#059669" />
+                                  <span>{supplier.addressLine1 ? `${supplier.addressLine1}, ${supplier.city || ''}` : (supplier.companyAddress || 'No address registered')}</span>
+                                </div>
+                                {supplier.phone && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Phone size={13} />
+                                    <span>{supplier.phone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* GPS Proximity Anchor Status */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {supplier.hasCoordinates ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span
+                                    style={{
+                                      fontSize: '11px',
+                                      backgroundColor: '#ECFDF5',
+                                      color: '#065F46',
+                                      padding: '3px 8px',
+                                      borderRadius: '6px',
+                                      border: '1px solid #A7F3D0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    <ShieldCheck size={13} color="#059669" />
+                                    300m Proximity Active ({Number(supplier.latitude).toFixed(4)}, {Number(supplier.longitude).toFixed(4)})
+                                  </span>
+                                  <a
+                                    href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: '#0284C7', display: 'flex', alignItems: 'center' }}
+                                    title="Open coordinates in Google Maps"
+                                  >
+                                    <ExternalLink size={14} />
+                                  </a>
+                                </div>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: '11px',
+                                    backgroundColor: '#FEF3C7',
+                                    color: '#92400E',
+                                    padding: '3px 8px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #FCD34D',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  <AlertTriangle size={13} color="#D97706" />
+                                  ⚠️ GPS Missing — Proximity Check Blocked
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Products Table for this Supplier */}
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                              <thead>
+                                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Product & SKU</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Unit</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Required Qty</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Collected</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Outstanding</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600 }}>Pickup Status</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600 }}>Contributing Shops</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {supplier.products.map((item: any) => {
+                                  const isExpanded = expandedShopProduct === `${supplier.companyId}-${item.productId}`;
+                                  const shopCount = item.shopContributions?.length || 0;
+
+                                  return (
+                                    <React.Fragment key={item.productId}>
+                                      <tr
+                                        style={{
+                                          borderBottom: '1px solid #F1F5F9',
+                                          backgroundColor: item.isCollected ? '#F0FDF4' : 'transparent',
+                                        }}
+                                      >
+                                        <td style={{ padding: '12px 14px' }}>
+                                          <div style={{ fontWeight: 600, color: '#1E293B' }}>{item.productName}</div>
+                                          {item.productSku && (
+                                            <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
+                                              {item.productSku}
+                                            </div>
+                                          )}
+                                        </td>
+                                        <td style={{ padding: '12px 14px', color: '#475569' }}>
+                                          {item.unit}
+                                        </td>
+                                        <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#047857' }}>
+                                          {item.requiredQuantity}
+                                        </td>
+                                        <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 600, color: item.collectedQuantity > 0 ? '#059669' : '#94A3B8' }}>
+                                          {item.collectedQuantity}
+                                        </td>
+                                        <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 600, color: item.outstandingQuantity > 0 ? '#D97706' : '#059669' }}>
+                                          {item.outstandingQuantity}
+                                        </td>
+                                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                                          <span
+                                            style={{
+                                              fontSize: '11px',
+                                              fontWeight: 600,
+                                              padding: '2px 8px',
+                                              borderRadius: '6px',
+                                              backgroundColor: item.isCollected ? '#D1FAE5' : '#F1F5F9',
+                                              color: item.isCollected ? '#065F46' : '#64748B',
+                                            }}
+                                          >
+                                            {item.isCollected ? 'Collected' : 'Pending'}
+                                          </span>
+                                        </td>
+                                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                                          {shopCount > 0 ? (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setExpandedShopProduct(
+                                                  isExpanded ? null : `${supplier.companyId}-${item.productId}`
+                                                )
+                                              }
+                                              style={{
+                                                padding: '4px 8px',
+                                                fontSize: '11.5px',
+                                                borderRadius: '6px',
+                                                border: '1px solid #CBD5E1',
+                                                backgroundColor: isExpanded ? '#1E3A8A' : '#FFFFFF',
+                                                color: isExpanded ? '#FFFFFF' : '#334155',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                fontWeight: 500,
+                                              }}
+                                            >
+                                              <span>{shopCount} {shopCount === 1 ? 'Shop' : 'Shops'}</span>
+                                              <ChevronDown
+                                                size={13}
+                                                style={{
+                                                  transform: isExpanded ? 'rotate(180deg)' : 'none',
+                                                  transition: 'transform 0.15s ease',
+                                                }}
+                                              />
+                                            </button>
+                                          ) : (
+                                            <span style={{ fontSize: '11px', color: '#94A3B8' }}>—</span>
+                                          )}
+                                        </td>
+                                      </tr>
+
+                                      {/* Expanded Shop Breakdown Row */}
+                                      {isExpanded && item.shopContributions && (
+                                        <tr style={{ backgroundColor: '#F8FAFC' }}>
+                                          <td colSpan={7} style={{ padding: '12px 20px', borderBottom: '1px solid #E2E8F0' }}>
+                                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
+                                              Orders Requiring "{item.productName}":
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '8px' }}>
+                                              {item.shopContributions.map((sc: any, scIdx: number) => (
+                                                <div
+                                                  key={sc.orderId || scIdx}
+                                                  style={{
+                                                    padding: '8px 12px',
+                                                    backgroundColor: '#FFFFFF',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid #CBD5E1',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                  }}
+                                                >
+                                                  <div>
+                                                    <div style={{ fontWeight: 600, color: '#1E293B' }}>{sc.shopName}</div>
+                                                    <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
+                                                      Order: {sc.orderCode || sc.orderId.substring(0, 8)}
+                                                    </div>
+                                                  </div>
+                                                  <div style={{ fontWeight: 700, color: '#047857', fontSize: '13px' }}>
+                                                    {sc.quantity} {item.unit}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Delivery Stops List */}

@@ -763,10 +763,7 @@ export const CompanyOverview: React.FC = () => {
                           </div>
                           <div>
                             <div
-                              onClick={() => {
-                                setSelectedForDetails(company);
-                                setIsDetailsOpen(true);
-                              }}
+                              onClick={() => navigate(`/companies/${company.id}`)}
                               style={{
                                 fontSize: '13px',
                                 fontWeight: 700,
@@ -922,10 +919,7 @@ export const CompanyOverview: React.FC = () => {
                           {/* View Details */}
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedForDetails(company);
-                              setIsDetailsOpen(true);
-                            }}
+                            onClick={() => navigate(`/companies/${company.id}`)}
                             className="btn btn-secondary btn-table-action"
                             style={{
                               display: 'inline-flex',

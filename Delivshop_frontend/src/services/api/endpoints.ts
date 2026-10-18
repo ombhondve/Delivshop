@@ -36,6 +36,7 @@ import {
   OrderDispatchRecord,
   UnscheduledOrderRecord,
   OrderSchedulingAuditRecord,
+  PickupRequirementsResponse,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -652,6 +653,11 @@ export const api = {
         body: JSON.stringify({ reason }),
       });
     },
+
+    async getPickupRequirements(id: string, date?: string): Promise<PickupRequirementsResponse> {
+      const qs = date ? `?date=${encodeURIComponent(date)}` : '';
+      return apiClient<PickupRequirementsResponse>(`routes/${id}/pickup-requirements${qs}`);
+    },
   },
 
   assignments: {
@@ -701,6 +707,10 @@ export const api = {
 
     async get(id: string): Promise<any> {
       return apiClient<any>(`assignments/${id}`);
+    },
+
+    async getPickupRequirements(id: string): Promise<PickupRequirementsResponse> {
+      return apiClient<PickupRequirementsResponse>(`assignments/${id}/pickup-requirements`);
     },
 
     async create(payload: any): Promise<any> {

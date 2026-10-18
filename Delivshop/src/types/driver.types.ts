@@ -309,3 +309,55 @@ export interface DeliveryReconciliation {
   notes?: string;
   created_at: string;
 }
+
+export interface DriverPickupProduct {
+  productId: string;
+  productName: string;
+  sku: string;
+  unit: string;
+  packSize: string;
+  requiredQuantity: number;
+  collectedQuantity: number;
+  outstandingQuantity: number;
+  status: 'PENDING' | 'COLLECTED' | 'SHORTAGE' | 'PARTIAL';
+  shortageReason?: string | null;
+  // STRICT REQUIREMENT: No product prices or monetary amounts for driver role
+}
+
+export interface DriverPickupStop {
+  companyId: string;
+  companyCode: string;
+  companyName: string;
+  companyType?: string;
+  contactPerson?: string;
+  phone?: string;
+  addressLine1?: string;
+  city?: string;
+  postalCode?: string;
+  latitude: number | null;
+  longitude: number | null;
+  hasCoordinates: boolean;
+  stopSequence: number;
+  status: 'PENDING' | 'ARRIVED' | 'COLLECTED' | 'SHORTAGE' | 'SKIPPED';
+  isUnlocked: boolean;
+  proximityRadiusMeters?: number;
+  arrivalTime?: string | null;
+  completedTime?: string | null;
+  verifiedDistanceMeters?: number | null;
+  discrepancyReason?: string | null;
+  totalRequiredUnits: number;
+  totalCollectedUnits: number;
+  products: DriverPickupProduct[];
+}
+
+export interface DriverPickupsResponse {
+  runId: string;
+  runCode?: string;
+  routeName?: string;
+  deliveryDate?: string;
+  totalPickups: number;
+  completedPickups: number;
+  totalRequiredUnits: number;
+  totalCollectedUnits: number;
+  pickups: DriverPickupStop[];
+}

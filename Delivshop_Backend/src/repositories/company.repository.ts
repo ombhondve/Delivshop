@@ -30,6 +30,8 @@ export function toCompanyDTO(row: CompanyRecord, productsCount = 0): Company {
     state: row.state,
     postalCode: row.postal_code,
     country: row.country,
+    latitude: row.latitude != null ? Number(row.latitude) : null,
+    longitude: row.longitude != null ? Number(row.longitude) : null,
     status: row.status,
     notes: row.notes,
     createdBy: row.created_by,
@@ -56,13 +58,15 @@ export const companyRepository = {
         contact_person, phone, email, alt_phone,
         gstin, pan, registration_number,
         address_line_1, address_line_2, city, state, postal_code, country,
+        latitude, longitude,
         status, notes, created_by
       ) VALUES (
         $1, $2, $3, $4, $5,
         $6, $7, $8, $9,
         $10, $11, $12,
         $13, $14, $15, $16, $17, $18,
-        $19, $20, $21
+        $19, $20,
+        $21, $22, $23
       ) RETURNING *`,
       [
         input.companyCode,
@@ -83,6 +87,8 @@ export const companyRepository = {
         input.state || 'Maharashtra',
         input.postalCode,
         input.country || 'India',
+        input.latitude !== undefined && input.latitude !== null ? input.latitude : null,
+        input.longitude !== undefined && input.longitude !== null ? input.longitude : null,
         input.status || 'ACTIVE',
         input.notes || null,
         validCreatedBy,
@@ -268,6 +274,8 @@ export const companyRepository = {
     addField('state', input.state?.trim());
     addField('postal_code', input.postalCode?.trim());
     addField('country', input.country?.trim());
+    addField('latitude', input.latitude !== undefined ? input.latitude : undefined);
+    addField('longitude', input.longitude !== undefined ? input.longitude : undefined);
     addField('notes', input.notes !== undefined ? (input.notes ? input.notes.trim() : null) : undefined);
     addField('status', input.status);
 

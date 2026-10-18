@@ -1,9 +1,7 @@
-import { createApp } from './app.js';
+import { app } from './app.js';
 import { ENV } from './config/env.js';
 import { checkDatabaseHealth, dbPool } from './config/database.js';
 import { logger } from './utils/logger.js';
-
-const app = createApp();
 
 // Only start HTTP listener if not running in a serverless environment (e.g. Vercel) and not testing
 if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {

@@ -14,6 +14,18 @@ const COMPANY_TYPES = [
   'Other',
 ] as const;
 
+const latitudeSchema = z.preprocess((val) => {
+  if (val === '' || val === null || val === undefined) return null;
+  const num = Number(val);
+  return isNaN(num) ? val : num;
+}, z.number().min(-90, 'Latitude must be between -90 and 90').max(90, 'Latitude must be between -90 and 90').nullable().optional());
+
+const longitudeSchema = z.preprocess((val) => {
+  if (val === '' || val === null || val === undefined) return null;
+  const num = Number(val);
+  return isNaN(num) ? val : num;
+}, z.number().min(-180, 'Longitude must be between -180 and 180').max(180, 'Longitude must be between -180 and 180').nullable().optional());
+
 export const createCompanySchema = z.object({
   body: z.object({
     name: z.string().trim().min(2, 'Company name must be at least 2 characters').max(255),
@@ -55,6 +67,8 @@ export const createCompanySchema = z.object({
     state: z.string().trim().min(2).default('Maharashtra'),
     postalCode: z.string().regex(INDIAN_PINCODE_REGEX, 'PIN code must be a valid 6-digit Indian postal code'),
     country: z.string().trim().default('India'),
+    latitude: latitudeSchema,
+    longitude: longitudeSchema,
     notes: z.string().max(2000).optional().or(z.literal('')).nullable(),
     status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
   }),
@@ -91,6 +105,8 @@ export const updateCompanySchema = z.object({
     state: z.string().trim().min(2).optional(),
     postalCode: z.string().regex(INDIAN_PINCODE_REGEX).optional(),
     country: z.string().trim().optional(),
+    latitude: latitudeSchema,
+    longitude: longitudeSchema,
     notes: z.string().max(2000).optional().nullable(),
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   }),

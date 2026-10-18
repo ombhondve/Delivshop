@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Navigation, Search, Loader2 } from 'lucide-react';
 
 interface InteractiveMapPickerProps {
   latitude: number | null;
@@ -7,14 +7,16 @@ interface InteractiveMapPickerProps {
   onChange: (lat: number, lng: number) => void;
 }
 
-// Preset common delivery hubs in Nashik for rapid testing and visual pin selection
-const NASHIK_HUBS = [
+// Preset common delivery hubs & dairy suppliers for rapid visual pin selection
+const REGIONAL_HUBS = [
   { name: 'Nashik Central (Panchavati)', lat: 20.005882, lng: 73.789764 },
-  { name: 'College Road Hub', lat: 20.0084, lng: 73.7635 },
-  { name: 'Satpur Industrial Area', lat: 19.9932, lng: 73.7314 },
-  { name: 'Ambad Industrial Area', lat: 19.9482, lng: 73.7423 },
-  { name: 'Nashik Road Railway Station', lat: 19.9575, lng: 73.8344 },
-  { name: 'Indira Nagar Area', lat: 19.9721, lng: 73.7712 },
+  { name: 'Ozar Dairy Hub (Sai Amrut)', lat: 20.091100, lng: 73.916800 },
+  { name: 'Satpur MIDC Industrial Area', lat: 19.993200, lng: 73.731400 },
+  { name: 'Ambad MIDC Facility', lat: 19.948200, lng: 73.742300 },
+  { name: 'College Road Center', lat: 20.008400, lng: 73.763500 },
+  { name: 'Nashik Road Railway Hub', lat: 19.957500, lng: 73.834400 },
+  { name: 'Sinnar MIDC Dairy Cluster', lat: 19.851000, lng: 73.998200 },
+  { name: 'Dindori Processing Hub', lat: 20.201200, lng: 73.834200 },
 ];
 
 export const InteractiveMapPicker: React.FC<InteractiveMapPickerProps> = ({
@@ -27,12 +29,24 @@ export const InteractiveMapPicker: React.FC<InteractiveMapPickerProps> = ({
 
   const [pinLat, setPinLat] = useState(currentLat);
   const [pinLng, setPinLng] = useState(currentLng);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<string | null>(null);
 
-  // Approximate Nashik bounding box for map canvas
-  const minLat = 19.92;
-  const maxLat = 20.06;
-  const minLng = 73.70;
-  const maxLng = 73.86;
+  useEffect(() => {
+    if (latitude !== null && latitude !== undefined && !isNaN(latitude)) {
+      setPinLat(latitude);
+    }
+    if (longitude !== null && longitude !== undefined && !isNaN(longitude)) {
+      setPinLng(longitude);
+    }
+  }, [latitude, longitude]);
+
+  // Approximate Nashik / Maharashtra bounding box for map canvas
+  const minLat = 19.80;
+  const maxLat = 20.25;
+  const minLng = 73.65;
+  const maxLng = 74.05;
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -42,7 +56,7 @@ export const InteractiveMapPicker: React.FC<InteractiveMapPickerProps> = ({
     const pctX = Math.max(0, Math.min(1, x / rect.width));
     const pctY = Math.max(0, Math.min(1, y / rect.height));
 
-    // Convert pixel click to Nashik geographic coordinates
+    // Convert pixel click to geographic coordinates
     const newLng = Number((minLng + pctX * (maxLng - minLng)).toFixed(6));
     const newLat = Number((maxLat - pctY * (maxLat - minLat)).toFixed(6));
 
@@ -57,25 +71,127 @@ export const InteractiveMapPicker: React.FC<InteractiveMapPickerProps> = ({
     onChange(lat, lng);
   };
 
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setSearchStatus(null);
+    setIsSearching(true);
+
+    // 1. Check local presets first
+    const matchedPreset = REGIONAL_HUBS.find(h =>
+      h.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    );
+
+    if (matchedPreset) {
+      handlePresetSelect(matchedPreset.lat, matchedPreset.lng);
+      setSearchStatus(`Found: ${matchedPreset.name}`);
+      setIsSearching(false);
+      return;
+    }
+
+    // 2. Query geocoding API
+    try {
+      const q = encodeURIComponent(`${searchQuery.trim()}, Maharashtra, India`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const foundLat = Number(parseFloat(data[0].lat).toFixed(6));
+          const foundLng = Number(parseFloat(data[0].lon).toFixed(6));
+          handlePresetSelect(foundLat, foundLng);
+          setSearchStatus(`Located: ${data[0].display_name.split(',').slice(0, 3).join(',')}`);
+        } else {
+          setSearchStatus('Location not found. Please click on the map or enter coordinates manually.');
+        }
+      } else {
+        setSearchStatus('Geocoding service unavailable. Please select on map.');
+      }
+    } catch {
+      setSearchStatus('Offline or unable to search. Please click on the map canvas.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   // Convert lat/lng to percentage for pin rendering
   const pinLeftPct = Math.max(0, Math.min(100, ((pinLng - minLng) / (maxLng - minLng)) * 100));
   const pinTopPct = Math.max(0, Math.min(100, ((maxLat - pinLat) / (maxLat - minLat)) * 100));
 
+  const filteredHubs = searchQuery.trim()
+    ? REGIONAL_HUBS.filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : REGIONAL_HUBS;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          Click anywhere on the area map or select a delivery hub preset:
+          Search location, click map, or pick a dairy/delivery hub:
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#60A5FA' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#60A5FA', fontFamily: 'monospace' }}>
           <Navigation size={14} />
-          <code>{pinLat.toFixed(6)}, {pinLng.toFixed(6)}</code>
+          <span>{pinLat.toFixed(6)}, {pinLng.toFixed(6)}</span>
         </div>
       </div>
 
+      {/* Address / Location Search Bar */}
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search hub, facility, MIDC area, or address (e.g. Ozar, Satpur, Sinnar)..."
+            style={{
+              width: '100%',
+              height: '36px',
+              padding: '0 12px 0 34px',
+              borderRadius: '8px',
+              border: '1px solid #A7AE9F',
+              fontSize: '13px',
+              outline: 'none',
+              boxSizing: 'border-box',
+              backgroundColor: '#FFFFFF',
+            }}
+          />
+          <Search size={16} color="#64748B" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+        </div>
+        <button
+          type="button"
+          onClick={() => handleSearch()}
+          disabled={isSearching || !searchQuery.trim()}
+          style={{
+            height: '36px',
+            padding: '0 14px',
+            borderRadius: '8px',
+            backgroundColor: '#1E3A8A',
+            color: '#FFFFFF',
+            border: 'none',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: isSearching || !searchQuery.trim() ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            opacity: isSearching || !searchQuery.trim() ? 0.6 : 1,
+          }}
+        >
+          {isSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+          Search
+        </button>
+      </form>
+
+      {searchStatus && (
+        <div style={{ fontSize: '12px', color: searchStatus.startsWith('Found') || searchStatus.startsWith('Located') ? '#059669' : '#D97706', padding: '4px 8px', backgroundColor: '#F8FAFC', borderRadius: '6px' }}>
+          {searchStatus}
+        </div>
+      )}
+
       {/* Preset Quick-Select Chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-        {NASHIK_HUBS.map((hub) => (
+        {filteredHubs.map((hub) => (
           <button
             key={hub.name}
             type="button"
@@ -86,11 +202,15 @@ export const InteractiveMapPicker: React.FC<InteractiveMapPickerProps> = ({
               borderRadius: '9999px',
               backgroundColor:
                 Math.abs(pinLat - hub.lat) < 0.001 && Math.abs(pinLng - hub.lng) < 0.001
-                  ? 'var(--color-primary)'
-                  : 'var(--bg-hover)',
-              color: '#FFFFFF',
-              border: 'none',
+                  ? '#1E3A8A'
+                  : '#F1F5F9',
+              color:
+                Math.abs(pinLat - hub.lat) < 0.001 && Math.abs(pinLng - hub.lng) < 0.001
+                  ? '#FFFFFF'
+                  : '#334155',
+              border: '1px solid #CBD5E1',
               cursor: 'pointer',
+              fontWeight: 500,
             }}
           >
             {hub.name}

@@ -30,6 +30,8 @@ export interface CompanyRecord {
   country: string;
   status: CompanyStatus;
   notes?: string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
   created_by?: string | null;
   created_at: Date;
   updated_at: Date;
@@ -55,6 +57,8 @@ export interface Company {
   state: string;
   postalCode: string;
   country: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status: CompanyStatus;
   notes?: string | null;
   createdBy?: string | null;
@@ -82,6 +86,8 @@ export interface CreateCompanyInput {
   state?: string;
   postalCode: string;
   country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string | null;
   status?: CompanyStatus;
 }
@@ -104,6 +110,8 @@ export interface UpdateCompanyInput {
   state?: string;
   postalCode?: string;
   country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string | null;
   status?: CompanyStatus;
 }

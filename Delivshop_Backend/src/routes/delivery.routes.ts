@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { deliveryController } from '../controllers/delivery.controller.js';
 import { attendanceController } from '../controllers/attendance.controller.js';
+import { pickupController } from '../controllers/pickup.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { requireDriverDeliveryAssignment } from '../middleware/ownership.middleware.js';
@@ -284,6 +285,28 @@ router.post(
   authorizeRoles('DRIVER', 'ADMIN'),
   requireDriverDeliveryAssignment,
   deliveryController.completeDelivery
+);
+
+// Driver Supplier Pickup Routes
+router.get(
+  '/runs/:id/pickups',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN', 'SUPPLIER'),
+  pickupController.getDriverPickupStops
+);
+
+router.post(
+  '/runs/:id/pickups/:companyId/verify-proximity',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  pickupController.verifyProximity
+);
+
+router.post(
+  '/runs/:id/pickups/:companyId/confirm',
+  authenticate,
+  authorizeRoles('DRIVER', 'ADMIN'),
+  pickupController.confirmPickup
 );
 
 export default router;

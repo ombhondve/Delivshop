@@ -12,9 +12,11 @@ import {
   Lock,
   Loader2,
   Sparkles,
+  Navigation,
 } from 'lucide-react';
 import { Company, CompanyType, UpdateCompanyPayload } from '../../types';
 import { api } from '../../services/api/endpoints';
+import { InteractiveMapPicker } from '../shops/InteractiveMapPicker';
 
 interface EditCompanyModalProps {
   company: Company | null;
@@ -38,6 +40,9 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
   onCompanyUpdated,
 }) => {
   const [formData, setFormData] = useState<UpdateCompanyPayload>({});
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
+  const [locationMode, setLocationMode] = useState<'picker' | 'coordinates'>('picker');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -65,6 +70,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
         country: company.country || 'India',
         notes: company.notes || '',
       });
+      setLatitude(company.latitude !== null && company.latitude !== undefined ? String(company.latitude) : '');
+      setLongitude(company.longitude !== null && company.longitude !== undefined ? String(company.longitude) : '');
       setErrors({});
       setServerError(null);
       setSuccessMessage(null);
@@ -123,6 +130,20 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
       }
     }
 
+    if (latitude.trim() || longitude.trim()) {
+      const latNum = parseFloat(latitude.trim());
+      const lngNum = parseFloat(longitude.trim());
+      if (isNaN(latNum) || latNum < -90 || latNum > 90) {
+        newErrors.latitude = 'Latitude must be between -90 and 90';
+      }
+      if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+        newErrors.longitude = 'Longitude must be between -180 and 180';
+      }
+      if ((!latitude.trim() && longitude.trim()) || (latitude.trim() && !longitude.trim())) {
+        newErrors.coordinates = 'Both latitude and longitude are required to save company GPS location';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -154,6 +175,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
         state: formData.state?.trim() || undefined,
         postalCode: formData.postalCode?.trim() || undefined,
         country: formData.country?.trim() || 'India',
+        latitude: latitude.trim() ? parseFloat(latitude.trim()) : undefined,
+        longitude: longitude.trim() ? parseFloat(longitude.trim()) : undefined,
         notes: formData.notes?.trim() || undefined,
       };
 
@@ -784,12 +807,165 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
             </div>
           </div>
 
-          {/* Section 5: Internal Notes */}
+          {/* Section 5: GPS Pickup Location & Proximity Anchor */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  5. Company Pickup Location & GPS Coordinates
+                </h4>
+                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>
+                  Required for Driver App 300-metre proximity verification to unlock collection quantities
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setLocationMode('picker')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: locationMode === 'picker' ? '#1E3A8A' : '#FFFFFF',
+                    color: locationMode === 'picker' ? '#FFFFFF' : '#334155',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <MapPin size={12} /> Map Pin Picker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationMode('coordinates')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: locationMode === 'coordinates' ? '#1E3A8A' : '#FFFFFF',
+                    color: locationMode === 'coordinates' ? '#FFFFFF' : '#334155',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Navigation size={12} /> Direct Coordinates
+                </button>
+              </div>
+            </div>
+
+            {!latitude && !longitude && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', backgroundColor: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '8px', fontSize: '12.5px', color: '#92400E' }}>
+                <AlertCircle size={16} color="#D97706" style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>GPS Location Unconfigured:</strong> This company has no saved GPS coordinates. Drivers will be unable to verify proximity until coordinates are set.
+                </span>
+              </div>
+            )}
+
+            {errors.coordinates && (
+              <div style={{ padding: '8px 12px', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '8px', color: '#B91C1C', fontSize: '12px' }}>
+                {errors.coordinates}
+              </div>
+            )}
+
+            {/* Visual Map Pin Picker */}
+            {locationMode === 'picker' && (
+              <InteractiveMapPicker
+                latitude={latitude ? parseFloat(latitude) : null}
+                longitude={longitude ? parseFloat(longitude) : null}
+                onChange={(lat, lng) => {
+                  setLatitude(String(lat));
+                  setLongitude(String(lng));
+                }}
+              />
+            )}
+
+            {/* Coordinates Inputs & Live Preview */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Latitude (-90.0 to 90.0)
+                </label>
+                <input
+                  id="field-latitude"
+                  type="number"
+                  step="any"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  placeholder="e.g. 20.091100"
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    padding: '0 12px',
+                    borderRadius: '8px',
+                    border: errors.latitude ? '1px solid #EF4444' : '1px solid #A7AE9F',
+                    fontSize: '13.5px',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {errors.latitude && <p style={{ color: '#EF4444', fontSize: '11.5px', margin: '4px 0 0 0' }}>{errors.latitude}</p>}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Longitude (-180.0 to 180.0)
+                </label>
+                <input
+                  id="field-longitude"
+                  type="number"
+                  step="any"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  placeholder="e.g. 73.916800"
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    padding: '0 12px',
+                    borderRadius: '8px',
+                    border: errors.longitude ? '1px solid #EF4444' : '1px solid #A7AE9F',
+                    fontSize: '13.5px',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {errors.longitude && <p style={{ color: '#EF4444', fontSize: '11.5px', margin: '4px 0 0 0' }}>{errors.longitude}</p>}
+              </div>
+            </div>
+
+            {latitude && longitude && !errors.latitude && !errors.longitude && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', backgroundColor: '#ECFDF5', border: '1px solid #6EE7B7', borderRadius: '8px', fontSize: '12.5px', color: '#065F46', flexWrap: 'wrap' }}>
+                <CheckCircle2 size={16} color="#059669" />
+                <span>
+                  <strong>Confirmed GPS Anchor:</strong> {latitude}, {longitude}
+                </span>
+                <a
+                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: 'auto', color: '#0284C7', textDecoration: 'underline', fontSize: '11.5px' }}
+                >
+                  Verify on Google Maps ↗
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Section 6: Internal Notes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
               <FileText size={16} color="var(--color-primary)" />
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                5. Internal Notes & Compliance
+                6. Internal Notes & Compliance
               </h3>
             </div>
 

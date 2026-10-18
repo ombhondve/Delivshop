@@ -7,10 +7,13 @@ import {
   Loader2,
   Save,
   PlusCircle,
+  MapPin,
+  Navigation,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { CompanyType, CompanyStatus } from '../../types';
 import { Button } from '../../components/common/Button';
+import { InteractiveMapPicker } from '../shops/InteractiveMapPicker';
 
 interface AddCompanyModalProps {
   isOpen: boolean;
@@ -64,7 +67,12 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('India');
 
-  // Section 5: Notes
+  // Section 5: GPS Pickup Location
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
+  const [locationMode, setLocationMode] = useState<'picker' | 'coordinates'>('picker');
+
+  // Section 6: Notes
   const [notes, setNotes] = useState('');
 
   // State
@@ -127,6 +135,20 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
       errs.postalCode = 'Valid 6-digit Indian PIN code is required';
     }
 
+    if (latitude.trim() || longitude.trim()) {
+      const latNum = parseFloat(latitude.trim());
+      const lngNum = parseFloat(longitude.trim());
+      if (isNaN(latNum) || latNum < -90 || latNum > 90) {
+        errs.latitude = 'Latitude must be between -90 and 90';
+      }
+      if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+        errs.longitude = 'Longitude must be between -180 and 180';
+      }
+      if ((!latitude.trim() && longitude.trim()) || (latitude.trim() && !longitude.trim())) {
+        errs.coordinates = 'Both latitude and longitude are required to save company GPS location';
+      }
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -151,6 +173,8 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
     setState('Maharashtra');
     setPostalCode('');
     setCountry('India');
+    setLatitude('');
+    setLongitude('');
     setNotes('');
     setErrors({});
     setSubmitError(null);
@@ -193,6 +217,8 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
         state: state.trim(),
         postalCode: postalCode.trim(),
         country: country.trim() || 'India',
+        latitude: latitude.trim() ? parseFloat(latitude.trim()) : undefined,
+        longitude: longitude.trim() ? parseFloat(longitude.trim()) : undefined,
         notes: notes.trim() || undefined,
       };
 
@@ -850,11 +876,155 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
             </div>
           </div>
 
-          {/* Section 5: Additional Information */}
+          {/* Section 5: GPS Pickup Location & Proximity Anchor */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  5. Company Pickup Location & GPS Coordinates
+                </h4>
+                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>
+                  Required for Driver App 300-metre proximity verification to unlock collection quantities
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setLocationMode('picker')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: locationMode === 'picker' ? '#1E3A8A' : '#FFFFFF',
+                    color: locationMode === 'picker' ? '#FFFFFF' : '#334155',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <MapPin size={12} /> Map Pin Picker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationMode('coordinates')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: locationMode === 'coordinates' ? '#1E3A8A' : '#FFFFFF',
+                    color: locationMode === 'coordinates' ? '#FFFFFF' : '#334155',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Navigation size={12} /> Direct Coordinates
+                </button>
+              </div>
+            </div>
+
+            {errors.coordinates && (
+              <div style={{ padding: '8px 12px', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '8px', color: '#B91C1C', fontSize: '12px' }}>
+                {errors.coordinates}
+              </div>
+            )}
+
+            {/* Visual Map Pin Picker */}
+            {locationMode === 'picker' && (
+              <InteractiveMapPicker
+                latitude={latitude ? parseFloat(latitude) : null}
+                longitude={longitude ? parseFloat(longitude) : null}
+                onChange={(lat, lng) => {
+                  setLatitude(String(lat));
+                  setLongitude(String(lng));
+                }}
+              />
+            )}
+
+            {/* Coordinates Inputs & Live Preview */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Latitude (-90.0 to 90.0)
+                </label>
+                <input
+                  id="field-latitude"
+                  type="number"
+                  step="any"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  placeholder="e.g. 20.091100"
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    padding: '0 12px',
+                    borderRadius: '8px',
+                    border: errors.latitude ? '1px solid #EF4444' : '1px solid #A7AE9F',
+                    fontSize: '13.5px',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {errors.latitude && <p style={{ color: '#EF4444', fontSize: '11.5px', margin: '4px 0 0 0' }}>{errors.latitude}</p>}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Longitude (-180.0 to 180.0)
+                </label>
+                <input
+                  id="field-longitude"
+                  type="number"
+                  step="any"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  placeholder="e.g. 73.916800"
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    padding: '0 12px',
+                    borderRadius: '8px',
+                    border: errors.longitude ? '1px solid #EF4444' : '1px solid #A7AE9F',
+                    fontSize: '13.5px',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {errors.longitude && <p style={{ color: '#EF4444', fontSize: '11.5px', margin: '4px 0 0 0' }}>{errors.longitude}</p>}
+              </div>
+            </div>
+
+            {latitude && longitude && !errors.latitude && !errors.longitude && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', backgroundColor: '#ECFDF5', border: '1px solid #6EE7B7', borderRadius: '8px', fontSize: '12.5px', color: '#065F46', flexWrap: 'wrap' }}>
+                <CheckCircle2 size={16} color="#059669" />
+                <span>
+                  <strong>Confirmed GPS Anchor:</strong> {latitude}, {longitude}
+                </span>
+                <a
+                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: 'auto', color: '#0284C7', textDecoration: 'underline', fontSize: '11.5px' }}
+                >
+                  Verify on Google Maps ↗
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Section 6: Additional Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
               <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                5. Internal Notes
+                6. Internal Notes
               </h4>
             </div>
 

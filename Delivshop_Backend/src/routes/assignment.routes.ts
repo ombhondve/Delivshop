@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { assignmentController } from '../controllers/assignment.controller.js';
 import { schedulingController } from '../controllers/scheduling.controller.js';
+import { pickupController } from '../controllers/pickup.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { validateRequest } from '../middleware/validate.middleware.js';
@@ -49,6 +50,13 @@ router.get(
   authenticate,
   authorizeRoles('ADMIN', 'SUPPLIER'),
   assignmentController.getDependencies
+);
+
+router.get(
+  '/:id/pickup-requirements',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER', 'DRIVER'),
+  pickupController.getRunPickupRequirements
 );
 
 router.get(

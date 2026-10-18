@@ -189,3 +189,24 @@ export async function resolveGoogleMapsUrl(mapUrl: string): Promise<ResolvedCoor
 
   throw new Error('Could not extract coordinates from the provided Google Maps link. Please specify coordinates or use the map picker.');
 }
+
+/**
+ * Calculate geographical distance in metres between two coordinates using the Haversine formula.
+ */
+export function calculateHaversineDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371000; // Radius of Earth in metres
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 100) / 100;
+}
+

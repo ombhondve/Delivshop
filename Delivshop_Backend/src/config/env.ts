@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // Helper to trim and convert empty or whitespace-only strings to undefined
 const sanitizeString = (val: unknown): string | undefined => {

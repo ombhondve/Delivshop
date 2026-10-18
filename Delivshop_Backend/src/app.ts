@@ -13,6 +13,14 @@ export const createApp = (): Application => {
   // Trust first proxy hop (e.g. Vercel edge/gateway) for accurate client IP in rate limiting
   app.set('trust proxy', 1);
 
+  // Normalize empty, undefined, or root-relative URL paths in serverless environments
+  app.use((req: Request, _res: Response, next) => {
+    if (!req.url || req.url === '' || req.url === '//') {
+      req.url = '/';
+    }
+    next();
+  });
+
   // 1. Security Headers (interop safe across CJS/ESM and TypeScript 5.8/5.9+ NodeNext)
   const helmetMiddleware: any = (helmet as any)?.default || helmet;
   app.use(
@@ -175,3 +183,7 @@ export const createApp = (): Application => {
 
   return app;
 };
+
+// Authoritative default application instance for Vercel serverless runtime and direct module execution
+export const app: Application = createApp();
+export default app;

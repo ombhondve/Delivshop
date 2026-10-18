@@ -12,6 +12,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -21,11 +22,22 @@ import { DelivColors } from '@/constants/theme';
 import { DriverHeader } from '@/components/driver/DriverHeader';
 import { StatusBadge } from '@/components/driver/StatusBadge';
 import { StopCard } from '@/components/driver/StopCard';
-import { DeliveryRun, DeliveryRunStop } from '@/types/driver.types';
+import { DeliveryRun, DeliveryRunStop, DriverPickupStop, DriverPickupsResponse } from '@/types/driver.types';
+import * as Location from 'expo-location';
 
 export default function DispatchDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [dispatch, setDispatch] = useState<DeliveryRun | null>(null);
+  const [pickupsData, setPickupsData] = useState<DriverPickupsResponse | null>(null);
+  const [pickupsLoading, setPickupsLoading] = useState(false);
+  const [selectedPickupStop, setSelectedPickupStop] = useState<DriverPickupStop | null>(null);
+  const [pickupModalVisible, setPickupModalVisible] = useState(false);
+  const [verifyingProximity, setVerifyingProximity] = useState(false);
+  const [confirmingPickup, setConfirmingPickup] = useState(false);
+  const [collectedQuantities, setCollectedQuantities] = useState<Record<string, string>>({});
+  const [shortageReasons, setShortageReasons] = useState<Record<string, string>>({});
+  const [pickupNotes, setPickupNotes] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -45,9 +57,138 @@ export default function DispatchDetailsScreen() {
       setDispatch(data);
     } catch (err: any) {
       Alert.alert('Dispatch Error', err.message || 'Could not load dispatch details.');
+    }
+
+    try {
+      setPickupsLoading(true);
+      const pData = await driverApi.getAssignedPickups(id);
+      setPickupsData(pData);
+    } catch (pErr: any) {
+      console.warn('Could not load supplier pickups for run:', pErr?.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setPickupsLoading(false);
+    }
+  };
+
+  const handleNavigateToCompany = (supplier: DriverPickupStop) => {
+    if (supplier.latitude && supplier.longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${supplier.latitude},${supplier.longitude}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert('Navigation Error', 'Could not launch maps application.');
+      });
+    } else {
+      Alert.alert('Coordinates Missing', 'This supplier company has not configured GPS pickup coordinates.');
+    }
+  };
+
+  const handleVerifyProximity = async (supplier: DriverPickupStop) => {
+    if (!dispatch) return;
+    setVerifyingProximity(true);
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Location Permission Required',
+          '300-metre proximity verification requires location access to verify physical arrival at the supplier facility.'
+        );
+        setVerifyingProximity(false);
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const res: any = await driverApi.verifyPickupProximity(dispatch.id, supplier.companyId, {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy != null ? position.coords.accuracy : undefined,
+      });
+
+      // Arrival verified! Products unlocked
+      const unlockedProducts = res.products || supplier.products || [];
+      const updatedStop: DriverPickupStop = {
+        ...supplier,
+        status: 'ARRIVED',
+        isUnlocked: true,
+        verifiedDistanceMeters: res.distanceMeters,
+        products: unlockedProducts,
+      };
+
+      setSelectedPickupStop(updatedStop);
+      const initialQty: Record<string, string> = {};
+      const initialShortage: Record<string, string> = {};
+      unlockedProducts.forEach((p: any) => {
+        initialQty[p.productId] = String(p.collectedQuantity > 0 ? p.collectedQuantity : p.requiredQuantity);
+        if (p.shortageReason) {
+          initialShortage[p.productId] = p.shortageReason;
+        }
+      });
+      setCollectedQuantities(initialQty);
+      setShortageReasons(initialShortage);
+      setPickupModalVisible(true);
+
+      // Refresh background dispatches
+      fetchDispatch();
+    } catch (err: any) {
+      Alert.alert(
+        'Proximity Check Failed',
+        err.message || 'Driver must be within 300 metres of the supplier entrance to unlock collection quantities.'
+      );
+    } finally {
+      setVerifyingProximity(false);
+    }
+  };
+
+  const handleOpenPickupCollection = (supplier: DriverPickupStop) => {
+    setSelectedPickupStop(supplier);
+    const initialQty: Record<string, string> = {};
+    const initialShortage: Record<string, string> = {};
+    (supplier.products || []).forEach((p) => {
+      initialQty[p.productId] = String(p.collectedQuantity > 0 ? p.collectedQuantity : p.requiredQuantity);
+      if (p.shortageReason) {
+        initialShortage[p.productId] = p.shortageReason;
+      }
+    });
+    setCollectedQuantities(initialQty);
+    setShortageReasons(initialShortage);
+    setPickupModalVisible(true);
+  };
+
+  const handleConfirmPickup = async () => {
+    if (!selectedPickupStop || !dispatch) return;
+    setConfirmingPickup(true);
+
+    try {
+      const items = (selectedPickupStop.products || []).map((p) => {
+        const entered = parseFloat(collectedQuantities[p.productId] || '0') || 0;
+        const shortage = entered < p.requiredQuantity ? (shortageReasons[p.productId] || 'Supplier stock shortage') : null;
+        return {
+          productId: p.productId,
+          collectedQuantity: entered,
+          shortageReason: shortage,
+        };
+      });
+
+      await driverApi.confirmPickup(dispatch.id, selectedPickupStop.companyId, {
+        items,
+        notes: pickupNotes.trim() || undefined,
+      });
+
+      Alert.alert(
+        'Pickup Confirmed',
+        `Collection at "${selectedPickupStop.companyName}" successfully logged. Quantities have been added to vehicle manifest.`
+      );
+      setPickupModalVisible(false);
+      setSelectedPickupStop(null);
+      await fetchDispatch();
+    } catch (err: any) {
+      Alert.alert('Confirmation Error', err.message || 'Failed to persist pickup confirmation.');
+    } finally {
+      setConfirmingPickup(false);
     }
   };
 
@@ -293,6 +434,151 @@ export default function DispatchDetailsScreen() {
           </View>
         </View>
 
+        {/* Supplier Pickup Stops List (Required Pickups before Store Deliveries) */}
+        {pickupsData && pickupsData.pickups && pickupsData.pickups.length > 0 && (
+          <View style={styles.supplierSection}>
+            <View style={styles.stopsHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="cube" size={16} color={DelivColors.deepEmerald} />
+                <Text style={styles.stopsHeading}>SUPPLIER PICKUP STOPS</Text>
+              </View>
+              <Text style={styles.stopsCount}>
+                {pickupsData.completedPickups} / {pickupsData.totalPickups} completed
+              </Text>
+            </View>
+
+            {pickupsData.pickups.map((supplier) => {
+              const isCollected = supplier.status === 'COLLECTED' || supplier.status === 'SHORTAGE';
+              const isArrived = supplier.status === 'ARRIVED';
+              return (
+                <View key={supplier.companyId} style={styles.supplierCard}>
+                  <View style={styles.supplierHeader}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text style={styles.supplierName}>{supplier.companyName}</Text>
+                      <Text style={styles.supplierAddress} numberOfLines={2}>
+                        {supplier.addressLine1
+                          ? `${supplier.addressLine1}${supplier.city ? ', ' + supplier.city : ''}`
+                          : 'Address on file'}
+                      </Text>
+                      {supplier.latitude && supplier.longitude && (
+                        <View style={styles.gpsRow}>
+                          <Ionicons name="location" size={12} color={DelivColors.emeraldGreen} />
+                          <Text style={styles.gpsCoordText}>
+                            GPS: {Number(supplier.latitude).toFixed(4)}, {Number(supplier.longitude).toFixed(4)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <View
+                      style={[
+                        styles.supplierBadge,
+                        isCollected
+                          ? styles.badgeCollected
+                          : isArrived
+                          ? styles.badgeArrived
+                          : styles.badgePending,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.supplierBadgeText,
+                          isCollected
+                            ? styles.badgeTextCollected
+                            : isArrived
+                            ? styles.badgeTextArrived
+                            : styles.badgeTextPending,
+                        ]}
+                      >
+                        {supplier.status}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.supplierStatsRow}>
+                    <View style={styles.supplierStatCol}>
+                      <Text style={styles.supplierStatVal}>
+                        {supplier.products?.length || 0}
+                      </Text>
+                      <Text style={styles.supplierStatLabel}>Lines</Text>
+                    </View>
+                    <View style={styles.supplierStatCol}>
+                      <Text style={styles.supplierStatVal}>{supplier.totalRequiredUnits}</Text>
+                      <Text style={styles.supplierStatLabel}>Required Qty</Text>
+                    </View>
+                    <View style={styles.supplierStatCol}>
+                      <Text
+                        style={[
+                          styles.supplierStatVal,
+                          {
+                            color: isCollected
+                              ? DelivColors.emeraldGreen
+                              : DelivColors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {supplier.totalCollectedUnits}
+                      </Text>
+                      <Text style={styles.supplierStatLabel}>Collected</Text>
+                    </View>
+                  </View>
+
+                  {/* Actions */}
+                  <View style={styles.supplierActionsRow}>
+                    <TouchableOpacity
+                      style={styles.navBtn}
+                      onPress={() => handleNavigateToCompany(supplier)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="navigate-outline" size={15} color={DelivColors.deepEmerald} />
+                      <Text style={styles.navBtnText}>Navigate</Text>
+                    </TouchableOpacity>
+
+                    {isCollected ? (
+                      <TouchableOpacity
+                        style={styles.viewCollectedBtn}
+                        onPress={() => handleOpenPickupCollection(supplier)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons
+                          name="checkmark-circle-outline"
+                          size={15}
+                          color={DelivColors.emeraldGreen}
+                        />
+                        <Text style={styles.viewCollectedBtnText}>View Confirmed Items</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[
+                          styles.verifyProximityBtn,
+                          verifyingProximity && styles.btnDisabled,
+                        ]}
+                        onPress={() => handleVerifyProximity(supplier)}
+                        disabled={verifyingProximity}
+                        activeOpacity={0.85}
+                      >
+                        {verifyingProximity && selectedPickupStop?.companyId === supplier.companyId ? (
+                          <ActivityIndicator size="small" color={DelivColors.white} />
+                        ) : (
+                          <>
+                            <Ionicons
+                              name="shield-checkmark-outline"
+                              size={15}
+                              color={DelivColors.white}
+                            />
+                            <Text style={styles.verifyProximityBtnText}>
+                              {isArrived ? 'Collect Quantities' : 'Verify Proximity (300m) & Collect'}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         {/* Sequenced Route Stops List */}
         <View style={styles.stopsHeader}>
           <Text style={styles.stopsHeading}>SEQUENCED ROUTE STOPS</Text>
@@ -390,6 +676,135 @@ export default function DispatchDetailsScreen() {
                   <ActivityIndicator color={DelivColors.white} size="small" />
                 ) : (
                   <Text style={styles.confirmSkipBtnText}>Record Audit Exception & Skip</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Supplier Pickup Collection Modal (Strictly No Prices Exposed to Driver) */}
+      <Modal
+        visible={pickupModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickupModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Pickup Collection</Text>
+                <Text style={styles.modalSub} numberOfLines={1}>
+                  {selectedPickupStop?.companyName}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setPickupModalVisible(false)}>
+                <Ionicons name="close" size={24} color={DelivColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollBody}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.securityBanner}>
+                <Ionicons name="shield-checkmark" size={16} color={DelivColors.emeraldGreen} />
+                <Text style={styles.securityBannerText}>
+                  Location verified within 300m proximity. Record actual physical items received.
+                </Text>
+              </View>
+
+              <Text style={styles.inputLabel}>REQUIRED PRODUCTS TO COLLECT</Text>
+
+              {(selectedPickupStop?.products || []).map((product) => {
+                const required = product.requiredQuantity;
+                const entered = parseFloat(collectedQuantities[product.productId] || '0') || 0;
+                const isShortage = entered < required;
+
+                return (
+                  <View key={product.productId} style={styles.productPickupCard}>
+                    <View style={styles.productInfoRow}>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={styles.productNameText}>{product.productName}</Text>
+                        <Text style={styles.productMetaText}>
+                          SKU: {product.sku || 'N/A'} • Unit: {product.unit || 'units'}
+                        </Text>
+                      </View>
+                      <View style={styles.requiredBadge}>
+                        <Text style={styles.requiredBadgeLabel}>Req:</Text>
+                        <Text style={styles.requiredBadgeValue}>
+                          {required} {product.unit || ''}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.qtyInputRow}>
+                      <Text style={styles.qtyInputLabel}>Actual Collected:</Text>
+                      <TextInput
+                        style={styles.qtyInput}
+                        keyboardType="numeric"
+                        value={
+                          collectedQuantities[product.productId] !== undefined
+                            ? collectedQuantities[product.productId]
+                            : String(required)
+                        }
+                        onChangeText={(val) =>
+                          setCollectedQuantities((prev) => ({
+                            ...prev,
+                            [product.productId]: val,
+                          }))
+                        }
+                      />
+                    </View>
+
+                    {isShortage && (
+                      <View style={styles.shortageRow}>
+                        <Text style={styles.shortageLabel}>Shortage Reason:</Text>
+                        <TextInput
+                          style={styles.shortageInput}
+                          placeholder="Reason (e.g. out of stock, damaged)"
+                          placeholderTextColor={DelivColors.textMuted}
+                          value={shortageReasons[product.productId] || ''}
+                          onChangeText={(val) =>
+                            setShortageReasons((prev) => ({
+                              ...prev,
+                              [product.productId]: val,
+                            }))
+                          }
+                        />
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+
+              <Text style={styles.inputLabel}>ADDITIONAL DISPATCH REMARKS (OPTIONAL)</Text>
+              <TextInput
+                style={styles.modalTextInput}
+                placeholder="Supervisor name, dock door number, etc..."
+                placeholderTextColor={DelivColors.textMuted}
+                value={pickupNotes}
+                onChangeText={setPickupNotes}
+              />
+
+              <TouchableOpacity
+                style={[styles.confirmPickupBtn, confirmingPickup && styles.btnDisabled]}
+                onPress={handleConfirmPickup}
+                disabled={confirmingPickup}
+                activeOpacity={0.85}
+              >
+                {confirmingPickup ? (
+                  <ActivityIndicator color={DelivColors.white} size="small" />
+                ) : (
+                  <Text style={styles.confirmPickupBtnText}>
+                    Confirm Pickup & Add to Manifest
+                  </Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -663,6 +1078,267 @@ const styles = StyleSheet.create({
   confirmSkipBtnText: {
     fontSize: 14,
     fontWeight: '700',
+    color: DelivColors.white,
+  },
+  supplierSection: {
+    marginBottom: 20,
+  },
+  supplierCard: {
+    backgroundColor: DelivColors.white,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  supplierHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  supplierName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: DelivColors.deepEmerald,
+  },
+  supplierAddress: {
+    fontSize: 12,
+    color: DelivColors.textSecondary,
+    marginTop: 2,
+  },
+  gpsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  gpsCoordText: {
+    fontSize: 11,
+    color: DelivColors.emeraldGreen,
+    fontWeight: '600',
+  },
+  supplierBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  badgePending: {
+    backgroundColor: '#FEF3C7',
+  },
+  badgeArrived: {
+    backgroundColor: '#E0F2FE',
+  },
+  badgeCollected: {
+    backgroundColor: DelivColors.lightEmerald,
+  },
+  supplierBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  badgeTextPending: {
+    color: '#B45309',
+  },
+  badgeTextArrived: {
+    color: '#0369A1',
+  },
+  badgeTextCollected: {
+    color: DelivColors.deepEmerald,
+  },
+  supplierStatsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  supplierStatCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  supplierStatVal: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: DelivColors.deepEmerald,
+  },
+  supplierStatLabel: {
+    fontSize: 10,
+    color: DelivColors.textMuted,
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  supplierActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  navBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: DelivColors.deepEmerald,
+    backgroundColor: '#F0FDF4',
+  },
+  navBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: DelivColors.deepEmerald,
+  },
+  verifyProximityBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: DelivColors.emeraldGreen,
+  },
+  verifyProximityBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: DelivColors.white,
+  },
+  viewCollectedBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: DelivColors.lightEmerald,
+    borderWidth: 1,
+    borderColor: DelivColors.emeraldGreen,
+  },
+  viewCollectedBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: DelivColors.deepEmerald,
+  },
+  securityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F0FDF4',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 8,
+  },
+  securityBannerText: {
+    fontSize: 12,
+    color: DelivColors.deepEmerald,
+    fontWeight: '600',
+    flex: 1,
+  },
+  productPickupCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 8,
+  },
+  productInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  productNameText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: DelivColors.textPrimary,
+  },
+  productMetaText: {
+    fontSize: 11,
+    color: DelivColors.textSecondary,
+    marginTop: 2,
+  },
+  requiredBadge: {
+    alignItems: 'flex-end',
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  requiredBadgeLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: DelivColors.textMuted,
+  },
+  requiredBadgeValue: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: DelivColors.deepEmerald,
+  },
+  qtyInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  qtyInputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: DelivColors.textPrimary,
+  },
+  qtyInput: {
+    backgroundColor: DelivColors.white,
+    borderWidth: 1,
+    borderColor: DelivColors.border,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    fontSize: 14,
+    fontWeight: '700',
+    color: DelivColors.deepEmerald,
+    minWidth: 80,
+    textAlign: 'center',
+  },
+  shortageRow: {
+    gap: 4,
+    marginTop: 4,
+  },
+  shortageLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: DelivColors.error,
+  },
+  shortageInput: {
+    backgroundColor: DelivColors.white,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 12,
+    color: DelivColors.textPrimary,
+  },
+  confirmPickupBtn: {
+    backgroundColor: DelivColors.emeraldGreen,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  confirmPickupBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
     color: DelivColors.white,
   },
 });

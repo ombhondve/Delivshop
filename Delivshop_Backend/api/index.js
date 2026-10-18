@@ -1,4 +1,4 @@
-import app from '../dist/server.js';
+import app from '../dist/app.js';
 
 export default function handler(req, res) {
   try {
@@ -23,3 +23,5 @@ export default function handler(req, res) {
     }
   }
 }
+
+export { app };

@@ -259,6 +259,18 @@ export default function DriverDashboardScreen() {
       );
     }
 
+    if (isShiftStarted && !activeRun) {
+      return (
+        <View style={styles.standbyCard}>
+          <Ionicons name="calendar-outline" size={26} color="#64748B" />
+          <Text style={styles.standbyTitle}>No route assigned yet</Text>
+          <Text style={styles.standbySub}>
+            Your attendance is marked Present. The dispatcher has not yet assigned or published a delivery run for your shift.
+          </Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.standbyCard}>
         <Ionicons name="checkmark-circle-outline" size={24} color={DelivColors.emeraldGreen} />

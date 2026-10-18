@@ -19,6 +19,7 @@ import { driverApi } from '@/services/api/driverApi';
 import { DelivColors } from '@/constants/theme';
 import { DriverHeader } from '@/components/driver/DriverHeader';
 import { DeliveryRun } from '@/types/driver.types';
+import * as Location from 'expo-location';
 
 export default function ShiftStartScreen() {
   const { user } = useAuth();
@@ -27,8 +28,9 @@ export default function ShiftStartScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [activeRun, setActiveRun] = useState<DeliveryRun | null>(null);
-  const [notes, setNotes] = useState('Reported at Pune Central Cold Depot');
+  const [notes, setNotes] = useState('Reported at Depot');
   const [readyCheck, setReadyCheck] = useState(true);
+  const [gpsStatus, setGpsStatus] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -53,14 +55,52 @@ export default function ShiftStartScreen() {
     }
 
     setSubmitting(true);
+    setGpsStatus('Requesting GPS location...');
+
     try {
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'GPS Permission Required',
+            'Shift check-in requires location verification to prevent fraudulent attendance. Please grant location permissions.',
+            [{ text: 'OK' }]
+          );
+          setSubmitting(false);
+          setGpsStatus(null);
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+      } catch (locErr: any) {
+        console.warn('GPS location reading warning:', locErr.message);
+        Alert.alert(
+          'Location Reading Failed',
+          'Could not retrieve fresh GPS location. Please check your device GPS toggle and retry.',
+          [{ text: 'Retry', onPress: () => handleStartShift() }, { text: 'Cancel', style: 'cancel' }]
+        );
+        setSubmitting(false);
+        setGpsStatus(null);
+        return;
+      }
+
+      setGpsStatus('Logging attendance check-in...');
       await driverApi.startShift(driverId, {
-        notes,
+        latitude,
+        longitude,
+        notes: notes ? `${notes} (GPS: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)})` : undefined,
       });
 
       Alert.alert(
         'Shift Started',
-        'Your daily attendance check-in has been logged. Please proceed to pre-dispatch vehicle inspection.',
+        `Your attendance has been verified and recorded with GPS coordinates (${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}).`,
         [
           {
             text: 'Proceed to Inspection',
@@ -84,6 +124,7 @@ export default function ShiftStartScreen() {
       Alert.alert('Shift Check-in Error', err.message || 'Could not record shift attendance check-in.');
     } finally {
       setSubmitting(false);
+      setGpsStatus(null);
     }
   };
 

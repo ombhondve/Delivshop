@@ -4,6 +4,7 @@ import { NavigationProvider, useNavigation } from '../context/NavigationContext'
 import { Layout } from '../components/layout/Layout';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { CompanyOverview } from '../features/companies/CompanyOverview';
+import { CompanyDetailPage } from '../features/companies/CompanyDetailPage';
 import { ShopOverview } from '../features/shops/ShopOverview';
 import { ShopDetailPage } from '../features/shops/ShopDetailPage';
 import { ProductCatalog } from '../features/products/ProductCatalog';
@@ -23,7 +24,7 @@ import { RoutesOverview } from '../features/routes/RoutesOverview';
 import { AssignmentsOverview } from '../features/assignments/AssignmentsOverview';
 
 const MainContent: React.FC = () => {
-  const { path, activeTab, selectTab, shopId, driverId, vehicleId, isNotFound, isLogin, navigate } = useNavigation();
+  const { path, activeTab, selectTab, shopId, companyId, driverId, vehicleId, isNotFound, isLogin, navigate } = useNavigation();
   const { user, loading } = useAuth();
 
   // If unauthenticated and on a protected route, safely redirect to /login?redirect=...
@@ -67,6 +68,11 @@ const MainContent: React.FC = () => {
   const renderTabContent = () => {
     if (isNotFound) {
       return <NotFoundPage />;
+    }
+
+    // Dedicated Company Details page when route is /companies/:companyId or /admin/companies/:companyId
+    if (activeTab === 'companies' && companyId) {
+      return <CompanyDetailPage companyId={companyId} />;
     }
 
     // Dedicated Shop Details page when route is /shops/:shopId or /admin/shops/:shopId
