@@ -494,6 +494,36 @@ export const assignmentRepository = {
       [runId]
     );
 
+    // Synchronize assigned orders and deliveries for this shop on this run
+    if (isDelivered && res.rows[0]) {
+      const stop = res.rows[0];
+      await query(
+        `UPDATE orders
+         SET status = 'DELIVERED',
+             scheduling_status = 'DELIVERED',
+             delivered_at = NOW(),
+             updated_at = NOW()
+         WHERE (delivery_run_id = $1 OR delivery_run_stop_id = $2)
+           AND shop_id = $3
+           AND status NOT IN ('DELIVERED', 'CANCELLED')`,
+        [runId, stop.id, stop.shop_id]
+      );
+
+      await query(
+        `UPDATE deliveries d
+         SET status = 'DELIVERED',
+             delivered_at = NOW(),
+             delivered_crates_count = COALESCE($1, delivered_crates_count),
+             returned_crates_count = COALESCE($2, returned_crates_count),
+             updated_at = NOW()
+         FROM orders o
+         WHERE d.order_id = o.id
+           AND (o.delivery_run_id = $3 OR o.delivery_run_stop_id = $4)
+           AND o.shop_id = $5`,
+        [data.deliveredCratesCount ?? null, data.returnedCratesCount ?? null, runId, stop.id, stop.shop_id]
+      );
+    }
+
     return res.rows[0];
   },
 

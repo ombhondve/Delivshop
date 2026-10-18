@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { assignmentController } from '../controllers/assignment.controller.js';
+import { schedulingController } from '../controllers/scheduling.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { validateRequest } from '../middleware/validate.middleware.js';
@@ -73,6 +74,13 @@ router.patch(
   assignmentController.updateStopStatus
 );
 
+router.post(
+  '/:id/publish',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  schedulingController.publishRun
+);
+
 router.delete(
   '/:id',
   authenticate,
@@ -82,3 +90,4 @@ router.delete(
 );
 
 export default router;
+

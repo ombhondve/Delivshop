@@ -101,10 +101,30 @@ export default function ShopOrdersScreen() {
             <Text style={styles.orderNumberText}>{orderNumber}</Text>
             <Text style={styles.orderDateText}>{formatDate(item.created_at)}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '1A' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-              {item.status}
-            </Text>
+          <View style={styles.cardHeaderBadges}>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '1A' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                {item.status}
+              </Text>
+            </View>
+            {item.scheduling_status === 'AWAITING_SCHEDULING' && (
+              <View style={[styles.schedulingBadge, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="time-outline" size={11} color="#D97706" />
+                <Text style={[styles.schedulingBadgeText, { color: '#B45309' }]}>Awaiting Schedule</Text>
+              </View>
+            )}
+            {item.scheduling_status === 'SCHEDULED' && (
+              <View style={[styles.schedulingBadge, { backgroundColor: '#ECFDF5' }]}>
+                <Ionicons name="checkmark-circle-outline" size={11} color="#059669" />
+                <Text style={[styles.schedulingBadgeText, { color: '#047857' }]}>Scheduled</Text>
+              </View>
+            )}
+            {item.scheduling_status === 'OUT_FOR_DELIVERY' && (
+              <View style={[styles.schedulingBadge, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="bicycle-outline" size={11} color="#2563EB" />
+                <Text style={[styles.schedulingBadgeText, { color: '#1D4ED8' }]}>Out for Delivery</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -125,10 +145,20 @@ export default function ShopOrdersScreen() {
 
         <View style={styles.cardFooter}>
           <View style={styles.deliveryStatusRow}>
-            <Ionicons name="cube-outline" size={14} color="#64748B" />
-            <Text style={styles.deliveryStatusText}>
-              Delivery: {item.delivery_status || 'Pending Assignment'}
-            </Text>
+            <Ionicons name="calendar-outline" size={14} color="#64748B" />
+            {item.confirmed_delivery_date ? (
+              <Text style={[styles.deliveryStatusText, { color: '#047857', fontWeight: '600' }]}>
+                Confirmed: {formatDate(item.confirmed_delivery_date)}
+              </Text>
+            ) : item.requested_delivery_date ? (
+              <Text style={[styles.deliveryStatusText, { color: '#B45309', fontWeight: '500' }]}>
+                Requested: {formatDate(item.requested_delivery_date)}
+              </Text>
+            ) : (
+              <Text style={styles.deliveryStatusText}>
+                {item.delivery_status || 'Pending Assignment'}
+              </Text>
+            )}
           </View>
           <Text style={styles.orderTotalText}>{formatCurrency(Number(item.total || 0))}</Text>
         </View>
@@ -256,9 +286,73 @@ export default function ShopOrdersScreen() {
                   </View>
                 </View>
 
+                {/* Route Scheduling Banner */}
+                {selectedOrder.scheduling_status === 'AWAITING_SCHEDULING' ? (
+                  <View style={styles.modalAwaitingBox}>
+                    <View style={styles.modalAwaitingHeader}>
+                      <Ionicons name="time" size={18} color="#D97706" />
+                      <Text style={styles.modalAwaitingTitle}>Awaiting Supplier Scheduling</Text>
+                    </View>
+                    <Text style={styles.modalAwaitingMsg}>
+                      Your order has been received. The delivery date will be confirmed by the supplier.
+                    </Text>
+                    {selectedOrder.requested_delivery_date && (
+                      <Text style={styles.modalRequestedDateText}>
+                        Requested Delivery Date: {formatDate(selectedOrder.requested_delivery_date)}
+                      </Text>
+                    )}
+                  </View>
+                ) : selectedOrder.confirmed_delivery_date ? (
+                  <View style={styles.modalScheduledBox}>
+                    <View style={styles.modalScheduledHeader}>
+                      <Ionicons name="checkmark-circle" size={18} color="#059669" />
+                      <Text style={styles.modalScheduledTitle}>Confirmed Delivery Schedule</Text>
+                    </View>
+                    <View style={styles.modalScheduledRow}>
+                      <Text style={styles.modalScheduledDateLabel}>Delivery Date:</Text>
+                      <Text style={styles.modalScheduledDateVal}>{formatDate(selectedOrder.confirmed_delivery_date)}</Text>
+                    </View>
+                    {selectedOrder.delivery_window && (
+                      <View style={styles.modalScheduledRow}>
+                        <Text style={styles.modalScheduledDateLabel}>Delivery Window:</Text>
+                        <Text style={styles.modalScheduledDateVal}>{selectedOrder.delivery_window}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.modalScheduledNote}>
+                      Allocated to cold-chain delivery vehicle with verified crate capacity.
+                    </Text>
+                  </View>
+                ) : null}
+
                 {/* Delivery Information */}
                 <View style={styles.detailSection}>
                   <Text style={styles.sectionHeading}>Delivery Information</Text>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailKey}>Scheduling State:</Text>
+                    <Text style={[styles.detailVal, { fontWeight: '700' }]}>
+                      {selectedOrder.scheduling_status ? selectedOrder.scheduling_status.replace(/_/g, ' ') : 'PENDING'}
+                    </Text>
+                  </View>
+                  {selectedOrder.requested_delivery_date && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailKey}>Requested Date:</Text>
+                      <Text style={styles.detailVal}>{formatDate(selectedOrder.requested_delivery_date)}</Text>
+                    </View>
+                  )}
+                  {selectedOrder.confirmed_delivery_date && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailKey}>Confirmed Date:</Text>
+                      <Text style={[styles.detailVal, { color: '#047857', fontWeight: '700' }]}>
+                        {formatDate(selectedOrder.confirmed_delivery_date)}
+                      </Text>
+                    </View>
+                  )}
+                  {selectedOrder.delivery_window && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailKey}>Delivery Window:</Text>
+                      <Text style={styles.detailVal}>{selectedOrder.delivery_window}</Text>
+                    </View>
+                  )}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailKey}>Dispatch Status:</Text>
                     <Text style={styles.detailVal}>{selectedOrder.delivery_status || 'PENDING ASSIGNMENT'}</Text>
@@ -713,5 +807,92 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  cardHeaderBadges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  schedulingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  schedulingBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  modalAwaitingBox: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  modalAwaitingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  modalAwaitingTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  modalAwaitingMsg: {
+    fontSize: 12,
+    color: '#B45309',
+    lineHeight: 16,
+    marginBottom: 6,
+  },
+  modalRequestedDateText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#78350F',
+  },
+  modalScheduledBox: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  modalScheduledHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  modalScheduledTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  modalScheduledRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  modalScheduledDateLabel: {
+    fontSize: 12,
+    color: '#047857',
+    fontWeight: '600',
+  },
+  modalScheduledDateVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  modalScheduledNote: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 });

@@ -14,11 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/features/auth/AuthContext';
-import { shopApi } from '@/services/api/shopApi';
+import { shopApi, DeliveryAvailabilityResponse } from '@/services/api/shopApi';
 import { Product } from '@/types/product';
 import { CacheManager } from '@/services/offline/cacheManager';
 import { OrderQueueManager, PendingOrderItem } from '@/services/offline/orderQueue';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 export default function CreateOrderScreen() {
   const { user, shop } = useAuth();
@@ -35,6 +35,15 @@ export default function CreateOrderScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [successOrder, setSuccessOrder] = useState<any | null>(null);
 
+  // Delivery Availability & Route Scheduling State
+  const [availability, setAvailability] = useState<DeliveryAvailabilityResponse | null>(null);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedWindow, setSelectedWindow] = useState<string>('');
+  const [customRequestedDate, setCustomRequestedDate] = useState<string>('');
+  const [isCustomDateRequested, setIsCustomDateRequested] = useState<boolean>(false);
+
   // Delivery address from profile
   const deliveryAddress = useMemo(() => ({
     street: shop?.address || 'H.NO.5192,P.NO.08, Ozar',
@@ -42,6 +51,7 @@ export default function CreateOrderScreen() {
     postalCode: shop?.pincode || '422206',
     notes: 'Please verify milk crate count on arrival',
   }), [shop]);
+
 
   // Load products (cache-first + network update)
   useEffect(() => {
@@ -131,13 +141,68 @@ export default function CreateOrderScreen() {
 
   const totalQuantity = useMemo(() => cartItems.reduce((sum, item) => sum + item.quantity, 0), [cartItems]);
   const subtotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.totalPrice, 0), [cartItems]);
-  const deliveryFee = 0; // Authorized dairy replenishment route
+  const deliveryFee = 0;
   const orderTotal = subtotal + deliveryFee;
 
-  // Order submission with Idempotency Key & Offline queue
+  // Fetch genuine route-based availability whenever the review modal opens
+  useEffect(() => {
+    if (!reviewModalVisible) return;
+    let isMounted = true;
+
+    async function checkAvailability() {
+      setLoadingAvailability(true);
+      try {
+        const estCrates = Math.max(1, Math.ceil(totalQuantity / 12));
+        const avail = await shopApi.getDeliveryAvailability(estCrates);
+        if (!isMounted) return;
+
+        setAvailability(avail);
+
+        const openRun = avail.availableDates.find((d) => d.isAvailable);
+        if (openRun) {
+          setSelectedRunId(openRun.deliveryRunId);
+          setSelectedDate(openRun.date);
+          setSelectedWindow(openRun.deliveryWindow);
+          setIsCustomDateRequested(false);
+        } else {
+          // No published run: default requested date to tomorrow
+          const d = new Date();
+          d.setDate(d.getDate() + 1);
+          const tomorrow = d.toISOString().slice(0, 10);
+          setSelectedRunId(null);
+          setSelectedDate(tomorrow);
+          setCustomRequestedDate(tomorrow);
+          setSelectedWindow(avail.defaultDeliveryWindow || '06:00 AM - 09:00 AM');
+          setIsCustomDateRequested(true);
+        }
+      } catch (e) {
+        console.warn('Availability check failed, defaulting to unscheduled request', e);
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        const tomorrow = d.toISOString().slice(0, 10);
+        setSelectedRunId(null);
+        setSelectedDate(tomorrow);
+        setCustomRequestedDate(tomorrow);
+        setIsCustomDateRequested(true);
+      } finally {
+        if (isMounted) setLoadingAvailability(false);
+      }
+    }
+
+    checkAvailability();
+    return () => { isMounted = false; };
+  }, [reviewModalVisible, totalQuantity]);
+
+  // Order submission with Idempotency Key, Route-Based Availability & Offline queue
   const handleConfirmOrder = async () => {
     if (cartItems.length === 0) {
       Alert.alert('Empty Cart', 'Please add at least one dairy item to your order.');
+      return;
+    }
+
+    // Check policy: if ordering without published runs is blocked by policy
+    if (availability && !availability.allowUnscheduledOrders && (!selectedRunId || isCustomDateRequested)) {
+      Alert.alert('Delivery Schedule Required', availability.policyMessage);
       return;
     }
 
@@ -152,12 +217,18 @@ export default function CreateOrderScreen() {
       orderTotal
     );
 
-    // 2. Dispatch to backend API with Idempotency-Key
+    const payloadDate = isCustomDateRequested ? customRequestedDate : selectedDate;
+    const payloadRunId = (!isCustomDateRequested && selectedRunId) ? selectedRunId : undefined;
+
+    // 2. Dispatch to backend API with Idempotency-Key and Route Scheduling parameters
     try {
       const result = await shopApi.createOrder(
         {
           items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
           deliveryAddress,
+          requestedDeliveryDate: payloadDate || undefined,
+          deliveryRunId: payloadRunId,
+          deliveryWindow: selectedWindow || undefined,
         },
         pendingOrder.idempotencyKey
       );
@@ -197,6 +268,7 @@ export default function CreateOrderScreen() {
       setSubmitting(false);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -374,6 +446,146 @@ export default function CreateOrderScreen() {
                 </View>
               </View>
 
+              {/* Delivery Date & Route Scheduling Selection */}
+              <View style={styles.schedulingSection}>
+                <View style={styles.schedulingHeaderRow}>
+                  <Ionicons name="calendar-outline" size={18} color="#16805D" />
+                  <Text style={styles.schedulingSectionTitle}>Delivery Schedule & Route Availability</Text>
+                </View>
+
+                {loadingAvailability ? (
+                  <View style={styles.availLoadingBox}>
+                    <ActivityIndicator size="small" color="#16805D" />
+                    <Text style={styles.availLoadingText}>Checking cold-chain route availability & truck capacity...</Text>
+                  </View>
+                ) : availability ? (
+                  <View>
+                    {/* Route coverage note */}
+                    <View style={[styles.coverageBanner, !availability.hasRouteCoverage && styles.coverageBannerWarn]}>
+                      <Ionicons
+                        name={availability.hasRouteCoverage ? 'checkmark-circle-outline' : 'alert-circle-outline'}
+                        size={16}
+                        color={availability.hasRouteCoverage ? '#16805D' : '#D97706'}
+                      />
+                      <Text style={[styles.coverageText, !availability.hasRouteCoverage && styles.coverageTextWarn]}>
+                        {availability.hasRouteCoverage
+                          ? `Route Service: ${availability.coveredRoutes?.[0]?.name || 'Assigned Zone'}`
+                          : 'No active route template currently covers this address.'}
+                      </Text>
+                    </View>
+
+                    {/* Published Runs List */}
+                    {availability.availableDates.length > 0 && !isCustomDateRequested ? (
+                      <View style={styles.runsContainer}>
+                        <Text style={styles.runsPromptText}>Select a confirmed delivery run:</Text>
+                        {availability.availableDates.map((dateOption) => {
+                          const isSelected = selectedRunId === dateOption.deliveryRunId && selectedDate === dateOption.date;
+                          return (
+                            <TouchableOpacity
+                              key={dateOption.deliveryRunId || dateOption.date}
+                              style={[styles.dateCard, isSelected && styles.dateCardActive]}
+                              onPress={() => {
+                                setSelectedRunId(dateOption.deliveryRunId);
+                                setSelectedDate(dateOption.date);
+                                setSelectedWindow(dateOption.deliveryWindow);
+                                setIsCustomDateRequested(false);
+                              }}
+                            >
+                              <View style={styles.dateCardTop}>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={[styles.dateText, isSelected && styles.dateTextActive]}>
+                                    {formatDate(dateOption.date)}
+                                  </Text>
+                                  <Text style={styles.windowText}>Window: {dateOption.deliveryWindow}</Text>
+                                </View>
+                                <View style={styles.guaranteedBadge}>
+                                  <Ionicons name="shield-checkmark" size={12} color="#16805D" />
+                                  <Text style={styles.guaranteedBadgeText}>Confirmed Run</Text>
+                                </View>
+                              </View>
+                              <View style={styles.dateCardBottom}>
+                                <Text style={styles.capacityText}>
+                                  {dateOption.availableCrates} crates left • Cutoff: {dateOption.cutoffTime}
+                                </Text>
+                                <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
+                                  {isSelected && <View style={styles.radioInnerCircle} />}
+                                </View>
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
+
+                        <TouchableOpacity
+                          style={styles.customDateToggle}
+                          onPress={() => {
+                            setIsCustomDateRequested(true);
+                            setSelectedRunId(null);
+                          }}
+                        >
+                          <Ionicons name="calendar" size={14} color="#16805D" />
+                          <Text style={styles.customDateToggleText}>Request an alternative delivery date instead</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
+
+                    {/* Unscheduled / Custom Date Requested Notice */}
+                    {(availability.availableDates.length === 0 || isCustomDateRequested) && (
+                      <View style={styles.unscheduledBox}>
+                        <View style={styles.unscheduledNoticeRow}>
+                          <Ionicons name="time-outline" size={20} color="#D97706" />
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.unscheduledTitle}>Awaiting Supplier Scheduling</Text>
+                            <Text style={styles.unscheduledMsg}>
+                              Your order has been received. The delivery date will be confirmed by the supplier.
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.customDateInputSection}>
+                          <Text style={styles.customDateLabel}>Preferred / Requested Delivery Date (YYYY-MM-DD):</Text>
+                          <TextInput
+                            style={styles.customDateInput}
+                            value={customRequestedDate}
+                            onChangeText={(text) => {
+                              setCustomRequestedDate(text);
+                              setSelectedDate(text);
+                            }}
+                            placeholder="YYYY-MM-DD (e.g. 2026-10-25)"
+                            placeholderTextColor="#94A3B8"
+                            autoCapitalize="none"
+                          />
+                        </View>
+
+                        {availability.availableDates.length > 0 && (
+                          <TouchableOpacity
+                            style={styles.backToRunsBtn}
+                            onPress={() => {
+                              setIsCustomDateRequested(false);
+                              const first = availability.availableDates[0];
+                              if (first) {
+                                setSelectedRunId(first.deliveryRunId);
+                                setSelectedDate(first.date);
+                                setSelectedWindow(first.deliveryWindow);
+                              }
+                            }}
+                          >
+                            <Text style={styles.backToRunsBtnText}>← Choose from published runs instead</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Restricted by policy warning if applicable */}
+                    {!availability.allowUnscheduledOrders && availability.availableDates.length === 0 && (
+                      <View style={styles.policyWarningBox}>
+                        <Ionicons name="close-circle" size={16} color="#DC2626" />
+                        <Text style={styles.policyWarningText}>{availability.policyMessage}</Text>
+                      </View>
+                    )}
+                  </View>
+                ) : null}
+              </View>
+
               <Text style={styles.summarySectionTitle}>Line Items ({cartItems.length})</Text>
 
               {cartItems.map((item) => (
@@ -450,8 +662,41 @@ export default function CreateOrderScreen() {
                   {successOrder.order_number || `ORD-${successOrder.id?.slice(0, 8)}`}
                 </Text>
               </View>
+
+              {/* Delivery Schedule Confirmation Card */}
+              {successOrder.scheduling_status === 'SCHEDULED' || successOrder.confirmed_delivery_date ? (
+                <View style={styles.successScheduledBox}>
+                  <View style={styles.successStatusRow}>
+                    <Ionicons name="checkmark-circle" size={18} color="#16805D" />
+                    <Text style={styles.successStatusScheduledTitle}>Confirmed Delivery Schedule</Text>
+                  </View>
+                  <Text style={styles.successScheduledDate}>
+                    {formatDate(successOrder.confirmed_delivery_date || selectedDate)}
+                  </Text>
+                  <Text style={styles.successScheduledWindow}>
+                    Delivery Window: {successOrder.delivery_window || selectedWindow || 'Standard Route Window'}
+                  </Text>
+                  <Text style={styles.successScheduledSub}>
+                    Allocated to cold-chain delivery vehicle.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.successUnscheduledBox}>
+                  <View style={styles.successStatusRow}>
+                    <Ionicons name="time" size={18} color="#D97706" />
+                    <Text style={styles.successStatusUnscheduledTitle}>Awaiting Supplier Confirmation</Text>
+                  </View>
+                  <Text style={styles.successUnscheduledMsg}>
+                    Your order has been received. The delivery date will be confirmed by the supplier.
+                  </Text>
+                  <Text style={styles.successRequestedDate}>
+                    Requested Date: {formatDate(successOrder.requested_delivery_date || selectedDate)}
+                  </Text>
+                </View>
+              )}
+
               <Text style={styles.successNotes}>
-                Your daily replenishment order has been registered in the supplier dispatches ledger.
+                Your replenishment order has been registered in the supplier dispatches ledger.
               </Text>
 
               <TouchableOpacity
@@ -958,5 +1203,287 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  schedulingSection: {
+    marginBottom: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  schedulingHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  schedulingSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#123B32',
+  },
+  availLoadingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+  },
+  availLoadingText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  coverageBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  coverageBannerWarn: {
+    backgroundColor: '#FFFBEB',
+  },
+  coverageText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#065F46',
+  },
+  coverageTextWarn: {
+    color: '#92400E',
+  },
+  runsContainer: {
+    gap: 8,
+    marginTop: 4,
+  },
+  runsPromptText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 2,
+  },
+  dateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  dateCardActive: {
+    borderColor: '#16805D',
+    backgroundColor: '#F0FDF4',
+  },
+  dateCardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  dateText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  dateTextActive: {
+    color: '#16805D',
+  },
+  windowText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  guaranteedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  guaranteedBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16805D',
+  },
+  dateCardBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 6,
+  },
+  capacityText: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  radioCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioCircleActive: {
+    borderColor: '#16805D',
+  },
+  radioInnerCircle: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#16805D',
+  },
+  customDateToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  customDateToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#16805D',
+    textDecorationLine: 'underline',
+  },
+  unscheduledBox: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 6,
+  },
+  unscheduledNoticeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 10,
+  },
+  unscheduledTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 2,
+  },
+  unscheduledMsg: {
+    fontSize: 11,
+    color: '#B45309',
+    lineHeight: 16,
+  },
+  customDateInputSection: {
+    marginTop: 6,
+  },
+  customDateLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#78350F',
+    marginBottom: 4,
+  },
+  customDateInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 13,
+    color: '#1E293B',
+  },
+  backToRunsBtn: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  backToRunsBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#16805D',
+  },
+  policyWarningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 6,
+    padding: 8,
+    marginTop: 8,
+  },
+  policyWarningText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#991B1B',
+    lineHeight: 15,
+  },
+  successScheduledBox: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 8,
+    padding: 12,
+    width: '100%',
+    marginBottom: 14,
+    alignItems: 'center',
+  },
+  successStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  successStatusScheduledTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  successScheduledDate: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#16805D',
+    marginVertical: 2,
+  },
+  successScheduledWindow: {
+    fontSize: 11,
+    color: '#047857',
+    fontWeight: '600',
+  },
+  successScheduledSub: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  successUnscheduledBox: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    padding: 12,
+    width: '100%',
+    marginBottom: 14,
+  },
+  successStatusUnscheduledTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  successUnscheduledMsg: {
+    fontSize: 12,
+    color: '#B45309',
+    lineHeight: 16,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  successRequestedDate: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#78350F',
   },
 });

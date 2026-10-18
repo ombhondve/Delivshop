@@ -3,6 +3,9 @@ import { ENV } from './env.js';
 
 const { Pool } = pg;
 
+// Parse PostgreSQL DATE (OID 1082) as clean 'YYYY-MM-DD' string to preserve calendar delivery dates across timezones
+pg.types.setTypeParser(1082, (val: string) => val);
+
 const isCloudDatabase =
   ENV.NODE_ENV === 'production' ||
   ENV.NODE_ENV === 'preview' ||

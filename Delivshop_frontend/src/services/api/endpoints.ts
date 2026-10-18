@@ -34,6 +34,8 @@ import {
   InventoryFilterQuery,
   OrderVolumeSummaryResponse,
   OrderDispatchRecord,
+  UnscheduledOrderRecord,
+  OrderSchedulingAuditRecord,
 } from '../../types';
 
 export interface ShopFilterQuery {
@@ -738,6 +740,23 @@ export const api = {
         body: JSON.stringify(options || {}),
       });
     },
+
+    async publishRun(id: string): Promise<any> {
+      return apiClient<any>(`assignments/${id}/publish`, {
+        method: 'POST',
+      });
+    },
+
+    async getSchedulingSettings(): Promise<any> {
+      return apiClient<any>('assignments/scheduling-settings');
+    },
+
+    async updateSchedulingSettings(payload: any): Promise<any> {
+      return apiClient<any>('assignments/scheduling-settings', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
   },
 
   orders: {
@@ -763,6 +782,51 @@ export const api = {
 
       const qs = query.toString();
       return apiClient<{ orders: OrderDispatchRecord[]; total: number; page: number; limit: number }>(`orders${qs ? `?${qs}` : ''}`);
+    },
+
+    async listUnscheduled(params: {
+      search?: string;
+      routeId?: string;
+      requestedDate?: string;
+    } = {}): Promise<{ orders: UnscheduledOrderRecord[]; count: number }> {
+      const query = new URLSearchParams();
+      if (params.search) query.set('search', params.search);
+      if (params.routeId) query.set('routeId', params.routeId);
+      if (params.requestedDate) query.set('requestedDate', params.requestedDate);
+      const qs = query.toString();
+      return apiClient<{ orders: UnscheduledOrderRecord[]; count: number }>(`orders/unscheduled${qs ? `?${qs}` : ''}`);
+    },
+
+    async schedule(
+      orderId: string,
+      payload: {
+        deliveryRunId: string;
+        deliveryWindow?: string;
+        notes?: string;
+      }
+    ): Promise<any> {
+      return apiClient<any>(`orders/${orderId}/schedule`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async reschedule(
+      orderId: string,
+      payload: {
+        deliveryRunId: string;
+        deliveryWindow?: string;
+        reason: string;
+      }
+    ): Promise<any> {
+      return apiClient<any>(`orders/${orderId}/reschedule`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async getSchedulingHistory(orderId: string): Promise<OrderSchedulingAuditRecord[]> {
+      return apiClient<OrderSchedulingAuditRecord[]>(`orders/${orderId}/scheduling-history`);
     },
 
     async get(orderId: string): Promise<any> {

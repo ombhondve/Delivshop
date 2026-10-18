@@ -1,11 +1,18 @@
 import { Router } from 'express';
 import { orderController } from '../controllers/order.controller.js';
 import { deliveryController } from '../controllers/delivery.controller.js';
+import { schedulingController } from '../controllers/scheduling.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 import { requireShopOrderOwnership } from '../middleware/ownership.middleware.js';
 import { validateRequest } from '../middleware/validate.middleware.js';
-import { updateOrderStatusSchema, createOrderSchema } from '../schemas/order.schema.js';
+import {
+  updateOrderStatusSchema,
+  createOrderSchema,
+  scheduleOrderSchema,
+  rescheduleOrderSchema,
+  updateSchedulingSettingsSchema,
+} from '../schemas/order.schema.js';
 
 const router = Router();
 
@@ -24,6 +31,38 @@ router.get(
   orderController.listOrders
 );
 
+// Unscheduled Orders Queue (Admin & Supplier)
+router.get(
+  '/unscheduled',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  schedulingController.getUnscheduledOrders
+);
+
+// Operational Scheduling Settings
+router.get(
+  '/scheduling-settings',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER', 'SHOP'),
+  schedulingController.getSettings
+);
+
+router.patch(
+  '/scheduling-settings',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(updateSchedulingSettingsSchema),
+  schedulingController.updateSettings
+);
+
+// Route-Based Delivery Availability Check
+router.get(
+  '/availability/:shopId',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER', 'SHOP'),
+  schedulingController.getDeliveryAvailability
+);
+
 router.get(
   '/volume-summary',
   authenticate,
@@ -36,6 +75,31 @@ router.get(
   authenticate,
   authorizeRoles('ADMIN', 'SUPPLIER'),
   orderController.exportVolumeSummaryCsv
+);
+
+// Order Scheduling & Rescheduling Operations
+router.post(
+  '/:orderId/schedule',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  validateRequest(scheduleOrderSchema),
+  schedulingController.scheduleOrder
+);
+
+router.post(
+  '/:orderId/reschedule',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  validateRequest(rescheduleOrderSchema),
+  schedulingController.rescheduleOrder
+);
+
+router.get(
+  '/:orderId/scheduling-history',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER', 'SHOP'),
+  requireShopOrderOwnership,
+  schedulingController.getOrderSchedulingHistory
 );
 
 router.get(
@@ -66,3 +130,4 @@ router.post(
 );
 
 export default router;
+

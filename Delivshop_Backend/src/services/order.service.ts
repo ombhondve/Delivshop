@@ -19,6 +19,9 @@ export const orderService = {
       items: Array<{ productId: string; quantity: number }>;
       deliveryAddress: any;
       idempotencyKey?: string;
+      requestedDeliveryDate?: string;
+      deliveryRunId?: string;
+      deliveryWindow?: string;
     },
     userId: string,
     ipAddress?: string
@@ -29,6 +32,9 @@ export const orderService = {
       items: data.items,
       deliveryAddress: data.deliveryAddress,
       idempotencyKey: data.idempotencyKey,
+      requestedDeliveryDate: data.requestedDeliveryDate,
+      deliveryRunId: data.deliveryRunId,
+      deliveryWindow: data.deliveryWindow,
     });
 
     if (!order.isDuplicateReplay) {
@@ -42,6 +48,9 @@ export const orderService = {
           itemCount: data.items.length,
           total: order.total,
           idempotencyKey: data.idempotencyKey,
+          schedulingStatus: order.scheduling_status,
+          requestedDeliveryDate: order.requested_delivery_date,
+          confirmedDeliveryDate: order.confirmed_delivery_date,
         },
         ipAddress,
       });
@@ -68,6 +77,7 @@ export const orderService = {
 
   async listOrders(filters: {
     status?: string;
+    schedulingStatus?: string;
     search?: string;
     shopId?: string;
     driverId?: string;

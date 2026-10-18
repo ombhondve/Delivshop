@@ -3,6 +3,7 @@ import { shopAuthController } from '../controllers/shop-auth.controller.js';
 import { shopController } from '../controllers/shop.controller.js';
 import { orderController } from '../controllers/order.controller.js';
 import { fileController } from '../controllers/file.controller.js';
+import { schedulingController } from '../controllers/scheduling.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { authorizeRoles } from '../middleware/role.middleware.js';
 
@@ -14,6 +15,9 @@ router.use(authorizeRoles('SHOP', 'ADMIN'));
 
 // GET /api/shop/me
 router.get('/me', shopAuthController.getMyProfile);
+
+// GET /api/shop/delivery-availability
+router.get('/delivery-availability', schedulingController.getDeliveryAvailability);
 
 // GET /api/shop/orders
 router.get('/orders', (req: Request, res: Response, next: NextFunction) => {

@@ -44,6 +44,9 @@ export const orderController = {
           items: req.body.items,
           deliveryAddress: req.body.deliveryAddress,
           idempotencyKey,
+          requestedDeliveryDate: req.body.requestedDeliveryDate,
+          deliveryRunId: req.body.deliveryRunId,
+          deliveryWindow: req.body.deliveryWindow,
         },
         req.user!.id,
         req.ip
@@ -91,6 +94,7 @@ export const orderController = {
 
       const filters = {
         status: req.query.status as string,
+        schedulingStatus: req.query.schedulingStatus as string,
         search: req.query.search as string,
         shopId: (req.user?.role === 'SHOP' && req.user.shopId ? req.user.shopId : req.query.shopId) as string,
         driverId: req.query.driverId as string,

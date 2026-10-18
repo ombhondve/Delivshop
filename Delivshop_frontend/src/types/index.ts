@@ -1189,6 +1189,15 @@ export interface OrderDispatchRecord {
   created_at: string;
   delivered_at?: string;
   notes?: string;
+  requested_delivery_date?: string | null;
+  confirmed_delivery_date?: string | null;
+  delivery_window?: string | null;
+  scheduling_status?: 'AWAITING_SCHEDULING' | 'SCHEDULED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+  delivery_run_id?: string | null;
+  delivery_run_code?: string | null;
+  vehicle_registration?: string | null;
+  scheduled_at?: string | null;
+  scheduled_by_name?: string | null;
   items: Array<{
     id: string;
     productId: string;
@@ -1213,6 +1222,58 @@ export interface OrderDispatchRecord {
     totalPrice: number;
     unitType?: string;
   }>;
+}
+
+export interface UnscheduledOrderRecord {
+  id: string;
+  order_number: string;
+  shop_id: string;
+  shop_name: string;
+  shop_address?: any;
+  shop_phone?: string;
+  created_at: string;
+  requested_delivery_date: string | null;
+  delivery_window: string | null;
+  scheduling_status: string;
+  awaiting_time_hours: number;
+  total: number;
+  total_crates: number;
+  total_volume_litres: number;
+  total_packages: number;
+  items: Array<{
+    id: string;
+    product_name: string;
+    quantity: number;
+    crates: number;
+    volume_litres: number;
+  }>;
+  eligible_runs: Array<{
+    delivery_run_id: string;
+    run_code: string;
+    route_name: string;
+    delivery_date: string;
+    delivery_window: string;
+    driver_name: string;
+    vehicle_registration: string;
+    is_published: boolean;
+    available_crate_capacity: number;
+    fits_order: boolean;
+    is_on_route: boolean;
+  }>;
+}
+
+export interface OrderSchedulingAuditRecord {
+  id: string;
+  order_id: string;
+  previous_status: string | null;
+  new_status: string;
+  previous_delivery_run_id: string | null;
+  new_delivery_run_id: string | null;
+  previous_delivery_date: string | null;
+  new_delivery_date: string | null;
+  reason: string | null;
+  performed_by_name: string | null;
+  created_at: string;
 }
 
 

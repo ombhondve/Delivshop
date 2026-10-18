@@ -6,7 +6,11 @@ export const orderRepository = {
   async findById(orderId: string): Promise<any | null> {
     const res = await query(
       `SELECT o.*, s.name as shop_name, s.phone as shop_phone, s.address as shop_address,
-              d.status as delivery_status, d.driver_id, u.name as driver_name, u.phone as driver_phone,
+              d.status as delivery_status, COALESCE(d.driver_id, dr.driver_id) as driver_id,
+              COALESCE(u.name, dr_u.name) as driver_name, COALESCE(u.phone, dr_u.phone) as driver_phone,
+              dr.run_code, dr.delivery_date as run_delivery_date,
+              COALESCE(r.name, 'City Route') as route_name, r.route_code,
+              v.registration_number as vehicle_registration,
               COALESCE(
                 json_agg(
                   json_build_object(
@@ -26,10 +30,15 @@ export const orderRepository = {
        JOIN shops s ON o.shop_id = s.id
        LEFT JOIN deliveries d ON o.id = d.order_id
        LEFT JOIN users u ON d.driver_id = u.id
+       LEFT JOIN delivery_runs dr ON o.delivery_run_id = dr.id
+       LEFT JOIN users dr_u ON dr.driver_id = dr_u.id
+       LEFT JOIN vehicles v ON dr.vehicle_id = v.id
+       LEFT JOIN routes r ON COALESCE(o.route_id, dr.route_id) = r.id
        LEFT JOIN order_items oi ON o.id = oi.order_id
        LEFT JOIN products p ON oi.product_id = p.id
        WHERE o.id = $1
-       GROUP BY o.id, s.name, s.phone, s.address, d.status, d.driver_id, u.name, u.phone
+       GROUP BY o.id, s.name, s.phone, s.address, d.status, d.driver_id, u.name, u.phone,
+                dr.run_code, dr.delivery_date, dr.driver_id, dr_u.name, dr_u.phone, r.name, r.route_code, v.registration_number
        LIMIT 1`,
       [orderId]
     );
@@ -40,7 +49,9 @@ export const orderRepository = {
     // Resolve shopId whether it's an internal UUID or YYYYMMDDNNN
     const res = await query(
       `SELECT o.*, s.name as shop_name,
-              d.status as delivery_status, u.name as driver_name,
+              d.status as delivery_status, COALESCE(u.name, dr_u.name) as driver_name,
+              dr.run_code, dr.delivery_date as run_delivery_date,
+              COALESCE(r.name, 'City Route') as route_name,
               COALESCE(
                 json_agg(
                   json_build_object(
@@ -58,10 +69,13 @@ export const orderRepository = {
        JOIN shops s ON o.shop_id = s.id
        LEFT JOIN deliveries d ON o.id = d.order_id
        LEFT JOIN users u ON d.driver_id = u.id
+       LEFT JOIN delivery_runs dr ON o.delivery_run_id = dr.id
+       LEFT JOIN users dr_u ON dr.driver_id = dr_u.id
+       LEFT JOIN routes r ON COALESCE(o.route_id, dr.route_id) = r.id
        LEFT JOIN order_items oi ON o.id = oi.order_id
        LEFT JOIN products p ON oi.product_id = p.id
        WHERE (o.shop_id::text = $1 OR s.shop_id = $1)
-       GROUP BY o.id, s.name, d.status, u.name
+       GROUP BY o.id, s.name, d.status, u.name, dr.run_code, dr.delivery_date, dr_u.name, r.name
        ORDER BY o.created_at DESC`,
       [shopId]
     );
@@ -74,8 +88,20 @@ export const orderRepository = {
     items: Array<{ productId: string; quantity: number }>;
     deliveryAddress: any;
     idempotencyKey?: string;
+    requestedDeliveryDate?: string;
+    deliveryRunId?: string;
+    deliveryWindow?: string;
   }): Promise<any> {
-    const { shopId, userId, items, deliveryAddress, idempotencyKey } = params;
+    const {
+      shopId,
+      userId,
+      items,
+      deliveryAddress,
+      idempotencyKey,
+      requestedDeliveryDate,
+      deliveryRunId,
+      deliveryWindow,
+    } = params;
 
     const client = await dbPool.connect();
     try {
@@ -120,7 +146,10 @@ export const orderRepository = {
 
       // 2. Resolve shop record (UUID or shop_id)
       const shopRes = await client.query(
-        `SELECT id, name, status, credit_limit, outstanding_balance FROM shops WHERE (id::text = $1 OR shop_id = $1) LIMIT 1`,
+        `SELECT id, name, status, credit_limit, outstanding_balance, delivery_window
+         FROM shops
+         WHERE (id::text = $1 OR shop_id = $1)
+         LIMIT 1`,
         [shopId]
       );
       if (shopRes.rowCount === 0) {
@@ -200,23 +229,148 @@ export const orderRepository = {
       const deliveryFee = 0.0;
       const total = subtotal + deliveryFee;
 
+      // 4. Scheduling & Route Allocation Resolution
+      let schedulingStatus = 'AWAITING_SCHEDULING';
+      let confirmedDeliveryDate: string | null = null;
+      let finalDeliveryWindow: string | null = deliveryWindow || shop.delivery_window || null;
+      let finalRunId: string | null = null;
+      let assignedDriverId: string | null = null;
+      let routeId: string | null = null;
+      let runStopId: string | null = null;
+      let scheduledNotice = 'Your order has been received. The delivery date will be confirmed by the supplier.';
+
+      if (deliveryRunId) {
+        // Validate delivery run
+        const runRes = await client.query(
+          `SELECT dr.*, v.registration_number, v.capacity_crates, v.status as vehicle_status,
+                  v.is_active as vehicle_is_active,
+                  u.id as driver_id, u.name as driver_name, u.is_active as driver_is_active, u.license_expiry
+           FROM delivery_runs dr
+           JOIN vehicles v ON dr.vehicle_id = v.id
+           JOIN users u ON dr.driver_id = u.id
+           WHERE dr.id = $1 AND dr.deleted_at IS NULL
+           FOR UPDATE`,
+          [deliveryRunId]
+        );
+
+        if (!runRes.rows[0]) {
+          throw new AppError('The selected delivery run was not found', 404);
+        }
+        const run = runRes.rows[0];
+
+        if (!run.is_published || run.status === 'CANCELLED' || run.status === 'COMPLETED') {
+          throw new AppError(`The selected delivery run is not open for new bookings (${run.status}).`, 409);
+        }
+
+        if (!run.driver_is_active || (run.license_expiry && new Date(run.license_expiry) < new Date(run.delivery_date))) {
+          throw new AppError(`Assigned driver for this run is currently unavailable.`, 409);
+        }
+
+        if (!run.vehicle_is_active || run.vehicle_status === 'UNDER_MAINTENANCE' || run.vehicle_status === 'INACTIVE') {
+          throw new AppError(`Assigned vehicle for this run is currently unavailable (${run.vehicle_status}).`, 409);
+        }
+
+        // Capacity check
+        const currentCratesRes = await client.query(
+          `SELECT COALESCE(SUM(total_crates_count), 0)::numeric as crates
+           FROM orders
+           WHERE delivery_run_id = $1 AND scheduling_status IN ('SCHEDULED', 'OUT_FOR_DELIVERY')`,
+          [run.id]
+        );
+        const currentCrates = Number(currentCratesRes.rows[0]?.crates) || 0;
+        const maxCrates = Number(run.capacity_crates) || 80;
+
+        if (currentCrates + totalCratesCount > maxCrates) {
+          throw new AppError(
+            `Delivery run capacity full. Vehicle max capacity: ${maxCrates} crates. Current load: ${currentCrates} crates. Required: ${Number(totalCratesCount.toFixed(2))} crates.`,
+            409
+          );
+        }
+
+        schedulingStatus = 'SCHEDULED';
+        confirmedDeliveryDate = run.delivery_date;
+        finalDeliveryWindow = deliveryWindow || run.delivery_window || shop.delivery_window || '06:00 AM - 09:00 AM';
+        finalRunId = run.id;
+        assignedDriverId = run.driver_id;
+        routeId = run.route_id;
+        scheduledNotice = `Delivery confirmed for ${confirmedDeliveryDate} (${finalDeliveryWindow}).`;
+
+        // Ensure shop is a stop in this run
+        const stopRes = await client.query(
+          `SELECT id FROM delivery_run_stops WHERE run_id = $1 AND shop_id = $2 LIMIT 1`,
+          [run.id, shop.id]
+        );
+        if (stopRes.rows[0]) {
+          runStopId = stopRes.rows[0].id;
+        } else {
+          const maxSeqRes = await client.query(
+            `SELECT COALESCE(MAX(stop_sequence), 0)::int as max_seq FROM delivery_run_stops WHERE run_id = $1`,
+            [run.id]
+          );
+          const nextSeq = (maxSeqRes.rows[0]?.max_seq || 0) + 1;
+          const insStop = await client.query(
+            `INSERT INTO delivery_run_stops (run_id, shop_id, stop_sequence, status, notes)
+             VALUES ($1, $2, $3, 'PENDING', 'Auto-added on order confirmation')
+             RETURNING id`,
+            [run.id, shop.id, nextSeq]
+          );
+          runStopId = insStop.rows[0].id;
+          await client.query(`UPDATE delivery_runs SET planned_stops_count = planned_stops_count + 1 WHERE id = $1`, [run.id]);
+        }
+      } else {
+        // No published delivery run provided
+        const settingsRes = await client.query(
+          `SELECT allow_ordering_without_published_run FROM supplier_scheduling_settings LIMIT 1`
+        );
+        const allowUnscheduled = settingsRes.rows[0]?.allow_ordering_without_published_run !== false;
+
+        if (!allowUnscheduled) {
+          throw new AppError(
+            'Ordering outside published delivery schedules is currently not permitted by supplier policy. Please select an available delivery run.',
+            400
+          );
+        }
+
+        schedulingStatus = 'AWAITING_SCHEDULING';
+        confirmedDeliveryDate = null;
+        finalRunId = null;
+
+        // Check if shop has a default route template for reference
+        const defaultRouteRes = await client.query(
+          `SELECT route_id FROM route_stops WHERE shop_id = $1 LIMIT 1`,
+          [shop.id]
+        );
+        routeId = defaultRouteRes.rows[0]?.route_id || null;
+      }
+
       // Generate human-readable order number: ORD-YYYYMMDD-XXXX
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderNumber = `ORD-${dateStr}-${randomSuffix}`;
 
-      // 4. Insert order with calculated volumes and crate counts
+      // 5. Insert order with scheduling columns
       const orderRes = await client.query(
         `INSERT INTO orders (
           order_number, shop_id, customer_id, status, subtotal, delivery_fee, total,
           total_volume_litres, total_crates_count, total_packages_count,
-          delivery_address, idempotency_key
-        ) VALUES ($1, $2, $3, 'PENDING', $4, $5, $6, $7, $8, $9, $10, $11)
+          delivery_address, idempotency_key, route_id,
+          requested_delivery_date, confirmed_delivery_date, delivery_window,
+          scheduling_status, delivery_run_id, delivery_run_stop_id,
+          scheduled_at, scheduled_by
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10,
+          $11, $12, $13,
+          $14, $15, $16,
+          $17, $18, $19,
+          $20, $21
+        )
         RETURNING *`,
         [
           orderNumber,
           shop.id,
           userId,
+          schedulingStatus === 'SCHEDULED' ? 'CONFIRMED' : 'PENDING',
           subtotal,
           deliveryFee,
           total,
@@ -225,11 +379,20 @@ export const orderRepository = {
           totalPackagesCount,
           JSON.stringify(deliveryAddress),
           idempotencyKey?.trim() || null,
+          routeId,
+          requestedDeliveryDate || null,
+          confirmedDeliveryDate,
+          finalDeliveryWindow,
+          schedulingStatus,
+          finalRunId,
+          runStopId,
+          schedulingStatus === 'SCHEDULED' ? new Date().toISOString() : null,
+          schedulingStatus === 'SCHEDULED' ? userId : null,
         ]
       );
       const order = orderRes.rows[0];
 
-      // 5. Insert order line items with explicit packaging & volume metrics
+      // 6. Insert order line items with explicit packaging & volume metrics
       for (const line of validatedItems) {
         await client.query(
           `INSERT INTO order_items (
@@ -239,13 +402,56 @@ export const orderRepository = {
         );
       }
 
-      // 6. Create initial delivery dispatch record
+      // 7. Create initial delivery dispatch record
+      if (assignedDriverId) {
+        await client.query(
+          `INSERT INTO deliveries (order_id, driver_id, status, notes)
+           VALUES ($1, $2, 'ASSIGNED', 'Scheduled directly on checkout to run ' || $3)
+           ON CONFLICT (order_id)
+           DO UPDATE SET driver_id = $2, status = 'ASSIGNED'`,
+          [order.id, assignedDriverId, finalRunId]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO deliveries (order_id, status, notes)
+           VALUES ($1, 'PENDING_ASSIGNMENT', 'Shop replenishment order submitted; awaiting supplier route scheduling')
+           ON CONFLICT (order_id) DO NOTHING`,
+          [order.id]
+        );
+      }
+
+      // 8. Record in order_scheduling_history
       await client.query(
-        `INSERT INTO deliveries (order_id, status, notes)
-         VALUES ($1, 'PENDING_ASSIGNMENT', 'Shop replenishment order submitted; awaiting admin approval and dispatch assignment')
-         ON CONFLICT (order_id) DO NOTHING`,
-        [order.id]
+        `INSERT INTO order_scheduling_history (
+          order_id, action, previous_delivery_date, new_delivery_date,
+          previous_delivery_run_id, new_delivery_run_id, previous_status, new_status,
+          reason, actor_id
+        ) VALUES ($1, $2, NULL, $3, NULL, $4, NULL, $5, $6, $7)`,
+        [
+          order.id,
+          schedulingStatus === 'SCHEDULED' ? 'SCHEDULED_AT_CHECKOUT' : 'ORDER_CREATED_AWAITING_SCHEDULING',
+          confirmedDeliveryDate,
+          finalRunId,
+          schedulingStatus,
+          schedulingStatus === 'SCHEDULED'
+            ? 'Scheduled directly on checkout to published run'
+            : 'Order received; awaiting supplier dispatch scheduling',
+          userId,
+        ]
       );
+
+      // 9. Update delivery_run total assigned count if scheduled
+      if (finalRunId) {
+        await client.query(
+          `UPDATE delivery_runs
+           SET total_assigned_crates = (SELECT COALESCE(SUM(total_crates_count), 0) FROM orders WHERE delivery_run_id = $1 AND scheduling_status = 'SCHEDULED'),
+               total_assigned_orders_count = (SELECT COUNT(*) FROM orders WHERE delivery_run_id = $1 AND scheduling_status = 'SCHEDULED'),
+               total_assigned_volume_litres = (SELECT COALESCE(SUM(total_volume_litres), 0) FROM orders WHERE delivery_run_id = $1 AND scheduling_status = 'SCHEDULED'),
+               updated_at = NOW()
+           WHERE id = $1`,
+          [finalRunId]
+        );
+      }
 
       await client.query('COMMIT');
 
@@ -254,6 +460,11 @@ export const orderRepository = {
         shop_name: shop.name,
         items: validatedItems,
         isDuplicateReplay: false,
+        scheduling_status: schedulingStatus,
+        requested_delivery_date: requestedDeliveryDate || null,
+        confirmed_delivery_date: confirmedDeliveryDate,
+        delivery_window: finalDeliveryWindow,
+        notice: scheduledNotice,
       };
     } catch (err) {
       await client.query('ROLLBACK');
@@ -276,6 +487,7 @@ export const orderRepository = {
 
   async listOrders(filters: {
     status?: string;
+    schedulingStatus?: string;
     search?: string;
     shopId?: string;
     driverId?: string;
@@ -303,6 +515,11 @@ export const orderRepository = {
       }
     }
 
+    if (filters.schedulingStatus && filters.schedulingStatus.trim() && filters.schedulingStatus.toUpperCase() !== 'ALL') {
+      params.push(filters.schedulingStatus.trim().toUpperCase());
+      conditions.push(`o.scheduling_status = $${params.length}`);
+    }
+
     if (filters.shopId && filters.shopId.trim()) {
       params.push(filters.shopId.trim());
       conditions.push(`(o.shop_id::text = $${params.length} OR s.shop_id = $${params.length})`);
@@ -310,7 +527,7 @@ export const orderRepository = {
 
     if (filters.driverId && filters.driverId.trim()) {
       params.push(filters.driverId.trim());
-      conditions.push(`d.driver_id::text = $${params.length}`);
+      conditions.push(`(d.driver_id::text = $${params.length} OR dr.driver_id::text = $${params.length})`);
     }
 
     if (filters.search && filters.search.trim()) {
@@ -321,6 +538,8 @@ export const orderRepository = {
         s.name ILIKE $${pIdx} OR 
         s.shop_id ILIKE $${pIdx} OR 
         u.name ILIKE $${pIdx} OR 
+        dr_u.name ILIKE $${pIdx} OR
+        dr.run_code ILIKE $${pIdx} OR
         r.name ILIKE $${pIdx} OR
         r.route_code ILIKE $${pIdx}
       )`);
@@ -328,7 +547,7 @@ export const orderRepository = {
 
     if (filters.date && filters.date.trim()) {
       params.push(filters.date.trim());
-      conditions.push(`o.created_at::date = $${params.length}::date`);
+      conditions.push(`(o.created_at::date = $${params.length}::date OR o.confirmed_delivery_date = $${params.length}::date)`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -339,7 +558,9 @@ export const orderRepository = {
        JOIN shops s ON o.shop_id = s.id
        LEFT JOIN deliveries d ON o.id = d.order_id
        LEFT JOIN users u ON d.driver_id = u.id
-       LEFT JOIN routes r ON o.route_id = r.id
+       LEFT JOIN delivery_runs dr ON o.delivery_run_id = dr.id
+       LEFT JOIN users dr_u ON dr.driver_id = dr_u.id
+       LEFT JOIN routes r ON COALESCE(o.route_id, dr.route_id) = r.id
        ${whereClause}`,
       params
     );
@@ -351,9 +572,12 @@ export const orderRepository = {
     const dataRes = await query(
       `SELECT o.*,
               s.name as shop_name, s.shop_id as shop_code, s.phone as shop_phone, s.address as shop_address,
-              d.status as delivery_status, d.driver_id, u.name as driver_name, u.phone as driver_phone,
+              s.area as shop_area, s.city as shop_city,
+              d.status as delivery_status, COALESCE(d.driver_id, dr.driver_id) as driver_id,
+              COALESCE(u.name, dr_u.name) as driver_name, COALESCE(u.phone, dr_u.phone) as driver_phone,
               COALESCE(r.name, o.delivery_address->>'route', 'City Hub Dispatch') as route_name,
               r.route_code,
+              dr.run_code, dr.delivery_date as run_delivery_date,
               COALESCE(
                 json_agg(
                   json_build_object(
@@ -380,11 +604,14 @@ export const orderRepository = {
        JOIN shops s ON o.shop_id = s.id
        LEFT JOIN deliveries d ON o.id = d.order_id
        LEFT JOIN users u ON d.driver_id = u.id
-       LEFT JOIN routes r ON o.route_id = r.id
+       LEFT JOIN delivery_runs dr ON o.delivery_run_id = dr.id
+       LEFT JOIN users dr_u ON dr.driver_id = dr_u.id
+       LEFT JOIN routes r ON COALESCE(o.route_id, dr.route_id) = r.id
        LEFT JOIN order_items oi ON o.id = oi.order_id
        LEFT JOIN products p ON oi.product_id = p.id
        ${whereClause}
-       GROUP BY o.id, s.name, s.shop_id, s.phone, s.address, d.status, d.driver_id, u.name, u.phone, r.name, r.route_code
+       GROUP BY o.id, s.name, s.shop_id, s.phone, s.address, s.area, s.city, d.status, d.driver_id,
+                u.name, u.phone, dr.driver_id, dr_u.name, dr_u.phone, r.name, r.route_code, dr.run_code, dr.delivery_date
        ORDER BY o.created_at DESC
        LIMIT ${limit} OFFSET ${offset}`,
       params
@@ -465,6 +692,15 @@ export const orderRepository = {
         total_crates_count: totalCrates,
         total_packages_count: totalPkgs,
         has_unknown_crates: hasUnknownCrates,
+        requested_delivery_date: row.requested_delivery_date,
+        confirmed_delivery_date: row.confirmed_delivery_date,
+        delivery_window: row.delivery_window,
+        scheduling_status: row.scheduling_status,
+        delivery_run_id: row.delivery_run_id,
+        run_code: row.run_code,
+        scheduled_at: row.scheduled_at,
+        scheduled_by: row.scheduled_by,
+        scheduling_notes: row.scheduling_notes,
         items,
       };
     });

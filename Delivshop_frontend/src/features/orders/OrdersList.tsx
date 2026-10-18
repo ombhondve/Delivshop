@@ -19,14 +19,22 @@ import {
   Check,
   XCircle,
   ArrowRight,
+  Calendar,
+  Clock,
+  History,
+  Send,
+  Layers,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { OrderVolumeSummaryModal } from './OrderVolumeSummaryModal';
+import { ScheduleOrderModal } from './ScheduleOrderModal';
+import { SchedulingHistoryModal } from './SchedulingHistoryModal';
+import { RescheduleOrderModal } from './RescheduleOrderModal';
 import { api } from '../../services/api/endpoints';
-import { OrderDispatchRecord } from '../../types';
+import { OrderDispatchRecord, UnscheduledOrderRecord } from '../../types';
 
 interface DisplayOrderItem {
   sku: string;
@@ -63,6 +71,12 @@ interface DisplayOrderRecord {
   hasUnknownCrates: boolean;
   createdAt: string;
   deliveredAt?: string;
+  requestedDeliveryDate?: string | null;
+  confirmedDeliveryDate?: string | null;
+  deliveryWindow?: string | null;
+  schedulingStatus?: string;
+  deliveryRunId?: string | null;
+  vehicleRegistration?: string | null;
   items: DisplayOrderItem[];
   notes?: string;
   itemsSummaryText?: string;
@@ -196,8 +210,30 @@ export const OrdersList: React.FC = () => {
   const [newOrderNotice, setNewOrderNotice] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
+  // Route Scheduling & Unscheduled Queue State
+  const [activeSection, setActiveSection] = useState<'ALL_ORDERS' | 'UNSCHEDULED_QUEUE'>('ALL_ORDERS');
+  const [unscheduledOrders, setUnscheduledOrders] = useState<UnscheduledOrderRecord[]>([]);
+  const [unscheduledCount, setUnscheduledCount] = useState<number>(0);
+  const [loadingUnscheduled, setLoadingUnscheduled] = useState<boolean>(false);
+  const [orderToSchedule, setOrderToSchedule] = useState<UnscheduledOrderRecord | null>(null);
+  const [orderToReschedule, setOrderToReschedule] = useState<{ id: string; orderNumber: string; currentDate?: string | null } | null>(null);
+  const [historyOrder, setHistoryOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+
   // Track known order IDs to detect newly arrived shop orders
   const knownOrderIdsRef = useRef<Set<string>>(new Set(FALLBACK_DISPATCH_ORDERS.map((o) => o.id)));
+
+  const fetchUnscheduledOrders = useCallback(async () => {
+    setLoadingUnscheduled(true);
+    try {
+      const res = await api.orders.listUnscheduled();
+      setUnscheduledOrders(res?.orders || []);
+      setUnscheduledCount(res?.count || 0);
+    } catch (e) {
+      console.warn('[OrdersList] Failed to fetch unscheduled orders queue:', e);
+    } finally {
+      setLoadingUnscheduled(false);
+    }
+  }, []);
 
   const fetchOrders = useCallback(async (isBackground = false) => {
     if (!isBackground) setLoading(true);
@@ -320,6 +356,12 @@ export const OrdersList: React.FC = () => {
             hasUnknownCrates: hasUnknown || Boolean(o.has_unknown_crates),
             createdAt: o.created_at,
             deliveredAt: o.delivered_at,
+            requestedDeliveryDate: o.requested_delivery_date,
+            confirmedDeliveryDate: o.confirmed_delivery_date,
+            deliveryWindow: o.delivery_window,
+            schedulingStatus: o.scheduling_status || (o.confirmed_delivery_date ? 'SCHEDULED' : 'AWAITING_SCHEDULING'),
+            deliveryRunId: o.delivery_run_id,
+            vehicleRegistration: o.vehicle_registration,
             items,
             notes: o.notes,
             itemsSummaryText: itemsSummary,
@@ -349,7 +391,8 @@ export const OrdersList: React.FC = () => {
   // Initial load
   useEffect(() => {
     fetchOrders(false);
-  }, [fetchOrders]);
+    fetchUnscheduledOrders();
+  }, [fetchOrders, fetchUnscheduledOrders]);
 
   // 4. Controlled Background Polling for Auto-Refresh (every 6 seconds when tab is active)
   useEffect(() => {
@@ -359,7 +402,7 @@ export const OrdersList: React.FC = () => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
         return; // Pause polling when tab is inactive
       }
-      await fetchOrders(true);
+      await Promise.all([fetchOrders(true), fetchUnscheduledOrders()]);
     };
 
     intervalId = setInterval(poll, 6000);
@@ -376,7 +419,7 @@ export const OrdersList: React.FC = () => {
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, fetchUnscheduledOrders]);
 
   // 5. Admin Status Review Workflow (Approve, Reject, Dispatch)
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string, notes?: string) => {
@@ -567,6 +610,28 @@ export const OrdersList: React.FC = () => {
           </div>
         </div>
 
+        {/* 5th KPI CARD: Unscheduled Orders Queue */}
+        <div
+          className="metric-card"
+          onClick={() => setActiveSection('UNSCHEDULED_QUEUE')}
+          style={{
+            cursor: 'pointer',
+            backgroundColor: activeSection === 'UNSCHEDULED_QUEUE' ? '#FEF3C7' : '#FFFFFF',
+            border: activeSection === 'UNSCHEDULED_QUEUE' ? '2px solid #B45309' : undefined,
+          }}
+        >
+          <div className="metric-icon" style={{ backgroundColor: '#FDE68A', color: '#B45309' }}>
+            <Clock size={18} />
+          </div>
+          <div className="metric-info">
+            <span className="metric-title">Unscheduled Orders</span>
+            <span className="metric-value" style={{ color: '#B45309' }}>{unscheduledCount} Need Run</span>
+            <span className="metric-trend" style={{ color: '#92400E', fontWeight: 700 }}>
+              {activeSection === 'UNSCHEDULED_QUEUE' ? '● Currently viewing queue' : 'Click to view queue →'}
+            </span>
+          </div>
+        </div>
+
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}>
             <AlertCircle size={18} />
@@ -579,174 +644,486 @@ export const OrdersList: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="search-filter-toolbar">
-        <div className="toolbar-search-form">
-          <div className="search-input-wrapper">
-            <Search size={18} className="search-input-icon" />
-            <input
-              type="text"
-              className="toolbar-search-input"
-              placeholder="Search by order number, shop name, or driver..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search orders"
-            />
-          </div>
-        </div>
+      {/* Section Navigation Tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <button
+          type="button"
+          onClick={() => setActiveSection('ALL_ORDERS')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 700,
+            border: 'none',
+            cursor: 'pointer',
+            backgroundColor: activeSection === 'ALL_ORDERS' ? '#047857' : '#F1F5F9',
+            color: activeSection === 'ALL_ORDERS' ? '#FFFFFF' : '#475569',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: activeSection === 'ALL_ORDERS' ? '0 2px 4px rgba(4, 120, 87, 0.2)' : 'none',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <ClipboardList size={15} />
+          <span>All Dispatch Orders ({orders.length})</span>
+        </button>
 
-        <div className="toolbar-filters-group">
-          <div className="filter-select-wrapper">
-            <ListFilter size={16} className="filter-leading-icon" />
-            <select
-              className="toolbar-select-field"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              aria-label="Filter by order status"
+        <button
+          type="button"
+          onClick={() => setActiveSection('UNSCHEDULED_QUEUE')}
+          id="tab-unscheduled-orders"
+          style={{
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 700,
+            border: 'none',
+            cursor: 'pointer',
+            backgroundColor: activeSection === 'UNSCHEDULED_QUEUE' ? '#B45309' : '#FEF3C7',
+            color: activeSection === 'UNSCHEDULED_QUEUE' ? '#FFFFFF' : '#92400E',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: activeSection === 'UNSCHEDULED_QUEUE' ? '0 2px 4px rgba(180, 83, 9, 0.2)' : 'none',
+            transition: 'all 0.15s ease',
+            position: 'relative',
+          }}
+        >
+          <Clock size={15} />
+          <span>Unscheduled Orders Queue</span>
+          {unscheduledCount > 0 && (
+            <span
+              style={{
+                backgroundColor: activeSection === 'UNSCHEDULED_QUEUE' ? '#FFFFFF' : '#B45309',
+                color: activeSection === 'UNSCHEDULED_QUEUE' ? '#B45309' : '#FFFFFF',
+                fontSize: '11px',
+                fontWeight: 800,
+                padding: '1px 6px',
+                borderRadius: '10px',
+                marginLeft: '2px',
+              }}
             >
-              <option value="">All Statuses ({orders.length})</option>
-              <option value="PENDING_CONFIRMATION">Pending Review ({pendingCount})</option>
-              <option value="CONFIRMED">Confirmed Orders</option>
-              <option value="DISPATCH_PREPARED">Bay Prepared</option>
-              <option value="IN_TRANSIT">In Transit ({inTransitCount})</option>
-              <option value="DELIVERED">Delivered ({deliveredCount})</option>
-              <option value="DISPUTED">Disputed ({disputedCount})</option>
-              <option value="CANCELLED">Cancelled / Rejected</option>
-            </select>
-          </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<RefreshCw size={13} className={loading ? 'spin' : ''} />}
-            onClick={() => fetchOrders(false)}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-        </div>
+              {unscheduledCount}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Orders Dispatch Manifest Table */}
-      <Card
-        title="Live Dispatch Manifest"
-        subtitle={`Showing ${filtered.length} shop orders with accurate liquid volume (L) conversions`}
-        noPadding
-      >
-        <div className="business-table-container">
-          <table className="business-table">
-            <thead>
-              <tr>
-                <th>Order #</th>
-                <th>Merchant Store</th>
-                <th>Assigned Route & Driver</th>
-                {/* 1. RENAMED COLUMN: Crate Volume -> Total Volume (L) */}
-                <th>Total Volume (L)</th>
-                <th>Total Value</th>
-                <th>Order Placed</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((o) => {
-                const isPending = o.status === 'PENDING_CONFIRMATION' || o.status === 'PENDING';
-                return (
-                  <tr
-                    key={o.id}
-                    style={{
-                      backgroundColor: o.isNew ? '#F0FDF4' : undefined,
-                      transition: 'background-color 0.5s ease',
-                    }}
-                  >
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <code style={{ fontWeight: 700, fontSize: '12.5px' }}>{o.orderNumber}</code>
-                        {o.isNew && (
-                          <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#059669', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px' }}>
-                            NEW
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="font-semibold text-primary">{o.shopName}</div>
-                      <div className="text-secondary text-xs">{o.shopId}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{o.driver}</div>
-                      <div style={{ fontSize: '12px', color: '#64748B' }}>{o.route}</div>
-                    </td>
-
-                    {/* 1. LIQUID VOLUME IN LITRES DISPLAY */}
-                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <div style={{ fontWeight: 700, color: '#047857', fontSize: '13.5px' }}>
-                        {formatVolumeLitres(o.totalVolumeLitres)}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
-                        {o.cratesCount} crates • {o.packagesCount} pkts
-                      </div>
-                      {o.hasUnknownCrates && (
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                            fontSize: '10.5px',
-                            color: '#B45309',
-                            backgroundColor: '#FEF3C7',
-                            padding: '1px 5px',
-                            borderRadius: '4px',
-                            marginTop: '2px',
-                          }}
-                        >
-                          <AlertTriangle size={10} />
-                          Partial crate config
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {formatCurrency(o.totalAmount)}
-                    </td>
-                    <td style={{ fontSize: '12px', color: '#64748B' }}>
-                      {formatDate(o.createdAt)}
-                    </td>
-                    <td>{getStatusBadge(o.status)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      {isPending ? (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => setSelectedOrder(o)}
-                          style={{
-                            backgroundColor: '#047857',
-                            borderColor: '#047857',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                          }}
-                          icon={<Eye size={13} />}
-                        >
-                          Review Order
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setSelectedOrder(o)}
-                          icon={<Eye size={13} />}
-                        >
-                          View Details
-                        </Button>
-                      )}
-                    </td>
+      {/* VIEW A: Unscheduled Orders Queue */}
+      {activeSection === 'UNSCHEDULED_QUEUE' ? (
+        <Card
+          title="Unscheduled Orders Queue"
+          subtitle={`Orders awaiting route allocation, driver assignment, and publication (${unscheduledOrders.length} pending in queue)`}
+          noPadding
+        >
+          {loadingUnscheduled ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+              <RefreshCw size={24} className="spin" style={{ margin: '0 auto 8px auto' }} />
+              <div>Loading unscheduled orders queue...</div>
+            </div>
+          ) : unscheduledOrders.length === 0 ? (
+            <div style={{ padding: '48px', textAlign: 'center' }}>
+              <CheckCircle2 size={36} color="#059669" style={{ margin: '0 auto 12px auto' }} />
+              <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
+                No Unscheduled Orders in Queue
+              </h4>
+              <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '440px', margin: '0 auto' }}>
+                All received replenishment orders have been assigned to confirmed cold-chain delivery runs.
+              </p>
+            </div>
+          ) : (
+            <div className="business-table-container">
+              <table className="business-table">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Merchant Store & Destination</th>
+                    <th>Requested Date</th>
+                    <th>Queue Waiting</th>
+                    <th>Crates & Volume</th>
+                    <th>Route Coverage & Eligible Runs</th>
+                    <th style={{ textAlign: 'right' }}>Scheduling Actions</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                </thead>
+                <tbody>
+                  {unscheduledOrders.map((u) => {
+                    const hasRuns = u.eligible_runs && u.eligible_runs.length > 0;
+                    const fittingRuns = (u.eligible_runs || []).filter((r) => r.fits_order);
+
+                    return (
+                      <tr key={u.id}>
+                        <td>
+                          <code style={{ fontWeight: 800, fontSize: '13px', color: '#0F172A' }}>
+                            {u.order_number}
+                          </code>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            {formatDate(u.created_at)}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0F172A' }}>{u.shop_name}</div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            {typeof u.shop_address === 'string' ? u.shop_address : `${u.shop_address?.street || ''}, ${u.shop_address?.city || ''}`}
+                          </div>
+                          {u.shop_phone && (
+                            <div style={{ fontSize: '11px', color: '#64748B' }}>Ph: {u.shop_phone}</div>
+                          )}
+                        </td>
+                        <td>
+                          {u.requested_delivery_date ? (
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#B45309' }}>
+                                {formatDate(u.requested_delivery_date)}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>
+                                Window: {u.delivery_window || 'Standard Morning'}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: '#94A3B8', fontStyle: 'italic' }}>
+                              Date to be confirmed by supplier
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              backgroundColor: '#FEF3C7',
+                              color: '#92400E',
+                              padding: '3px 8px',
+                              borderRadius: '12px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <Clock size={11} />
+                            {u.awaiting_time_hours} hrs in queue
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#047857' }}>
+                            {u.total_crates} Milk Crates
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            {u.total_volume_litres} L • {formatCurrency(u.total)}
+                          </div>
+                        </td>
+                        <td>
+                          {hasRuns ? (
+                            <div>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  backgroundColor: fittingRuns.length > 0 ? '#DCFCE7' : '#FEF3C7',
+                                  color: fittingRuns.length > 0 ? '#166534' : '#92400E',
+                                  padding: '2px 7px',
+                                  borderRadius: '6px',
+                                }}
+                              >
+                                {fittingRuns.length > 0
+                                  ? `${fittingRuns.length} matching run${fittingRuns.length === 1 ? '' : 's'} available`
+                                  : `${u.eligible_runs.length} runs full / create new`}
+                              </span>
+                              <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
+                                Next: {u.eligible_runs[0]?.route_name} ({formatDate(u.eligible_runs[0]?.delivery_date)})
+                              </div>
+                            </div>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                backgroundColor: '#FEE2E2',
+                                color: '#991B1B',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              No published route runs
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => setOrderToSchedule(u)}
+                              style={{ backgroundColor: '#047857', borderColor: '#047857', fontWeight: 700, fontSize: '12px' }}
+                              icon={<Calendar size={13} />}
+                            >
+                              Schedule Order →
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setHistoryOrder({ id: u.id, orderNumber: u.order_number })}
+                              icon={<History size={13} />}
+                              title="Audit Trail"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      ) : (
+        /* VIEW B: All Dispatch Orders */
+        <>
+          {/* Filter and Search Bar */}
+          <div className="search-filter-toolbar">
+            <div className="toolbar-search-form">
+              <div className="search-input-wrapper">
+                <Search size={18} className="search-input-icon" />
+                <input
+                  type="text"
+                  className="toolbar-search-input"
+                  placeholder="Search by order number, shop name, or driver..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Search orders"
+                />
+              </div>
+            </div>
+
+            <div className="toolbar-filters-group">
+              <div className="filter-select-wrapper">
+                <ListFilter size={16} className="filter-leading-icon" />
+                <select
+                  className="toolbar-select-field"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  aria-label="Filter by order status"
+                >
+                  <option value="">All Statuses ({orders.length})</option>
+                  <option value="PENDING_CONFIRMATION">Pending Review ({pendingCount})</option>
+                  <option value="CONFIRMED">Confirmed Orders</option>
+                  <option value="DISPATCH_PREPARED">Bay Prepared</option>
+                  <option value="IN_TRANSIT">In Transit ({inTransitCount})</option>
+                  <option value="DELIVERED">Delivered ({deliveredCount})</option>
+                  <option value="DISPUTED">Disputed ({disputedCount})</option>
+                  <option value="CANCELLED">Cancelled / Rejected</option>
+                </select>
+              </div>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<RefreshCw size={13} className={loading ? 'spin' : ''} />}
+                onClick={() => {
+                  fetchOrders(false);
+                  fetchUnscheduledOrders();
+                }}
+                disabled={loading}
+              >
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* Orders Dispatch Manifest Table */}
+          <Card
+            title="Live Dispatch Manifest"
+            subtitle={`Showing ${filtered.length} shop orders with accurate liquid volume (L) conversions`}
+            noPadding
+          >
+            <div className="business-table-container">
+              <table className="business-table">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Merchant Store</th>
+                    <th>Assigned Route & Driver</th>
+                    <th>Total Volume (L)</th>
+                    <th>Total Value</th>
+                    <th>Order Placed</th>
+                    <th>Delivery Schedule</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((o) => {
+                    const isPending = o.status === 'PENDING_CONFIRMATION' || o.status === 'PENDING';
+                    return (
+                      <tr
+                        key={o.id}
+                        style={{
+                          backgroundColor: o.isNew ? '#F0FDF4' : undefined,
+                          transition: 'background-color 0.5s ease',
+                        }}
+                      >
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <code style={{ fontWeight: 700, fontSize: '12.5px' }}>{o.orderNumber}</code>
+                            {o.isNew && (
+                              <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#059669', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px' }}>
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="font-semibold text-primary">{o.shopName}</div>
+                          <div className="text-secondary text-xs">{o.shopId}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{o.driver}</div>
+                          <div style={{ fontSize: '12px', color: '#64748B' }}>{o.route}</div>
+                        </td>
+
+                        {/* LIQUID VOLUME IN LITRES DISPLAY */}
+                        <td style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          <div style={{ fontWeight: 700, color: '#047857', fontSize: '13.5px' }}>
+                            {formatVolumeLitres(o.totalVolumeLitres)}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                            {o.cratesCount} crates • {o.packagesCount} pkts
+                          </div>
+                          {o.hasUnknownCrates && (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '2px',
+                                fontSize: '10.5px',
+                                color: '#B45309',
+                                backgroundColor: '#FEF3C7',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                marginTop: '2px',
+                              }}
+                            >
+                              <AlertTriangle size={10} />
+                              Partial crate config
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {formatCurrency(o.totalAmount)}
+                        </td>
+                        <td style={{ fontSize: '12px', color: '#64748B' }}>
+                          {formatDate(o.createdAt)}
+                        </td>
+
+                        {/* Delivery Schedule Column */}
+                        <td>
+                          {o.confirmedDeliveryDate ? (
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: '#047857', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <CheckCircle2 size={13} />
+                                <span>{formatDate(o.confirmedDeliveryDate)}</span>
+                              </div>
+                              <div style={{ fontSize: '10.5px', color: '#64748B' }}>
+                                {o.deliveryWindow || 'Morning Route'}
+                              </div>
+                            </div>
+                          ) : o.schedulingStatus === 'AWAITING_SCHEDULING' ? (
+                            <div>
+                              <span
+                                style={{
+                                  fontSize: '10.5px',
+                                  fontWeight: 700,
+                                  backgroundColor: '#FEF3C7',
+                                  color: '#92400E',
+                                  padding: '2px 6px',
+                                  borderRadius: '8px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                }}
+                              >
+                                <Clock size={10} />
+                                Awaiting Run
+                              </span>
+                              {o.requestedDeliveryDate && (
+                                <div style={{ fontSize: '10.5px', color: '#B45309', marginTop: '2px' }}>
+                                  Req: {formatDate(o.requestedDeliveryDate)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: '#94A3B8' }}>Unscheduled</span>
+                          )}
+                        </td>
+
+                        <td>{getStatusBadge(o.status)}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                            {o.schedulingStatus === 'AWAITING_SCHEDULING' && (
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => {
+                                  const foundUnscheduled = unscheduledOrders.find((u) => u.id === o.id);
+                                  if (foundUnscheduled) {
+                                    setOrderToSchedule(foundUnscheduled);
+                                  } else {
+                                    setActiveSection('UNSCHEDULED_QUEUE');
+                                  }
+                                }}
+                                style={{
+                                  backgroundColor: '#B45309',
+                                  borderColor: '#B45309',
+                                  fontSize: '11.5px',
+                                  padding: '2px 8px',
+                                  height: '28px',
+                                }}
+                                icon={<Calendar size={12} />}
+                              >
+                                Schedule
+                              </Button>
+                            )}
+                            {o.confirmedDeliveryDate && (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setOrderToReschedule({ id: o.id, orderNumber: o.orderNumber, currentDate: o.confirmedDeliveryDate })}
+                                style={{ fontSize: '11px', padding: '2px 6px', height: '28px' }}
+                                title="Reschedule delivery run/date"
+                              >
+                                <RefreshCw size={12} />
+                              </Button>
+                            )}
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setHistoryOrder({ id: o.id, orderNumber: o.orderNumber })}
+                              style={{ fontSize: '11px', padding: '2px 6px', height: '28px' }}
+                              title="View scheduling audit history"
+                            >
+                              <History size={12} />
+                            </Button>
+                            <Button
+                              variant={isPending ? 'primary' : 'secondary'}
+                              size="sm"
+                              onClick={() => setSelectedOrder(o)}
+                              style={isPending ? { backgroundColor: '#047857', borderColor: '#047857', fontSize: '12px', fontWeight: 600 } : { fontSize: '12px' }}
+                              icon={<Eye size={13} />}
+                            >
+                              {isPending ? 'Review' : 'Details'}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
 
       {/* Order Detail & Approval Modal */}
       {selectedOrder && (
@@ -853,6 +1230,84 @@ export const OrdersList: React.FC = () => {
                   </Button>
                 </div>
               )}
+
+              {/* Route Scheduling & Delivery Date Banner */}
+              <div
+                style={{
+                  backgroundColor: selectedOrder.confirmedDeliveryDate ? '#F0FDF4' : '#FFFBEB',
+                  border: `1px solid ${selectedOrder.confirmedDeliveryDate ? '#BBF7D0' : '#FDE68A'}`,
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {selectedOrder.confirmedDeliveryDate ? (
+                      <CheckCircle2 size={16} color="#059669" />
+                    ) : (
+                      <Clock size={16} color="#D97706" />
+                    )}
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: selectedOrder.confirmedDeliveryDate ? '#166534' : '#92400E' }}>
+                      {selectedOrder.confirmedDeliveryDate
+                        ? `Confirmed Delivery Date: ${formatDate(selectedOrder.confirmedDeliveryDate)}`
+                        : 'Delivery Date Awaiting Supplier Confirmation'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#475569', marginTop: '2px' }}>
+                    {selectedOrder.confirmedDeliveryDate
+                      ? `Window: ${selectedOrder.deliveryWindow || 'Morning Route'} • Van: ${selectedOrder.vehicleRegistration || 'Cold-Chain Van'}`
+                      : selectedOrder.requestedDeliveryDate
+                      ? `Shop requested arrival: ${formatDate(selectedOrder.requestedDeliveryDate)} (Pending run allocation)`
+                      : 'No delivery run currently assigned to this order'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {selectedOrder.confirmedDeliveryDate ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setOrderToReschedule({ id: selectedOrder.id, orderNumber: selectedOrder.orderNumber, currentDate: selectedOrder.confirmedDeliveryDate })}
+                      style={{ fontSize: '12px' }}
+                      icon={<RefreshCw size={12} />}
+                    >
+                      Reschedule
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        const foundUnscheduled = unscheduledOrders.find((u) => u.id === selectedOrder.id);
+                        if (foundUnscheduled) {
+                          setOrderToSchedule(foundUnscheduled);
+                          setSelectedOrder(null);
+                        } else {
+                          setActiveSection('UNSCHEDULED_QUEUE');
+                          setSelectedOrder(null);
+                        }
+                      }}
+                      style={{ backgroundColor: '#047857', borderColor: '#047857', fontSize: '12px', fontWeight: 700 }}
+                      icon={<Calendar size={12} />}
+                    >
+                      Schedule Order
+                    </Button>
+                  )}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setHistoryOrder({ id: selectedOrder.id, orderNumber: selectedOrder.orderNumber })}
+                    style={{ fontSize: '12px' }}
+                    icon={<History size={12} />}
+                  >
+                    Audit Trail
+                  </Button>
+                </div>
+              </div>
 
               {/* Route & Driver Details & Liquid Volume Breakdown */}
               <div
@@ -1003,6 +1458,38 @@ export const OrdersList: React.FC = () => {
       <OrderVolumeSummaryModal
         isOpen={isVolumeSummaryOpen}
         onClose={() => setIsVolumeSummaryOpen(false)}
+      />
+
+      {/* 3. SCHEDULE ORDER MODAL (UNSCHEDULED QUEUE WORKFLOW) */}
+      <ScheduleOrderModal
+        order={orderToSchedule}
+        isOpen={Boolean(orderToSchedule)}
+        onClose={() => setOrderToSchedule(null)}
+        onScheduled={() => {
+          fetchOrders(false);
+          fetchUnscheduledOrders();
+        }}
+      />
+
+      {/* 4. RESCHEDULE ORDER MODAL */}
+      <RescheduleOrderModal
+        orderId={orderToReschedule?.id || null}
+        orderNumber={orderToReschedule?.orderNumber || ''}
+        currentDate={orderToReschedule?.currentDate}
+        isOpen={Boolean(orderToReschedule)}
+        onClose={() => setOrderToReschedule(null)}
+        onRescheduled={() => {
+          fetchOrders(false);
+          fetchUnscheduledOrders();
+        }}
+      />
+
+      {/* 5. SCHEDULING AUDIT TRAIL MODAL */}
+      <SchedulingHistoryModal
+        orderId={historyOrder?.id || null}
+        orderNumber={historyOrder?.orderNumber || ''}
+        isOpen={Boolean(historyOrder)}
+        onClose={() => setHistoryOrder(null)}
       />
     </div>
   );
