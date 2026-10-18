@@ -366,7 +366,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                 className={`drawer-tab-btn ${activeTab === 'pickups' ? 'is-active' : ''}`}
               >
                 <Building2 size={15} />
-                <span>Supplier Pickups ({pickupRequirements?.supplierPickups?.length || 0})</span>
+                <span>Supplier Pickups ({(pickupRequirements?.supplierPickups ?? pickupRequirements?.companies ?? []).length})</span>
               </button>
               <button
                 type="button"
@@ -508,14 +508,20 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
               )}
 
               {/* TAB 1.5: SUPPLIER PICKUPS & QUANTITIES */}
-              {activeTab === 'pickups' && (
+              {activeTab === 'pickups' && (() => {
+                const supplierPickups = pickupRequirements?.supplierPickups ?? pickupRequirements?.companies ?? [];
+                const aggregatedProducts = pickupRequirements?.aggregatedProducts ?? [];
+                const totalPickups = pickupRequirements?.totalPickups ?? supplierPickups.length;
+                const totalRequiredUnits = pickupRequirements?.totalRequiredUnits ?? pickupRequirements?.summary?.totalRequiredUnits ?? 0;
+
+                return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {pickupLoading ? (
                     <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
                       <RefreshCw size={24} className="spin-icon" style={{ margin: '0 auto 8px auto' }} />
                       <p style={{ fontSize: '13px', margin: 0 }}>Calculating supplier pickup quantities from route shops...</p>
                     </div>
-                  ) : !pickupRequirements || pickupRequirements.supplierPickups.length === 0 ? (
+                  ) : !pickupRequirements || supplierPickups.length === 0 ? (
                     <div
                       style={{
                         padding: '30px',
@@ -557,14 +563,14 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                               Auto-Calculated Route Pickup Demand
                             </div>
                             <div style={{ fontSize: '12px', color: '#047857' }}>
-                              {pickupRequirements.totalPickups} Supplier Stops • {pickupRequirements.totalRequiredUnits} Total Units Needed
+                              {totalPickups} Supplier Stops • {totalRequiredUnits} Total Units Needed
                             </div>
                           </div>
                         </div>
                       </div>
 
                       {/* Route-Wide Aggregated Product Demand */}
-                      {pickupRequirements.aggregatedProducts && pickupRequirements.aggregatedProducts.length > 0 && (
+                      {aggregatedProducts.length > 0 && (
                         <div
                           style={{
                             padding: '14px 16px',
@@ -577,7 +583,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                             Aggregated Route Product Requirements
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
-                            {pickupRequirements.aggregatedProducts.map((agg: any) => (
+                            {aggregatedProducts.map((agg: any) => (
                               <div
                                 key={agg.productId}
                                 style={{
@@ -604,7 +610,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                       )}
 
                       {/* Supplier Cards */}
-                      {pickupRequirements.supplierPickups.map((supplier: any) => (
+                      {supplierPickups.map((supplier: any) => (
                         <div
                           key={supplier.companyId}
                           style={{
@@ -666,9 +672,10 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                                 </tr>
                               </thead>
                               <tbody>
-                                {supplier.products.map((item: any) => {
+                                {(supplier.products || []).map((item: any) => {
                                   const isExpanded = expandedShopProduct === `route-${supplier.companyId}-${item.productId}`;
-                                  const shopCount = item.shopContributions?.length || 0;
+                                  const shopContributions = item.shopBreakdown || item.shopContributions || [];
+                                  const shopCount = shopContributions.length;
 
                                   return (
                                     <React.Fragment key={item.productId}>
@@ -709,11 +716,11 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                                           )}
                                         </td>
                                       </tr>
-                                      {isExpanded && item.shopContributions && (
+                                      {isExpanded && shopContributions.length > 0 && (
                                         <tr style={{ backgroundColor: '#F8FAFC' }}>
                                           <td colSpan={4} style={{ padding: '10px 16px', borderBottom: '1px solid #E2E8F0' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '6px' }}>
-                                              {item.shopContributions.map((sc: any, scI: number) => (
+                                              {shopContributions.map((sc: any, scI: number) => (
                                                 <div key={scI} style={{ padding: '6px 10px', backgroundColor: '#FFFFFF', borderRadius: '4px', border: '1px solid #CBD5E1', display: 'flex', justifyContent: 'space-between' }}>
                                                   <span style={{ fontWeight: 600, fontSize: '11.5px', color: '#1E293B' }}>{sc.shopName}</span>
                                                   <span style={{ fontWeight: 700, fontSize: '11.5px', color: '#047857' }}>{sc.quantity} {item.unit}</span>
@@ -734,7 +741,8 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                     </>
                   )}
                 </div>
-              )}
+                );
+              })()}
 
               {/* TAB 2: MAP VISUALIZER */}
               {activeTab === 'map' && (

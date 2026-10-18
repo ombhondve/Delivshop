@@ -11,6 +11,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { AssignmentWizardModal } from './AssignmentWizardModal';
 import { AssignmentDetailsDrawer } from './AssignmentDetailsDrawer';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
 interface AssignmentsOverviewProps {
   initialRoute?: Route | null;
@@ -19,6 +20,7 @@ interface AssignmentsOverviewProps {
 export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initialRoute }) => {
   const [runs, setRuns] = useState<DeliveryRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('');
@@ -31,6 +33,7 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
 
   const loadAssignments = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const params: any = {};
       if (statusFilter === 'ARCHIVED') {
@@ -43,8 +46,9 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
       const res: any = await api.assignments.list(params);
       const list = Array.isArray(res) ? res : res?.data || [];
       setRuns(list);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load assignments:', err);
+      setError(err?.message || 'Failed to retrieve delivery run assignments from server. Please check connection and retry.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +58,10 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
     loadAssignments();
   }, [loadAssignments]);
 
-  const filteredRuns = runs.filter(r => {
+  const safeRuns = Array.isArray(runs) ? runs.filter(Boolean) : [];
+
+  const filteredRuns = safeRuns.filter(r => {
+    if (!r) return false;
     const code = r.run_code || r.runCode || '';
     const driver = r.driver_name || r.driverName || '';
     const vehicle = r.vehicle_registration || r.registrationNumber || '';
@@ -73,11 +80,11 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
   });
 
   // Statistics
-  const totalRuns = runs.length;
-  const assignedRuns = runs.filter(r => r.status === 'ASSIGNED' || r.status === 'READY').length;
-  const inProgressRuns = runs.filter(r => r.status === 'IN_PROGRESS').length;
-  const completedRuns = runs.filter(r => r.status === 'COMPLETED').length;
-  const cancelledRuns = runs.filter(r => r.status === 'CANCELLED').length;
+  const totalRuns = safeRuns.length;
+  const assignedRuns = safeRuns.filter(r => r && (r.status === 'ASSIGNED' || r.status === 'READY')).length;
+  const inProgressRuns = safeRuns.filter(r => r && r.status === 'IN_PROGRESS').length;
+  const completedRuns = safeRuns.filter(r => r && r.status === 'COMPLETED').length;
+  const cancelledRuns = safeRuns.filter(r => r && r.status === 'CANCELLED').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -361,10 +368,61 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
         subtitle={`Showing ${filteredRuns.length} of ${runs.length} delivery runs configured in central database`}
         noPadding
       >
+        {error && (
+          <div
+            style={{
+              margin: '16px',
+              padding: '14px 18px',
+              backgroundColor: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertTriangle size={20} color="#DC2626" style={{ flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#991B1B' }}>
+                  Unable to Synchronize Delivery Runs
+                </div>
+                <div style={{ fontSize: '12px', color: '#B91C1C', marginTop: '2px' }}>
+                  {error}
+                </div>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => loadAssignments()}
+              icon={<RefreshCw size={14} className={loading ? 'spin-icon' : ''} />}
+            >
+              {loading ? 'Retrying...' : 'Retry'}
+            </Button>
+          </div>
+        )}
+
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
             <RefreshCw size={24} className="spin-icon text-muted" style={{ margin: '0 auto 8px auto' }} />
             <p style={{ fontSize: '13px' }}>Retrieving live delivery run assignments...</p>
+          </div>
+        ) : error && filteredRuns.length === 0 ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
+            <AlertTriangle size={36} color="#DC2626" style={{ margin: '0 auto 10px auto', opacity: 0.8 }} />
+            <h4 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              Failed to Load Operational Assignments
+            </h4>
+            <p style={{ fontSize: '12.5px', maxWidth: '420px', margin: '6px auto 16px auto', color: '#64748B' }}>
+              {error}
+            </p>
+            <Button variant="primary" onClick={() => loadAssignments()} icon={<RefreshCw size={14} />}>
+              Retry Connection
+            </Button>
           </div>
         ) : filteredRuns.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
@@ -542,28 +600,32 @@ export const AssignmentsOverview: React.FC<AssignmentsOverviewProps> = ({ initia
 
       {/* Creation Wizard */}
       {isWizardOpen && (
-        <AssignmentWizardModal
-          isOpen={isWizardOpen}
-          onClose={() => setIsWizardOpen(false)}
-          onAssignmentCreated={() => {
-            setIsWizardOpen(false);
-            loadAssignments();
-          }}
-          preselectedRoute={initialRoute}
-        />
+        <ErrorBoundary title="Assignment Dispatch Wizard Error">
+          <AssignmentWizardModal
+            isOpen={isWizardOpen}
+            onClose={() => setIsWizardOpen(false)}
+            onAssignmentCreated={() => {
+              setIsWizardOpen(false);
+              loadAssignments();
+            }}
+            preselectedRoute={initialRoute}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Details Drawer */}
       {isDetailsOpen && (
-        <AssignmentDetailsDrawer
-          runId={selectedRunId}
-          isOpen={isDetailsOpen}
-          onClose={() => {
-            setIsDetailsOpen(false);
-            setSelectedRunId(null);
-          }}
-          onRunUpdated={loadAssignments}
-        />
+        <ErrorBoundary title="Assignment Details Error">
+          <AssignmentDetailsDrawer
+            runId={selectedRunId}
+            isOpen={isDetailsOpen}
+            onClose={() => {
+              setIsDetailsOpen(false);
+              setSelectedRunId(null);
+            }}
+            onRunUpdated={loadAssignments}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );

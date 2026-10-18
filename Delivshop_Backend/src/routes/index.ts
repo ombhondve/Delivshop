@@ -15,6 +15,14 @@ import collectionRoutes from './collection.routes.js';
 
 const apiRouter = Router();
 
+// Ensure dynamic transactional API routes return live, complete responses and are not conditionally truncated to empty 304s
+apiRouter.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 apiRouter.use('/', healthRoutes);
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/companies', companyRoutes);

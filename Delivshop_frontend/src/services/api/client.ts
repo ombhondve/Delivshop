@@ -201,6 +201,7 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
       credentials: 'include',
       headers,
       signal: combinedSignal,
+      cache: 'no-cache',
       ...restOptions,
     });
   } catch (err: any) {
@@ -256,6 +257,11 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
     }
   }
 
+  // Handle HTTP 304 Not Modified: Body is empty (0 bytes)
+  if (response.status === 304) {
+    return (null as unknown) as T;
+  }
+
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
@@ -280,5 +286,5 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   }
 
   const apiRes = json as ApiResponse<T>;
-  return apiRes.data ?? (json as T);
+  return apiRes?.data ?? (json as T);
 }

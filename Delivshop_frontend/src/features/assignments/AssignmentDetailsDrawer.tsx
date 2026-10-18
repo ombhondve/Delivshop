@@ -641,128 +641,153 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                     </div>
                   </div>
 
-                  {pickupRequirements && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ textAlign: 'right', fontSize: '12px' }}>
-                        <div style={{ fontWeight: 700, color: '#1E293B' }}>
-                          {pickupRequirements.completedPickups} / {pickupRequirements.totalPickups} Suppliers Collected
-                        </div>
-                        <div style={{ color: '#64748B' }}>
-                          {pickupRequirements.totalCollectedUnits} / {pickupRequirements.totalRequiredUnits} Total Units
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          width: '42px',
-                          height: '42px',
-                          borderRadius: '50%',
-                          border: '3px solid #10B981',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          color: '#047857',
-                          backgroundColor: '#FFFFFF',
-                        }}
-                      >
-                        {pickupRequirements.totalRequiredUnits > 0
-                          ? Math.round((pickupRequirements.totalCollectedUnits / pickupRequirements.totalRequiredUnits) * 100)
-                          : 0}%
-                      </div>
-                    </div>
-                  )}
+                  {(() => {
+                    const supplierPickups = pickupRequirements?.supplierPickups ?? pickupRequirements?.companies ?? [];
+                    const aggregatedProducts = pickupRequirements?.aggregatedProducts ?? [];
+                    const totalPickups = pickupRequirements?.totalPickups ?? supplierPickups.length;
+                    const completedPickups = pickupRequirements?.completedPickups ?? supplierPickups.filter((s: any) => s.status === 'COLLECTED').length;
+                    const totalRequiredUnits = pickupRequirements?.totalRequiredUnits ?? pickupRequirements?.summary?.totalRequiredUnits ?? 0;
+                    const totalCollectedUnits = pickupRequirements?.totalCollectedUnits ?? pickupRequirements?.summary?.totalCollectedUnits ?? 0;
+
+                    return (
+                      <>
+                        {pickupRequirements && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ textAlign: 'right', fontSize: '12px' }}>
+                              <div style={{ fontWeight: 700, color: '#1E293B' }}>
+                                {completedPickups} / {totalPickups} Suppliers Collected
+                              </div>
+                              <div style={{ color: '#64748B' }}>
+                                {totalCollectedUnits} / {totalRequiredUnits} Total Units
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '50%',
+                                border: '3px solid #10B981',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                color: '#047857',
+                                backgroundColor: '#FFFFFF',
+                              }}
+                            >
+                              {totalRequiredUnits > 0
+                                ? Math.round((totalCollectedUnits / totalRequiredUnits) * 100)
+                                : 0}%
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  {pickupLoading ? (
-                    <div style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>
-                      <RefreshCw size={22} className="spin-icon" style={{ margin: '0 auto 8px auto' }} />
-                      <p style={{ fontSize: '13px', margin: 0 }}>Calculating supplier pickup quantities from route orders...</p>
-                    </div>
-                  ) : !pickupRequirements || pickupRequirements.supplierPickups.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '24px',
-                        textAlign: 'center',
-                        backgroundColor: '#F8FAFC',
-                        borderRadius: '8px',
-                        border: '1px dashed #CBD5E1',
-                        color: '#64748B',
-                      }}
-                    >
-                      <Package size={28} style={{ margin: '0 auto 8px auto', opacity: 0.6 }} />
-                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
-                        No Supplier Pickups Required
-                      </div>
-                      <p style={{ fontSize: '12.5px', margin: '4px 0 0 0' }}>
-                        No products from active supplier companies are ordered by the shops mapped to this delivery run.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* 1. Route-Wide Aggregated Totals Summary */}
-                      {pickupRequirements.aggregatedProducts && pickupRequirements.aggregatedProducts.length > 0 && (
+                  {(() => {
+                    const supplierPickups = pickupRequirements?.supplierPickups ?? pickupRequirements?.companies ?? [];
+                    const aggregatedProducts = pickupRequirements?.aggregatedProducts ?? [];
+
+                    if (pickupLoading) {
+                      return (
+                        <div style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>
+                          <RefreshCw size={22} className="spin-icon" style={{ margin: '0 auto 8px auto' }} />
+                          <p style={{ fontSize: '13px', margin: 0 }}>Calculating supplier pickup quantities from route orders...</p>
+                        </div>
+                      );
+                    }
+
+                    if (!pickupRequirements || supplierPickups.length === 0) {
+                      return (
                         <div
                           style={{
-                            padding: '14px 16px',
+                            padding: '24px',
+                            textAlign: 'center',
                             backgroundColor: '#F8FAFC',
                             borderRadius: '8px',
-                            border: '1px solid #E2E8F0',
+                            border: '1px dashed #CBD5E1',
+                            color: '#64748B',
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                              Route-Wide Aggregated Product Demand ({pickupRequirements.aggregatedProducts.length} Products)
-                            </span>
-                            <span style={{ fontSize: '11px', color: '#64748B' }}>
-                              Summed across all supplying companies
-                            </span>
+                          <Package size={28} style={{ margin: '0 auto 8px auto', opacity: 0.6 }} />
+                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
+                            No Supplier Pickups Required
                           </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
-                            {pickupRequirements.aggregatedProducts.map((agg: AggregatedPickupProduct) => (
-                              <div
-                                key={agg.productId}
-                                style={{
-                                  padding: '10px 12px',
-                                  backgroundColor: '#FFFFFF',
-                                  borderRadius: '6px',
-                                  border: '1px solid #CBD5E1',
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <div>
-                                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }}>
-                                    {agg.productName}
-                                  </div>
-                                  <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
-                                    {agg.productSku || 'SKU-—'}
-                                  </div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#047857' }}>
-                                    {agg.totalRequiredQuantity} <span style={{ fontSize: '11px', fontWeight: 500 }}>{agg.unit}</span>
-                                  </div>
-                                  <div style={{ fontSize: '10.5px', color: agg.totalOutstandingQuantity > 0 ? '#D97706' : '#059669' }}>
-                                    {agg.totalCollectedQuantity} collected
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                          <p style={{ fontSize: '12.5px', margin: '4px 0 0 0' }}>
+                            No products from active supplier companies are ordered by the shops mapped to this delivery run.
+                          </p>
                         </div>
-                      )}
+                      );
+                    }
 
-                      {/* 2. Breakdown per Supplier Company */}
-                      {pickupRequirements.supplierPickups.map((supplier: CompanyPickupStop) => (
-                        <div
-                          key={supplier.companyId}
-                          style={{
-                            border: '1px solid #E2E8F0',
-                            borderRadius: '8px',
+                    return (
+                      <>
+                        {/* 1. Route-Wide Aggregated Totals Summary */}
+                        {aggregatedProducts.length > 0 && (
+                          <div
+                            style={{
+                              padding: '14px 16px',
+                              backgroundColor: '#F8FAFC',
+                              borderRadius: '8px',
+                              border: '1px solid #E2E8F0',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Route-Wide Aggregated Product Demand ({aggregatedProducts.length} Products)
+                              </span>
+                              <span style={{ fontSize: '11px', color: '#64748B' }}>
+                                Summed across all supplying companies
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                              {aggregatedProducts.map((agg: AggregatedPickupProduct) => (
+                                <div
+                                  key={agg.productId}
+                                  style={{
+                                    padding: '10px 12px',
+                                    backgroundColor: '#FFFFFF',
+                                    borderRadius: '6px',
+                                    border: '1px solid #CBD5E1',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }}>
+                                      {agg.productName}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
+                                      {agg.productSku || 'SKU-—'}
+                                    </div>
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#047857' }}>
+                                      {agg.totalRequiredQuantity} <span style={{ fontSize: '11px', fontWeight: 500 }}>{agg.unit}</span>
+                                    </div>
+                                    <div style={{ fontSize: '10.5px', color: agg.totalOutstandingQuantity > 0 ? '#D97706' : '#059669' }}>
+                                      {agg.totalCollectedQuantity} collected
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 2. Breakdown per Supplier Company */}
+                        {supplierPickups.map((supplier: CompanyPickupStop) => (
+                          <div
+                            key={supplier.companyId}
+                            style={{
+                              border: '1px solid #E2E8F0',
+                              borderRadius: '8px',
                             backgroundColor: '#FFFFFF',
                             overflow: 'hidden',
                           }}
@@ -908,9 +933,10 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                                 </tr>
                               </thead>
                               <tbody>
-                                {supplier.products.map((item: any) => {
+                                {(supplier.products || []).map((item: any) => {
                                   const isExpanded = expandedShopProduct === `${supplier.companyId}-${item.productId}`;
-                                  const shopCount = item.shopContributions?.length || 0;
+                                  const shopContributions = item.shopBreakdown || item.shopContributions || [];
+                                  const shopCount = shopContributions.length;
 
                                   return (
                                     <React.Fragment key={item.productId}>
@@ -993,14 +1019,14 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                                       </tr>
 
                                       {/* Expanded Shop Breakdown Row */}
-                                      {isExpanded && item.shopContributions && (
+                                      {isExpanded && shopContributions.length > 0 && (
                                         <tr style={{ backgroundColor: '#F8FAFC' }}>
                                           <td colSpan={7} style={{ padding: '12px 20px', borderBottom: '1px solid #E2E8F0' }}>
                                             <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
                                               Orders Requiring "{item.productName}":
                                             </div>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '8px' }}>
-                                              {item.shopContributions.map((sc: any, scIdx: number) => (
+                                              {shopContributions.map((sc: any, scIdx: number) => (
                                                 <div
                                                   key={sc.orderId || scIdx}
                                                   style={{
@@ -1016,7 +1042,7 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                                                   <div>
                                                     <div style={{ fontWeight: 600, color: '#1E293B' }}>{sc.shopName}</div>
                                                     <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
-                                                      Order: {sc.orderCode || sc.orderId.substring(0, 8)}
+                                                      Order: {sc.orderCode || sc.orderNumber || (sc.orderId ? String(sc.orderId).substring(0, 8) : 'N/A')}
                                                     </div>
                                                   </div>
                                                   <div style={{ fontWeight: 700, color: '#047857', fontSize: '13px' }}>
@@ -1037,7 +1063,8 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                         </div>
                       ))}
                     </>
-                  )}
+                  );
+                })()}
                 </div>
               </div>
 

@@ -102,9 +102,9 @@ export const assignmentRepository = {
              u.name as driver_name, u.employee_id as driver_employee_id, u.phone as driver_phone,
              v.registration_number as vehicle_registration, v.vehicle_code, v.vehicle_type, v.capacity_crates
       FROM delivery_runs dr
-      JOIN routes r ON dr.route_id = r.id
-      JOIN users u ON dr.driver_id = u.id
-      JOIN vehicles v ON dr.vehicle_id = v.id
+      LEFT JOIN routes r ON dr.route_id = r.id
+      LEFT JOIN users u ON dr.driver_id = u.id
+      LEFT JOIN vehicles v ON dr.vehicle_id = v.id
       WHERE ${whereClauses.join(' AND ')}
       ORDER BY ${sortCol} ${orderDir}, dr.created_at DESC
     `;
@@ -150,9 +150,9 @@ export const assignmentRepository = {
               u.name as driver_name, u.employee_id as driver_employee_id, u.phone as driver_phone, u.license_number as driver_license,
               v.registration_number as vehicle_registration, v.vehicle_code, v.vehicle_type, v.capacity_crates, v.capacity_kg, v.fuel_type, v.is_refrigerated
        FROM delivery_runs dr
-       JOIN routes r ON dr.route_id = r.id
-       JOIN users u ON dr.driver_id = u.id
-       JOIN vehicles v ON dr.vehicle_id = v.id
+       LEFT JOIN routes r ON dr.route_id = r.id
+       LEFT JOIN users u ON dr.driver_id = u.id
+       LEFT JOIN vehicles v ON dr.vehicle_id = v.id
        WHERE dr.id = $1
        LIMIT 1`,
       [id]

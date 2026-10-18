@@ -11,6 +11,7 @@ import { Route, RouteSummary } from '../../types';
 import { RouteCreationWizard } from './RouteCreationWizard';
 import { RouteDetailsDrawer } from './RouteDetailsDrawer';
 import { DeleteRouteModal } from './DeleteRouteModal';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
 interface RoutesOverviewProps {
   onDispatchRun?: (route: Route) => void;

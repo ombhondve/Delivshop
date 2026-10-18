@@ -23,6 +23,7 @@ import { VehicleDetailPage } from '../features/vehicles/VehicleDetailPage';
 import { VehiclesOverview } from '../features/vehicles/VehiclesOverview';
 import { RoutesOverview } from '../features/routes/RoutesOverview';
 import { AssignmentsOverview } from '../features/assignments/AssignmentsOverview';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 
 const MainContent: React.FC = () => {
   const { path, activeTab, selectTab, shopId, companyId, driverId, vehicleId, isNotFound, isLogin, navigate } = useNavigation();
@@ -129,7 +130,9 @@ const MainContent: React.FC = () => {
   return (
     <div className="dashboard-entrance-wrapper">
       <Layout activeTab={activeTab} onSelectTab={selectTab}>
-        {renderTabContent()}
+        <ErrorBoundary key={activeTab}>
+          {renderTabContent()}
+        </ErrorBoundary>
       </Layout>
     </div>
   );
