@@ -18,7 +18,7 @@ const ARGON2_OPTIONS = {
 };
 
 /**
- * Hash a plain password using Argon2id (or bcryptjs fallback).
+ * Hash a plain password using Argon2id (with hash-wasm / bcryptjs fallback).
  */
 export async function hashPassword(plainText: string): Promise<string> {
   if (argon2Module?.hash) {
@@ -28,11 +28,28 @@ export async function hashPassword(plainText: string): Promise<string> {
       // Fallback if native call fails
     }
   }
-  return bcrypt.hash(plainText, 12);
+
+  // Cross-platform WebAssembly Argon2id fallback (zero native binary dependency)
+  try {
+    const { argon2id } = await import('hash-wasm');
+    const salt = crypto.randomBytes(16);
+    return await argon2id({
+      password: plainText,
+      salt,
+      parallelism: 1,
+      iterations: 2,
+      memorySize: 19456,
+      hashLength: 32,
+      outputType: 'encoded',
+    });
+  } catch {
+    return bcrypt.hash(plainText, 12);
+  }
 }
 
 /**
  * Verify a plain password against an Argon2id (or legacy bcrypt) hash.
+ * Supports native @node-rs/argon2, WASM hash-wasm, and bcryptjs.
  */
 export async function comparePassword(plainText: string, hashed: string): Promise<boolean> {
   if (!hashed || !plainText) return false;
@@ -43,10 +60,17 @@ export async function comparePassword(plainText: string, hashed: string): Promis
       try {
         return await argon2Module.verify(hashed, plainText);
       } catch {
-        return false;
+        // Fallback to WASM
       }
     }
-    return false;
+
+    // WebAssembly fallback (zero native compilation required, runs seamlessly in Vercel serverless Linux)
+    try {
+      const { argon2Verify } = await import('hash-wasm');
+      return await argon2Verify({ password: plainText, hash: hashed });
+    } catch {
+      return false;
+    }
   }
 
   // Fallback for existing bcrypt hashes

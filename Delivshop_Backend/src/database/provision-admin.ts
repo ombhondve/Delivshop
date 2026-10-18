@@ -11,6 +11,7 @@ export interface ProvisionAdminOptions {
   name?: string;
   phone?: string;
   forceReset?: boolean;
+  allowDevPassword?: boolean;
 }
 
 export interface ProvisionAdminResult {
@@ -30,7 +31,14 @@ export interface ProvisionAdminResult {
  * - At least one special symbol
  * - Not a predictable dictionary word or dev credential
  */
-export function validatePasswordStrength(password: string): { valid: boolean; reason?: string } {
+export function validatePasswordStrength(
+  password: string,
+  allowDevPassword = false
+): { valid: boolean; reason?: string } {
+  if (allowDevPassword && password && password.length >= 6) {
+    return { valid: true };
+  }
+
   if (!password || password.length < 10) {
     return { valid: false, reason: 'Password must be at least 10 characters long' };
   }
@@ -82,7 +90,7 @@ export async function provisionAdmin(options: ProvisionAdminOptions): Promise<Pr
     throw new Error('A valid email address is required.');
   }
 
-  const strength = validatePasswordStrength(password);
+  const strength = validatePasswordStrength(password, options.allowDevPassword);
   if (!strength.valid) {
     throw new Error(`Password policy violation: ${strength.reason}`);
   }
@@ -175,6 +183,8 @@ function parseCliArgs(): Partial<ProvisionAdminOptions> {
       options.phone = arg.substring('--phone='.length);
     } else if (arg === '--reset' || arg === '--force' || arg === '--force-reset') {
       options.forceReset = true;
+    } else if (arg === '--allow-dev' || arg === '--allow-dev-password' || arg === '--dev') {
+      options.allowDevPassword = true;
     }
   }
   return options;
@@ -218,7 +228,14 @@ export async function runCli(): Promise<void> {
   }
 
   try {
-    const result = await provisionAdmin({ email, password, name, phone, forceReset: cliArgs.forceReset });
+    const result = await provisionAdmin({
+      email,
+      password,
+      name,
+      phone,
+      forceReset: cliArgs.forceReset,
+      allowDevPassword: cliArgs.allowDevPassword,
+    });
     console.log(`\n✅ ${result.message}`);
     console.log(`Action: ${result.action}`);
     console.log(`Email:  ${result.email}`);

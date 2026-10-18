@@ -1,3 +1,4 @@
+import './utils/url-shim.js';
 import express, { Application, Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -13,10 +14,17 @@ export const createApp = (): Application => {
   // Trust first proxy hop (e.g. Vercel edge/gateway) for accurate client IP in rate limiting
   app.set('trust proxy', 1);
 
-  // Normalize empty, undefined, or root-relative URL paths in serverless environments
+  // Normalize URL paths using WHATWG URL API to prevent legacy url.parse() invocation [DEP0169]
   app.use((req: Request, _res: Response, next) => {
     if (!req.url || req.url === '' || req.url === '//') {
       req.url = '/';
+    } else if (req.url.startsWith('http://') || req.url.startsWith('https://')) {
+      try {
+        const u = new URL(req.url);
+        req.url = (u.pathname || '/') + (u.search || '');
+      } catch {
+        // Fallback
+      }
     }
     next();
   });
