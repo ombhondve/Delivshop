@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import { logger } from '../utils/logger.js';
 
 export const authController = {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -43,6 +44,11 @@ export const authController = {
         sendError(res, err.message, 401);
         return;
       }
+      if (err.message.includes('database service temporarily unreachable')) {
+        sendError(res, err.message, 503);
+        return;
+      }
+      logger.error(`[Auth Controller] Unexpected login error: ${err.message}`);
       next(err);
     }
   },

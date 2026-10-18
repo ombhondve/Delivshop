@@ -42,9 +42,21 @@ describe('Assignments Secure Deletion & Operational Lifecycle Test Suite', () =>
     const drvRes = await dbPool.query("SELECT id FROM users WHERE role = 'DRIVER' AND is_active = TRUE AND deleted_at IS NULL LIMIT 1");
     driverId = drvRes.rows[0]?.id;
 
-    // Query active vehicle
-    const vehRes = await dbPool.query("SELECT id FROM vehicles WHERE is_active = TRUE AND deleted_at IS NULL LIMIT 1");
+    // Query active vehicle without conflicting active runs from other dates
+    const vehRes = await dbPool.query(
+      `SELECT id FROM vehicles 
+       WHERE is_active = TRUE AND deleted_at IS NULL 
+       AND id NOT IN (
+         SELECT vehicle_id FROM delivery_runs 
+         WHERE status IN ('ASSIGNED', 'READY', 'IN_PROGRESS') AND deleted_at IS NULL AND delivery_date < '2026-12-01'
+       ) 
+       LIMIT 1`
+    );
     vehicleId = vehRes.rows[0]?.id;
+    if (!vehicleId) {
+      const fallbackVeh = await dbPool.query("SELECT id FROM vehicles WHERE is_active = TRUE AND deleted_at IS NULL LIMIT 1");
+      vehicleId = fallbackVeh.rows[0]?.id;
+    }
     if (vehicleId) {
       await dbPool.query("UPDATE vehicles SET status = 'AVAILABLE' WHERE id = $1", [vehicleId]);
       await dbPool.query("UPDATE vehicle_documents SET expiry_date = '2028-12-31' WHERE vehicle_id = $1", [vehicleId]);

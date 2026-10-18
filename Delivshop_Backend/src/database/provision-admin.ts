@@ -90,7 +90,13 @@ export async function provisionAdmin(options: ProvisionAdminOptions): Promise<Pr
     throw new Error('A valid email address is required.');
   }
 
-  const strength = validatePasswordStrength(password, options.allowDevPassword);
+  // Strict security policy: predictable development passwords are never allowed in production
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  if (isProduction && options.allowDevPassword) {
+    throw new Error('Predictable development credentials are strictly prohibited in production.');
+  }
+
+  const strength = validatePasswordStrength(password, !isProduction && options.allowDevPassword);
   if (!strength.valid) {
     throw new Error(`Password policy violation: ${strength.reason}`);
   }
@@ -101,7 +107,7 @@ export async function provisionAdmin(options: ProvisionAdminOptions): Promise<Pr
     if (options.forceReset) {
       const passwordHash = await hashPassword(password);
       await query(
-        `UPDATE users SET password_hash = $1, is_active = TRUE, updated_at = NOW() WHERE id = $2`,
+        `UPDATE users SET password_hash = $1, role = 'ADMIN', is_active = TRUE, updated_at = NOW() WHERE id = $2`,
         [passwordHash, existingUser.id]
       );
       await auditService.log({
@@ -109,20 +115,20 @@ export async function provisionAdmin(options: ProvisionAdminOptions): Promise<Pr
         action: 'ADMIN_PASSWORD_RESET',
         entityType: 'user',
         entityId: existingUser.id,
-        details: { email: existingUser.email, role: existingUser.role },
+        details: { email: existingUser.email, role: 'ADMIN' },
       });
       const resetMsg = `Administrator password successfully updated for "${existingUser.email}".`;
-      logger.info(`[Admin Provisioning] ${resetMsg} (Role: ${existingUser.role})`);
+      logger.info(`[Admin Provisioning] ${resetMsg} (Role: ADMIN)`);
       return {
         success: true,
         action: 'RESET',
         email: existingUser.email,
-        role: existingUser.role,
+        role: 'ADMIN',
         message: resetMsg,
       };
     }
 
-    const msg = `Admin account with email "${email}" already exists. Preserving existing record and password without changes.`;
+    const msg = `Admin account with email "${email}" already exists. Preserving existing record and password without changes. If you wish to update the password or reset credentials, re-run with --reset.`;
     logger.info(`[Admin Provisioning] ${msg} (Role: ${existingUser.role})`);
     return {
       success: true,

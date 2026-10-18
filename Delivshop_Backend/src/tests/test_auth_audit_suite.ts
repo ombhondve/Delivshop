@@ -39,7 +39,7 @@ async function runAuthAuditSuite() {
 
     // 2. Admin Login with Email & Password
     console.log('\n--- Test 2: Admin Login with Credentials ---');
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@Delivshop2026!';
     const adminLoginRes = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
