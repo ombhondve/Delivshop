@@ -367,9 +367,11 @@ export default function CreateOrderScreen() {
                   ) : null}
                   <View style={styles.priceRow}>
                     <Text style={styles.productPrice}>{formatCurrency(price)}</Text>
-                    <Text style={styles.unitText}>/ {product.unit_of_measure || product.unit || 'unit'}</Text>
-                    {product.pack_size ? (
-                      <Text style={styles.packSizeText}>• Pack of {product.pack_size}</Text>
+                    <Text style={styles.unitText}>
+                      / {(product as any).selling_unit || (product as any).sellingUnit || (product as any).base_unit || (product as any).baseUnit || product.unit_of_measure || product.unit || 'item'}
+                    </Text>
+                    {product.pack_size || (product as any).packSize ? (
+                      <Text style={styles.packSizeText}>• {product.pack_size || (product as any).packSize}</Text>
                     ) : (
                       <Text style={styles.packSizeText}>• Direct Supply</Text>
                     )}

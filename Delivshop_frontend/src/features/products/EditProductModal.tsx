@@ -32,6 +32,7 @@ const DAIRY_CATEGORIES = [
   'Cheese',
   'Cream',
   'Flavoured Milk',
+  'Khoa',
   'Other Dairy Products',
 ];
 
@@ -42,8 +43,26 @@ const BASE_UNITS = [
   'g',
   'Piece',
   'Pack',
-  'Carton',
+];
+
+const SELLING_UNITS = [
+  'Pouch',
+  'Bottle',
+  'Pack',
+  'Block',
+  'Cup',
+  'Tin',
+  'Piece',
+  'Litre',
+  'Kilogram',
+];
+
+const PURCHASE_UNITS = [
   'Crate',
+  'Box',
+  'Carton',
+  'Tub',
+  'Bag',
 ];
 
 export const EditProductModal: React.FC<EditProductModalProps> = ({
@@ -132,6 +151,21 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
   if (!isOpen || !product) return null;
 
+  const handleCategoryChange = (newCat: string) => {
+    setCategory(newCat);
+    const isLiquid = ['Milk', 'Buttermilk', 'Chaas', 'Flavoured Milk', 'Lassi'].some(
+      (c) => newCat.toLowerCase().includes(c.toLowerCase())
+    );
+    const isSolid = ['Butter', 'Khoa', 'Paneer', 'Curd', 'Yogurt', 'Ghee', 'Cheese'].some(
+      (c) => newCat.toLowerCase().includes(c.toLowerCase())
+    );
+    if (isLiquid && (baseUnit === 'Kilogram' || baseUnit === 'g')) {
+      setBaseUnit('Litre');
+    } else if (isSolid && (baseUnit === 'Litre' || baseUnit === 'ml')) {
+      setBaseUnit('Kilogram');
+    }
+  };
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
 
@@ -139,6 +173,26 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     if (!companyId) errs.companyId = 'Supplier company is required';
     if (price < 0 || isNaN(price)) errs.price = 'Selling price cannot be negative';
     if (purchaseCost < 0 || isNaN(purchaseCost)) errs.purchaseCost = 'Purchase cost cannot be negative';
+
+    const isLiquid = ['Milk', 'Buttermilk', 'Chaas', 'Flavoured Milk', 'Lassi'].some(
+      (c) => category.toLowerCase().includes(c.toLowerCase())
+    );
+    const isSolid = ['Butter', 'Khoa', 'Paneer', 'Curd', 'Yogurt', 'Ghee', 'Cheese'].some(
+      (c) => category.toLowerCase().includes(c.toLowerCase())
+    );
+
+    if (isLiquid && (baseUnit === 'Kilogram' || baseUnit === 'g')) {
+      errs.baseUnit = `Liquid dairy category "${category}" cannot use weight units (Kilogram/g). Please select Litre or ml.`;
+    }
+    if (isSolid && (baseUnit === 'Litre' || baseUnit === 'ml')) {
+      errs.baseUnit = `Solid dairy category "${category}" cannot use volume units (Litre/ml). Please select Kilogram or g.`;
+    }
+    if (!packSize.trim()) {
+      errs.packSize = 'Pack size description is required';
+    }
+    if (unitsPerPack <= 0 || isNaN(unitsPerPack)) {
+      errs.unitsPerPack = 'Units per crate must be greater than 0';
+    }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -408,7 +462,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
@@ -470,12 +524,12 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Pricing & Packaging */}
+          {/* Section 2: Pricing & Commercial Terms */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
               <DollarSign size={16} color="var(--color-primary)" />
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                2. Pricing & Packaging
+                2. Pricing & Commercial Terms
               </h3>
             </div>
 
@@ -524,25 +578,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Pack Size
-                </label>
-                <input
-                  type="text"
-                  value={packSize}
-                  onChange={(e) => setPackSize(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #A7AE9F',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   GST Tax Rate (%)
                 </label>
                 <select
@@ -563,6 +598,183 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   <option value={12}>12% (Ghee / Butter / Cheese)</option>
                   <option value={18}>18% (Flavoured Drinks / Condensed)</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Packaging & Canonical Measurement Units */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1px solid #D6D3C8' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Boxes size={16} color="var(--color-primary)" />
+                <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  3. Packaging & Canonical Measurement Units
+                </h3>
+              </div>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: ['Milk', 'Buttermilk', 'Chaas', 'Flavoured Milk', 'Lassi'].some(c => category.toLowerCase().includes(c.toLowerCase()))
+                    ? '#EFF6FF'
+                    : '#FEF3C7',
+                  color: ['Milk', 'Buttermilk', 'Chaas', 'Flavoured Milk', 'Lassi'].some(c => category.toLowerCase().includes(c.toLowerCase()))
+                    ? '#1E40AF'
+                    : '#92400E',
+                }}
+              >
+                {['Milk', 'Buttermilk', 'Chaas', 'Flavoured Milk', 'Lassi'].some(c => category.toLowerCase().includes(c.toLowerCase()))
+                  ? 'Liquid Volume Dimension (Litres / ml)'
+                  : 'Solid Mass Dimension (Kilograms / g)'}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Base Unit (Physical Metric) <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <select
+                  value={baseUnit}
+                  onChange={(e) => setBaseUnit(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: `1px solid ${errors.baseUnit ? '#EF4444' : '#A7AE9F'}`,
+                    fontSize: '14px',
+                    backgroundColor: '#FFFFFF',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {BASE_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+                {errors.baseUnit && (
+                  <span style={{ color: '#EF4444', fontSize: '11.5px', marginTop: '4px', display: 'block' }}>
+                    {errors.baseUnit}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Pack Size Description <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={packSize}
+                  onChange={(e) => setPackSize(e.target.value)}
+                  placeholder="e.g. 500 ml Bottle, 500g Block"
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: `1px solid ${errors.packSize ? '#EF4444' : '#A7AE9F'}`,
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {errors.packSize && (
+                  <span style={{ color: '#EF4444', fontSize: '11.5px', marginTop: '4px', display: 'block' }}>
+                    {errors.packSize}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Selling Unit (Order Item)
+                </label>
+                <select
+                  value={sellingUnit}
+                  onChange={(e) => setSellingUnit(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #A7AE9F',
+                    fontSize: '14px',
+                    backgroundColor: '#FFFFFF',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {SELLING_UNITS.map((su) => (
+                    <option key={su} value={su}>
+                      {su}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Transport / Purchase Unit
+                </label>
+                <select
+                  value={purchaseUnit}
+                  onChange={(e) => setPurchaseUnit(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #A7AE9F',
+                    fontSize: '14px',
+                    backgroundColor: '#FFFFFF',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {PURCHASE_UNITS.map((pu) => (
+                    <option key={pu} value={pu}>
+                      {pu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Units per Crate / Case <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={unitsPerPack}
+                  onChange={(e) => setUnitsPerPack(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: `1px solid ${errors.unitsPerPack ? '#EF4444' : '#A7AE9F'}`,
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Shelf Life (Days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={shelfLifeDays}
+                  onChange={(e) => setShelfLifeDays(parseInt(e.target.value, 10) || 7)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #A7AE9F',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                />
               </div>
             </div>
           </div>

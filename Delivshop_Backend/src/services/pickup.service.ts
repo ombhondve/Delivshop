@@ -2,6 +2,7 @@ import { dbPool, query } from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import { calculateHaversineDistanceMeters } from './map-resolver.service.js';
 import { auditService } from './audit.service.js';
+import { parseProductPackaging } from '../utils/packaging.js';
 
 export interface PickupShopContribution {
   shopId: string;
@@ -16,8 +17,14 @@ export interface PickupProductItem {
   productId: string;
   productName: string;
   sku: string;
+  category?: string;
   unit: string;
   packSize: string;
+  packagingType?: string;
+  dimension?: 'VOLUME' | 'MASS' | 'COUNT';
+  totalVolumeLitres?: number | null;
+  totalWeightKg?: number | null;
+  formattedDisplay?: string;
   requiredQuantity: number;
   collectedQuantity: number;
   outstandingQuantity: number;
@@ -248,12 +255,17 @@ export const pickupService = {
          p.id as product_id,
          p.name as product_name,
          p.sku,
+         p.category,
          COALESCE(p.base_unit, 'Unit') as base_unit,
          COALESCE(p.pack_size, '1 unit') as pack_size,
+         p.selling_unit,
+         p.units_per_pack,
          p.price as product_price,
          oi.quantity as ordered_quantity,
          oi.unit_price as item_unit_price,
          oi.total_price as item_total_price,
+         oi.volume_litres,
+         oi.crates_count,
          o.id as order_id,
          o.order_number,
          s.id as shop_id,
@@ -312,6 +324,14 @@ export const pickupService = {
       const companyEntry = companyMap.get(cId)!;
       const pId = row.product_id;
 
+      const pkg = parseProductPackaging({
+        pack_size: row.pack_size,
+        base_unit: row.base_unit,
+        category: row.category,
+        selling_unit: row.selling_unit,
+        units_per_pack: row.units_per_pack,
+      });
+
       if (!companyEntry.productsMap.has(pId)) {
         const persistedItem = pickupItemsMap.get(`${cId}_${pId}`);
         const collectedQty = persistedItem ? Number(persistedItem.collected_quantity) : 0;
@@ -320,11 +340,16 @@ export const pickupService = {
           productId: pId,
           productName: row.product_name,
           sku: row.sku,
-          unit: row.base_unit || 'Unit',
-          packSize: row.pack_size || '1 unit',
+          category: row.category || 'Dairy',
+          unit: pkg.displayUnit,
+          packSize: pkg.packageSize || row.pack_size || '1 unit',
+          packagingType: pkg.packagingType,
+          dimension: pkg.dimension,
           requiredQuantity: 0,
           collectedQuantity: collectedQty,
           outstandingQuantity: 0,
+          totalVolumeLitres: 0,
+          totalWeightKg: 0,
           status: 'PENDING',
           shortageReason: persistedItem?.shortage_reason || null,
           shopBreakdown: [],
@@ -340,6 +365,14 @@ export const pickupService = {
       const productItem = companyEntry.productsMap.get(pId)!;
       const qty = Number(row.ordered_quantity || 0);
       productItem.requiredQuantity += qty;
+
+      if (pkg.isLiquid && pkg.litresPerPackage > 0) {
+        productItem.totalVolumeLitres = Number(((productItem.totalVolumeLitres || 0) + qty * pkg.litresPerPackage).toFixed(3));
+      } else if (!pkg.isLiquid && pkg.weightKgPerPackage > 0) {
+        productItem.totalWeightKg = Number(((productItem.totalWeightKg || 0) + qty * pkg.weightKgPerPackage).toFixed(3));
+      }
+
+      productItem.formattedDisplay = pkg.fullFormatted(productItem.requiredQuantity);
 
       if (!isDriver) {
         productItem.totalPrice = (productItem.totalPrice || 0) + Number(row.item_total_price || (qty * (productItem.unitPrice || 0)));
@@ -438,10 +471,16 @@ export const pickupService = {
             productId: prod.productId,
             productName: prod.productName,
             productSku: prod.sku,
+            category: prod.category,
+            packSize: prod.packSize,
+            packagingType: prod.packagingType,
             unit: prod.unit,
+            formattedDisplay: prod.formattedDisplay,
             totalRequiredQuantity: 0,
             totalCollectedQuantity: 0,
             totalOutstandingQuantity: 0,
+            totalVolumeLitres: 0,
+            totalWeightKg: 0,
             suppliersCount: 0,
           });
         }
@@ -449,6 +488,8 @@ export const pickupService = {
         item.totalRequiredQuantity += prod.requiredQuantity;
         item.totalCollectedQuantity += prod.collectedQuantity;
         item.totalOutstandingQuantity += prod.outstandingQuantity;
+        if (prod.totalVolumeLitres) item.totalVolumeLitres = Number(((item.totalVolumeLitres || 0) + prod.totalVolumeLitres).toFixed(3));
+        if (prod.totalWeightKg) item.totalWeightKg = Number(((item.totalWeightKg || 0) + prod.totalWeightKg).toFixed(3));
         item.suppliersCount += 1;
       }
     }
@@ -652,15 +693,21 @@ export const pickupService = {
 
       // 2. Upsert items
       for (const it of data.items) {
+        const prodRes = await client.query('SELECT name, sku, category, pack_size, base_unit, selling_unit, units_per_pack FROM products WHERE id = $1', [it.productId]);
+        const prod = prodRes.rows[0];
+        const pkg = prod ? parseProductPackaging(prod) : null;
+        const canonicalUnit = pkg ? pkg.displayUnit : 'Units';
+
         await client.query(
           `INSERT INTO delivery_run_pickup_items (
-             pickup_id, product_id, collected_quantity, shortage_reason
-           ) VALUES ($1, $2, $3, $4)
+             pickup_id, product_id, collected_quantity, unit, shortage_reason
+           ) VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (pickup_id, product_id) DO UPDATE SET
              collected_quantity = EXCLUDED.collected_quantity,
+             unit = COALESCE(EXCLUDED.unit, delivery_run_pickup_items.unit),
              shortage_reason = EXCLUDED.shortage_reason,
              updated_at = NOW()`,
-          [pickupRecord.id, it.productId, it.collectedQuantity, it.shortageReason || null]
+          [pickupRecord.id, it.productId, it.collectedQuantity, canonicalUnit, it.shortageReason || null]
         );
       }
 

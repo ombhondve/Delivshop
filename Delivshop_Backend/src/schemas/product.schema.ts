@@ -58,6 +58,19 @@ export const createProductSchema = z.object({
     initialBatchNumber: z.string().max(100).optional().or(z.literal('')).nullable(),
     initialExpiryDate: z.string().optional().or(z.literal('')).nullable(),
     initialManufacturingDate: z.string().optional().or(z.literal('')).nullable(),
+  }).refine((data) => {
+    const cat = data.category.toLowerCase().trim();
+    const unit = data.baseUnit.toLowerCase().trim();
+    const isLiquid = ['milk', 'buttermilk', 'chaas', 'lassi', 'flavoured milk'].includes(cat);
+    const isMass = ['kilogram', 'kg', 'g', 'gram'].includes(unit);
+    if (isLiquid && isMass) return false;
+    const isSolid = ['paneer', 'curd', 'dahi', 'butter', 'khoa', 'mawa', 'cheese'].includes(cat);
+    const isVolume = ['litre', 'liter', 'ml', 'millilitre'].includes(unit);
+    if (isSolid && isVolume) return false;
+    return true;
+  }, {
+    message: 'Base unit dimension conflicts with dairy category: Liquid products (Milk, Buttermilk, Chaas) cannot use mass units (Kilogram/g), and solid dairy (Butter, Khoa, Paneer) cannot use volume units (Litre/ml).',
+    path: ['baseUnit'],
   }),
 });
 
@@ -89,6 +102,21 @@ export const updateProductSchema = z.object({
     fatPercentage: z.coerce.number().min(0).max(100).optional().nullable(),
     snfPercentage: z.coerce.number().min(0).max(100).optional().nullable(),
     fssaiLicense: z.string().max(100).optional().or(z.literal('')).nullable(),
+  }).refine((data) => {
+    if (data.category && data.baseUnit) {
+      const cat = data.category.toLowerCase().trim();
+      const unit = data.baseUnit.toLowerCase().trim();
+      const isLiquid = ['milk', 'buttermilk', 'chaas', 'lassi', 'flavoured milk'].includes(cat);
+      const isMass = ['kilogram', 'kg', 'g', 'gram'].includes(unit);
+      if (isLiquid && isMass) return false;
+      const isSolid = ['paneer', 'curd', 'dahi', 'butter', 'khoa', 'mawa', 'cheese'].includes(cat);
+      const isVolume = ['litre', 'liter', 'ml', 'millilitre'].includes(unit);
+      if (isSolid && isVolume) return false;
+    }
+    return true;
+  }, {
+    message: 'Base unit dimension conflicts with dairy category: Liquid products cannot use mass units, and solid dairy cannot use volume units.',
+    path: ['baseUnit'],
   }),
 });
 

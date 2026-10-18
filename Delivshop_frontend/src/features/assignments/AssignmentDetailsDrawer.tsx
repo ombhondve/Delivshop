@@ -763,16 +763,17 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }}>
                                       {agg.productName}
                                     </div>
-                                    <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
-                                      {agg.productSku || 'SKU-—'}
+                                    <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                      <span style={{ fontFamily: 'monospace' }}>{agg.productSku || 'SKU-—'}</span>
+                                      {(agg as any).packSize && <span>• {(agg as any).packSize}</span>}
                                     </div>
                                   </div>
                                   <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontSize: '14px', fontWeight: 800, color: '#047857' }}>
-                                      {agg.totalRequiredQuantity} <span style={{ fontSize: '11px', fontWeight: 500 }}>{agg.unit}</span>
+                                      {(agg as any).displayTotal || `${agg.totalRequiredQuantity} ${agg.unit}`}
                                     </div>
                                     <div style={{ fontSize: '10.5px', color: agg.totalOutstandingQuantity > 0 ? '#D97706' : '#059669' }}>
-                                      {agg.totalCollectedQuantity} collected
+                                      {agg.totalCollectedQuantity} {agg.unit} collected
                                     </div>
                                   </div>
                                 </div>
@@ -948,23 +949,39 @@ export const AssignmentDetailsDrawer: React.FC<AssignmentDetailsDrawerProps> = (
                                       >
                                         <td style={{ padding: '12px 14px' }}>
                                           <div style={{ fontWeight: 600, color: '#1E293B' }}>{item.productName}</div>
-                                          {item.productSku && (
-                                            <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
-                                              {item.productSku}
+                                          <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                            {item.productSku && (
+                                              <span style={{ fontFamily: 'monospace' }}>
+                                                {item.productSku}
+                                              </span>
+                                            )}
+                                            {(item as any).packSize && <span>• {(item as any).packSize}</span>}
+                                          </div>
+                                        </td>
+                                        <td style={{ padding: '12px 14px', color: '#475569' }}>
+                                          <span style={{ fontWeight: 600, color: '#0F172A' }}>{item.unit}</span>
+                                          {(item as any).baseUnit && (item as any).baseUnit !== item.unit && (
+                                            <div style={{ fontSize: '10.5px', color: '#64748B' }}>({(item as any).baseUnit})</div>
+                                          )}
+                                        </td>
+                                        <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#047857' }}>
+                                          <div>{item.requiredQuantity} {item.unit}</div>
+                                          {Number((item as any).totalVolumeLitres || 0) > 0 && (
+                                            <div style={{ fontSize: '10.5px', fontWeight: 500, color: '#059669' }}>
+                                              {(item as any).totalVolumeLitres} L
+                                            </div>
+                                          )}
+                                          {Number((item as any).totalWeightKg || 0) > 0 && (
+                                            <div style={{ fontSize: '10.5px', fontWeight: 500, color: '#059669' }}>
+                                              {(item as any).totalWeightKg} kg
                                             </div>
                                           )}
                                         </td>
-                                        <td style={{ padding: '12px 14px', color: '#475569' }}>
-                                          {item.unit}
-                                        </td>
-                                        <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#047857' }}>
-                                          {item.requiredQuantity}
-                                        </td>
                                         <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 600, color: item.collectedQuantity > 0 ? '#059669' : '#94A3B8' }}>
-                                          {item.collectedQuantity}
+                                          {item.collectedQuantity} {item.unit}
                                         </td>
                                         <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 600, color: item.outstandingQuantity > 0 ? '#D97706' : '#059669' }}>
-                                          {item.outstandingQuantity}
+                                          {item.outstandingQuantity} {item.unit}
                                         </td>
                                         <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                                           <span
