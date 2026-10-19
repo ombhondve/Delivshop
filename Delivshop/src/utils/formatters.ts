@@ -43,6 +43,39 @@ export function formatDate(dateString: string): string {
   }
 }
 
+/**
+ * Format delivery dates into human readable standard (e.g. "21 October 2026")
+ * Parses YYYY-MM-DD components directly to prevent local timezone UTC offset skew.
+ */
+export function formatDeliveryDate(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return '';
+  try {
+    if (typeof dateInput === 'string') {
+      const match = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        const year = parseInt(match[1], 10);
+        const monthIndex = parseInt(match[2], 10) - 1;
+        const day = parseInt(match[3], 10);
+        const dateObj = new Date(year, monthIndex, day);
+        return dateObj.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+      }
+    }
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return String(dateInput);
+    return d.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return String(dateInput);
+  }
+}
+
 export function getStatusColor(status: string): string {
   switch (status.toUpperCase()) {
     case 'DELIVERED':

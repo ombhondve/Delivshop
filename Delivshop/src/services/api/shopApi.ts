@@ -26,6 +26,15 @@ export interface DeliveryAvailabilityResponse {
   shopId: string;
   shopName: string;
   hasRouteCoverage: boolean;
+  hasRouteAssigned?: boolean;
+  hasDriverAssigned?: boolean;
+  scheduledDeliveryDate?: string | null;
+  schedulingCase?: 'CASE_1' | 'CASE_2' | 'CASE_3' | 'CASE_4';
+  schedulingTitle?: string;
+  deliveryStatus?: string;
+  schedulingMessage?: string | null;
+  hasConfirmedDate?: boolean;
+  deliveryRunId?: string | null;
   coveredRoutes: Array<{ id: string; name: string; routeCode: string }>;
   availableDates: DeliveryAvailabilityOption[];
   allowUnscheduledOrders: boolean;
@@ -37,6 +46,10 @@ export interface DeliveryAvailabilityResponse {
 
 export interface CreateOrderPayload {
   shopId?: string;
+  deliveryRunId?: string | null;
+  requestedDeliveryDate?: string | null;
+  deliveryWindow?: string | null;
+  isShopPortal?: boolean;
   items: Array<{ productId: string; quantity: number }>;
   deliveryAddress: {
     street: string;

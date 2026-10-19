@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/features/auth/AuthContext';
 import { shopApi } from '@/services/api/shopApi';
 import { CacheManager } from '@/services/offline/cacheManager';
-import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters';
+import { formatCurrency, formatDate, formatDeliveryDate, getStatusColor } from '@/utils/formatters';
 
 const STATUS_FILTERS = [
   'ALL',
@@ -86,32 +86,48 @@ export default function ShopOrdersScreen() {
   }, [orders, activeFilter, searchQuery]);
 
 const getShopOrderVisibility = (order: any) => {
-  // Case C: Route assigned, delivery date confirmed
-  if (order.confirmed_delivery_date) {
+  // Case 1: Delivery Route and Date Assigned (Valid Route + Driver + Valid Delivery Date)
+  if (
+    order.scheduling_case === 'CASE_1' ||
+    order.scheduling_case === 'CASE_1_SCHEDULED' ||
+    (order.confirmed_delivery_date && order.customer_delivery_status === 'Scheduled') ||
+    (order.confirmed_delivery_date && !['Pending', 'Scheduling'].includes(order.customer_delivery_status))
+  ) {
     return {
-      statusLabel: order.status || 'Confirmed',
-      deliveryDateLabel: formatDate(order.confirmed_delivery_date),
+      statusLabel: 'Scheduled',
+      deliveryDateLabel: formatDeliveryDate(order.confirmed_delivery_date),
       showDeliveryDate: true,
-      caseType: 'CASE_C' as const,
+      caseType: 'CASE_1' as const,
+      title: 'Scheduled Delivery',
+      message: null,
     };
   }
 
-  // Case B: Route assigned, delivery date not confirmed
-  if (order.route_id || order.customer_delivery_status === 'Scheduling' || order.scheduling_status === 'SCHEDULING') {
+  // Case 2: No Delivery Route Assigned
+  if (
+    order.scheduling_case === 'CASE_2' ||
+    order.scheduling_case === 'CASE_2_NO_ROUTE' ||
+    (!order.route_id && (order.customer_delivery_status === 'Pending' || order.status === 'PENDING'))
+  ) {
     return {
-      statusLabel: 'Scheduling',
+      statusLabel: 'Pending',
       deliveryDateLabel: null,
       showDeliveryDate: false,
-      caseType: 'CASE_B' as const,
+      caseType: 'CASE_2' as const,
+      title: 'Delivery Scheduling',
+      message: 'Your delivery date will be confirmed after the supplier assigns a delivery route.',
     };
   }
 
-  // Case A: Route not assigned
+  // Case 3 (Route assigned but date missing) or Case 4 (Route assigned but driver missing)
+  const isCase4 = order.scheduling_case === 'CASE_4' || order.scheduling_case === 'CASE_4_NO_DRIVER';
   return {
-    statusLabel: 'Pending',
+    statusLabel: 'Scheduling',
     deliveryDateLabel: null,
     showDeliveryDate: false,
-    caseType: 'CASE_A' as const,
+    caseType: isCase4 ? ('CASE_4' as const) : ('CASE_3' as const),
+    title: 'Delivery Scheduling',
+    message: 'Your delivery date is not confirmed yet.',
   };
 };
 
@@ -132,20 +148,20 @@ const getShopOrderVisibility = (order: any) => {
             <Text style={styles.orderDateText}>{formatDate(item.created_at)}</Text>
           </View>
           <View style={styles.cardHeaderBadges}>
-            {visibility.caseType === 'CASE_A' && (
+            {visibility.caseType === 'CASE_2' && (
               <View style={[styles.statusBadge, { backgroundColor: '#F1F5F9' }]}>
                 <Text style={[styles.statusText, { color: '#64748B' }]}>Pending</Text>
               </View>
             )}
-            {visibility.caseType === 'CASE_B' && (
+            {(visibility.caseType === 'CASE_3' || visibility.caseType === 'CASE_4') && (
               <View style={[styles.statusBadge, { backgroundColor: '#FEF3C7' }]}>
                 <Text style={[styles.statusText, { color: '#B45309' }]}>Scheduling</Text>
               </View>
             )}
-            {visibility.caseType === 'CASE_C' && (
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '1A' }]}>
-                <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                  {item.status}
+            {visibility.caseType === 'CASE_1' && (
+              <View style={[styles.statusBadge, { backgroundColor: '#ECFDF5' }]}>
+                <Text style={[styles.statusText, { color: '#059669', fontWeight: '700' }]}>
+                  Scheduled
                 </Text>
               </View>
             )}
@@ -177,7 +193,18 @@ const getShopOrderVisibility = (order: any) => {
                 </Text>
               </>
             ) : (
-              <Text style={[styles.deliveryStatusText, { color: visibility.caseType === 'CASE_B' ? '#B45309' : '#64748B', fontWeight: '600' }]}>
+              <Text
+                style={[
+                  styles.deliveryStatusText,
+                  {
+                    color:
+                      visibility.caseType === 'CASE_3' || visibility.caseType === 'CASE_4'
+                        ? '#B45309'
+                        : '#64748B',
+                    fontWeight: '600',
+                  },
+                ]}
+              >
                 {visibility.statusLabel}
               </Text>
             )}
@@ -310,8 +337,8 @@ const getShopOrderVisibility = (order: any) => {
                               styles.statusDot,
                               {
                                 backgroundColor: modalVis.showDeliveryDate
-                                  ? getStatusColor(selectedOrder.status)
-                                  : modalVis.caseType === 'CASE_B'
+                                  ? '#059669'
+                                  : (modalVis.caseType === 'CASE_3' || modalVis.caseType === 'CASE_4')
                                   ? '#B45309'
                                   : '#64748B',
                               },
@@ -322,8 +349,8 @@ const getShopOrderVisibility = (order: any) => {
                               styles.statusValueText,
                               {
                                 color: modalVis.showDeliveryDate
-                                  ? getStatusColor(selectedOrder.status)
-                                  : modalVis.caseType === 'CASE_B'
+                                  ? '#059669'
+                                  : (modalVis.caseType === 'CASE_3' || modalVis.caseType === 'CASE_4')
                                   ? '#B45309'
                                   : '#64748B',
                               },
@@ -334,16 +361,22 @@ const getShopOrderVisibility = (order: any) => {
                         </View>
                       </View>
 
-                      {/* Confirmed Delivery Schedule (Only Case C) */}
-                      {modalVis.showDeliveryDate && (
+                      {/* Delivery Schedule Box */}
+                      {modalVis.showDeliveryDate ? (
                         <View style={styles.modalScheduledBox}>
                           <View style={styles.modalScheduledHeader}>
                             <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                            <Text style={styles.modalScheduledTitle}>Confirmed Delivery Schedule</Text>
+                            <Text style={styles.modalScheduledTitle}>Scheduled Delivery</Text>
                           </View>
                           <View style={styles.modalScheduledRow}>
                             <Text style={styles.modalScheduledDateLabel}>Delivery Date:</Text>
                             <Text style={styles.modalScheduledDateVal}>{modalVis.deliveryDateLabel}</Text>
+                          </View>
+                          <View style={styles.modalScheduledRow}>
+                            <Text style={styles.modalScheduledDateLabel}>Delivery Status:</Text>
+                            <Text style={[styles.modalScheduledDateVal, { color: '#059669', fontWeight: '700' }]}>
+                              Scheduled
+                            </Text>
                           </View>
                           {selectedOrder.delivery_window && (
                             <View style={styles.modalScheduledRow}>
@@ -351,6 +384,16 @@ const getShopOrderVisibility = (order: any) => {
                               <Text style={styles.modalScheduledDateVal}>{selectedOrder.delivery_window}</Text>
                             </View>
                           )}
+                        </View>
+                      ) : (
+                        <View style={[styles.modalScheduledBox, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
+                          <View style={styles.modalScheduledHeader}>
+                            <Ionicons name="information-circle-outline" size={18} color="#D97706" />
+                            <Text style={[styles.modalScheduledTitle, { color: '#92400E' }]}>Delivery Scheduling</Text>
+                          </View>
+                          <Text style={{ fontSize: 13, color: '#B45309', lineHeight: 18, marginTop: 4 }}>
+                            {modalVis.message}
+                          </Text>
                         </View>
                       )}
 

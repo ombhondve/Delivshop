@@ -26,10 +26,20 @@ export const schedulingController = {
           shopId: availability.shopId,
           shopName: availability.shopName,
           hasRouteCoverage: availability.hasRouteCoverage,
+          hasRouteAssigned: availability.hasRouteAssigned,
+          hasDriverAssigned: availability.hasDriverAssigned,
+          scheduledDeliveryDate: availability.scheduledDeliveryDate,
+          schedulingCase: availability.schedulingCase,
+          schedulingTitle: availability.schedulingTitle,
+          deliveryStatus: availability.deliveryStatus,
+          schedulingMessage: availability.schedulingMessage,
+          hasConfirmedDate: availability.hasConfirmedDate,
+          deliveryRunId: availability.deliveryRunId,
+          coveredRoutes: availability.coveredRoutes,
+          availableDates: availability.availableDates,
           allowUnscheduledOrders: availability.allowUnscheduledOrders,
-          policyMessage: 'Orders are received for supplier review. Delivery route and date will be scheduled and confirmed by logistics.',
+          policyMessage: availability.policyMessage,
           defaultDeliveryWindow: availability.defaultDeliveryWindow,
-          availableDates: [], // Shop never selects published runs or delivery dates
         };
         sendSuccess(res, sanitized);
         return;

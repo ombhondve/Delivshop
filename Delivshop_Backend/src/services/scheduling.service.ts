@@ -25,6 +25,15 @@ export interface DeliveryAvailabilityResponse {
   shopId: string;
   shopName: string;
   hasRouteCoverage: boolean;
+  hasRouteAssigned?: boolean;
+  hasDriverAssigned?: boolean;
+  scheduledDeliveryDate?: string | null;
+  schedulingCase?: 'CASE_1' | 'CASE_2' | 'CASE_3' | 'CASE_4' | 'CASE_1_SCHEDULED' | 'CASE_2_NO_ROUTE' | 'CASE_3_NO_DATE' | 'CASE_4_NO_DRIVER' | string;
+  schedulingTitle?: string;
+  deliveryStatus?: 'Scheduled' | 'Pending' | string;
+  schedulingMessage?: string | null;
+  hasConfirmedDate?: boolean;
+  deliveryRunId?: string | null;
   coveredRoutes: Array<{ id: string; name: string; routeCode: string }>;
   availableDates: DeliveryAvailabilityOption[];
   allowUnscheduledOrders: boolean;
@@ -303,10 +312,83 @@ export const schedulingService = {
         : 'Published delivery run available with guaranteed cold-chain capacity.';
     }
 
+    // Determine authoritative scheduling state
+    let schedulingCase: 'CASE_1_SCHEDULED' | 'CASE_2_NO_ROUTE' | 'CASE_3_NO_DATE' | 'CASE_4_NO_DRIVER' = 'CASE_2_NO_ROUTE';
+    let schedulingMessage = '';
+    let scheduledDeliveryDate: string | null = null;
+    let earliestRunId: string | null = null;
+    let hasRouteAssigned = hasRouteCoverage;
+    let hasDriverAssigned = false;
+    let deliveryStatus: 'Scheduled' | 'Pending' = 'Pending';
+
+    if (!hasRouteCoverage) {
+      // Case 2: No Delivery Route Assigned
+      schedulingCase = 'CASE_2_NO_ROUTE';
+      schedulingMessage = 'Your delivery date will be confirmed after the supplier assigns a delivery route.';
+      deliveryStatus = 'Pending';
+    } else {
+      // Check all upcoming runs on the covered routes to inspect date and driver presence
+      const allUpcomingRunsRes = await query(
+        `SELECT dr.id, dr.delivery_date, dr.delivery_window, dr.driver_id, dr.status, dr.is_published,
+                u.id as driver_user_id, u.name as driver_name, u.is_active as driver_is_active
+         FROM delivery_runs dr
+         LEFT JOIN users u ON dr.driver_id = u.id AND u.deleted_at IS NULL
+         WHERE dr.route_id = ANY($1::uuid[])
+           AND dr.is_published = TRUE
+           AND dr.status IN ('ASSIGNED', 'READY', 'IN_PROGRESS', 'VALIDATED')
+           AND dr.deleted_at IS NULL
+           AND dr.delivery_date >= CURRENT_DATE
+         ORDER BY dr.delivery_date ASC
+         LIMIT 1`,
+        [routeIds]
+      );
+
+      const earliestRun = allUpcomingRunsRes.rows[0];
+      if (earliestRun) {
+        earliestRunId = earliestRun.id;
+      }
+      if (!earliestRun || !earliestRun.delivery_date) {
+        // Case 3: Route Assigned but Delivery Date Missing
+        schedulingCase = 'CASE_3_NO_DATE';
+        schedulingMessage = 'Your delivery date is not confirmed yet.';
+        deliveryStatus = 'Pending';
+      } else if (!earliestRun.driver_id || earliestRun.driver_is_active === false) {
+        // Case 4: Route Assigned but Driver Missing
+        schedulingCase = 'CASE_4_NO_DRIVER';
+        schedulingMessage = 'Your delivery date is not confirmed yet.';
+        deliveryStatus = 'Pending';
+      } else {
+        // Case 1: Delivery Route and Date Assigned (Route + Driver + Valid Date)
+        schedulingCase = 'CASE_1_SCHEDULED';
+        schedulingMessage = 'Delivery scheduled';
+        hasDriverAssigned = true;
+        deliveryStatus = 'Scheduled';
+        scheduledDeliveryDate = typeof earliestRun.delivery_date === 'string'
+          ? earliestRun.delivery_date.slice(0, 10)
+          : new Date(earliestRun.delivery_date).toISOString().slice(0, 10);
+      }
+    }
+
+    const canonicalCase =
+      schedulingCase === 'CASE_1_SCHEDULED' ? 'CASE_1' :
+      schedulingCase === 'CASE_2_NO_ROUTE' ? 'CASE_2' :
+      schedulingCase === 'CASE_3_NO_DATE' ? 'CASE_3' : 'CASE_4';
+
+    const schedulingTitle = canonicalCase === 'CASE_1' ? 'Scheduled Delivery' : 'Delivery Scheduling';
+
     return {
       shopId: shop.id,
       shopName: shop.name,
       hasRouteCoverage,
+      hasRouteAssigned,
+      hasDriverAssigned,
+      scheduledDeliveryDate,
+      schedulingCase: canonicalCase,
+      schedulingTitle,
+      deliveryStatus,
+      schedulingMessage: canonicalCase === 'CASE_1' ? null : schedulingMessage,
+      hasConfirmedDate: Boolean(scheduledDeliveryDate),
+      deliveryRunId: canonicalCase === 'CASE_1' ? (availableDates[0]?.deliveryRunId || earliestRunId || null) : null,
       coveredRoutes: coveredRoutes.map((r) => ({
         id: r.id,
         name: r.name,

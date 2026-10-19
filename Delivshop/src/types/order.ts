@@ -48,6 +48,14 @@ export interface Order {
   runCode?: string | null;
   run_code?: string | null;
   notice?: string;
+  scheduling_case?: 'CASE_1' | 'CASE_2' | 'CASE_3' | 'CASE_4';
+  schedulingCase?: 'CASE_1' | 'CASE_2' | 'CASE_3' | 'CASE_4';
+  scheduling_title?: string;
+  schedulingTitle?: string;
+  scheduling_message?: string | null;
+  schedulingMessage?: string | null;
+  delivery_status?: string;
+  customer_delivery_status?: string;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;

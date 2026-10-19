@@ -18,7 +18,7 @@ import { shopApi, DeliveryAvailabilityResponse } from '@/services/api/shopApi';
 import { Product } from '@/types/product';
 import { CacheManager } from '@/services/offline/cacheManager';
 import { OrderQueueManager, PendingOrderItem } from '@/services/offline/orderQueue';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import { formatCurrency, formatDate, formatDeliveryDate } from '@/utils/formatters';
 
 export default function CreateOrderScreen() {
   const { user, shop } = useAuth();
@@ -187,6 +187,8 @@ export default function CreateOrderScreen() {
         {
           items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
           deliveryAddress,
+          deliveryRunId: availability?.schedulingCase === 'CASE_1' ? availability.deliveryRunId : undefined,
+          isShopPortal: true,
         },
         pendingOrder.idempotencyKey
       );
@@ -408,17 +410,56 @@ export default function CreateOrderScreen() {
                 </View>
               </View>
 
-              {/* Delivery Scheduling Notice */}
+              {/* Delivery Scheduling Details */}
               <View style={styles.schedulingSection}>
-                <View style={styles.unscheduledNoticeRow}>
-                  <Ionicons name="information-circle-outline" size={20} color="#16805D" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.unscheduledTitle}>Logistics Delivery Scheduling</Text>
-                    <Text style={styles.unscheduledMsg}>
-                      Your order will be scheduled and confirmed by our supplier logistics team upon submission.
+                {loadingAvailability ? (
+                  <View style={styles.schedulingLoadingRow}>
+                    <ActivityIndicator size="small" color="#16805D" />
+                    <Text style={styles.schedulingLoadingText}>Checking delivery route schedule...</Text>
+                  </View>
+                ) : availability?.schedulingCase === 'CASE_1' ? (
+                  <View style={styles.scheduledCardBox}>
+                    <View style={styles.scheduledCardHeader}>
+                      <Ionicons name="calendar" size={18} color="#059669" />
+                      <Text style={styles.scheduledCardTitle}>Scheduled Delivery</Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={styles.bulletLabel}>Delivery Date:</Text>
+                      <Text style={styles.bulletValue}>
+                        {formatDeliveryDate(availability.scheduledDeliveryDate)}
+                      </Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={styles.bulletLabel}>Delivery Status:</Text>
+                      <Text style={[styles.bulletValue, { color: '#059669' }]}>
+                        {availability.deliveryStatus || 'Scheduled'}
+                      </Text>
+                    </View>
+                  </View>
+                ) : availability?.schedulingCase === 'CASE_2' ? (
+                  <View style={styles.pendingCardBox}>
+                    <View style={styles.pendingCardHeader}>
+                      <Ionicons name="information-circle-outline" size={18} color="#D97706" />
+                      <Text style={styles.pendingCardTitle}>Delivery Scheduling</Text>
+                    </View>
+                    <Text style={styles.pendingCardMessage}>
+                      Your delivery date will be confirmed after the supplier assigns a delivery route.
                     </Text>
                   </View>
-                </View>
+                ) : (
+                  // Case 3 & Case 4: Route assigned, but delivery date missing or driver missing
+                  <View style={styles.pendingCardBox}>
+                    <View style={styles.pendingCardHeader}>
+                      <Ionicons name="information-circle-outline" size={18} color="#D97706" />
+                      <Text style={styles.pendingCardTitle}>Delivery Scheduling</Text>
+                    </View>
+                    <Text style={styles.pendingCardMessage}>
+                      Your delivery date is not confirmed yet.
+                    </Text>
+                  </View>
+                )}
               </View>
 
               <Text style={styles.summarySectionTitle}>Line Items ({cartItems.length})</Text>
@@ -499,15 +540,40 @@ export default function CreateOrderScreen() {
               </View>
 
               {/* Delivery Schedule Status Notice */}
-              <View style={styles.successUnscheduledBox}>
-                <View style={styles.successStatusRow}>
-                  <Ionicons name="time" size={18} color="#D97706" />
-                  <Text style={styles.successStatusUnscheduledTitle}>Order Placed (Pending Schedule)</Text>
+              {successOrder.confirmed_delivery_date || successOrder.scheduling_case === 'CASE_1' ? (
+                <View style={[styles.scheduledCardBox, { width: '100%', marginBottom: 14 }]}>
+                  <View style={styles.scheduledCardHeader}>
+                    <Ionicons name="checkmark-circle" size={18} color="#059669" />
+                    <Text style={styles.scheduledCardTitle}>Scheduled Delivery</Text>
+                  </View>
+                  <View style={styles.bulletRow}>
+                    <Text style={styles.bulletDot}>•</Text>
+                    <Text style={styles.bulletLabel}>Delivery Date:</Text>
+                    <Text style={styles.bulletValue}>
+                      {formatDeliveryDate(successOrder.confirmed_delivery_date)}
+                    </Text>
+                  </View>
+                  <View style={styles.bulletRow}>
+                    <Text style={styles.bulletDot}>•</Text>
+                    <Text style={styles.bulletLabel}>Delivery Status:</Text>
+                    <Text style={[styles.bulletValue, { color: '#059669' }]}>
+                      Scheduled
+                    </Text>
+                  </View>
                 </View>
-                <Text style={styles.successUnscheduledMsg}>
-                  Your replenishment order has been registered. The delivery schedule will be confirmed by supplier logistics.
-                </Text>
-              </View>
+              ) : (
+                <View style={[styles.pendingCardBox, { width: '100%', marginBottom: 14 }]}>
+                  <View style={styles.pendingCardHeader}>
+                    <Ionicons name="information-circle-outline" size={18} color="#D97706" />
+                    <Text style={styles.pendingCardTitle}>Delivery Scheduling</Text>
+                  </View>
+                  <Text style={styles.pendingCardMessage}>
+                    {successOrder.scheduling_case === 'CASE_2'
+                      ? 'Your delivery date will be confirmed after the supplier assigns a delivery route.'
+                      : 'Your delivery date is not confirmed yet.'}
+                  </Text>
+                </View>
+              )}
 
               <Text style={styles.successNotes}>
                 Your replenishment order has been registered in the supplier dispatches ledger.
@@ -1299,5 +1365,85 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#78350F',
+  },
+  scheduledCardBox: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+  },
+  scheduledCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  scheduledCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+    paddingLeft: 4,
+  },
+  bulletDot: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#047857',
+    marginRight: 6,
+  },
+  bulletLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+    marginRight: 6,
+  },
+  bulletValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  pendingCardBox: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+  },
+  pendingCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  pendingCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  pendingCardMessage: {
+    fontSize: 12,
+    color: '#B45309',
+    lineHeight: 18,
+  },
+  schedulingLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  schedulingLoadingText: {
+    fontSize: 12,
+    color: '#64748B',
   },
 });

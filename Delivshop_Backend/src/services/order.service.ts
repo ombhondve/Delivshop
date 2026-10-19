@@ -36,6 +36,7 @@ export const orderService = {
       deliveryRunId?: string;
       deliveryWindow?: string;
       isShopRole?: boolean;
+      isShopPortal?: boolean;
     },
     userId: string,
     ipAddress?: string
@@ -50,6 +51,7 @@ export const orderService = {
       deliveryRunId: data.deliveryRunId,
       deliveryWindow: data.deliveryWindow,
       isShopRole: data.isShopRole,
+      isShopPortal: data.isShopPortal,
     });
 
     if (!order.isDuplicateReplay) {

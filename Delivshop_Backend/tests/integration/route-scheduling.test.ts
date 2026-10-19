@@ -127,8 +127,8 @@ describe('Route-Based Delivery Date Availability and Order Scheduling Test Suite
 
     // 7. Create a published delivery run on testDeliveryDate for testRouteId
     await dbPool.query(
-      "DELETE FROM delivery_runs WHERE delivery_date = $1::date",
-      [testDeliveryDate]
+      "DELETE FROM delivery_runs WHERE delivery_date IN ($1::date, $2::date)",
+      [testDeliveryDate, secondDate]
     );
 
     const insRun = await dbPool.query(
@@ -336,7 +336,31 @@ describe('Route-Based Delivery Date Availability and Order Scheduling Test Suite
   });
 
   it('6. Admin reschedules order to another delivery run with audit trail', async () => {
-    // 1. Create a second run on another date
+    // 1. Create a dedicated driver & vehicle to avoid uq_driver_run_date conflict with other test suites
+    const drvRes = await dbPool.query(
+      `INSERT INTO users (email, password_hash, name, phone, role, is_active)
+       VALUES ($1, 'hash_test', 'Reschedule Driver', '+91 98765 22222', 'DRIVER', true)
+       RETURNING id`,
+      [`resched_drv_${Date.now()}@delivshop.internal`]
+    );
+    const run2DriverId = drvRes.rows[0].id;
+
+    const vehQuery = await dbPool.query(
+      `SELECT id FROM vehicles WHERE is_active = TRUE AND id != $1 AND status = 'AVAILABLE' LIMIT 1`,
+      [testVehicleId]
+    );
+    let run2VehicleId = vehQuery.rows[0]?.id;
+    if (!run2VehicleId) {
+      const vehRes = await dbPool.query(
+        `INSERT INTO vehicles (vehicle_code, registration_number, make_model, vehicle_type, capacity_kg, capacity_crates, fuel_type, depot, status, is_active)
+         VALUES ($1, $2, 'Tata 407', 'REFRIGERATED_TRUCK', 1500, 100, 'DIESEL', 'Pune Central', 'AVAILABLE', true)
+         RETURNING id`,
+        [`V-RS-${Date.now().toString(36)}`, `MH-12-RS-${Date.now().toString(36).slice(-4).toUpperCase()}`]
+      );
+      run2VehicleId = vehRes.rows[0].id;
+    }
+
+    // Create a second run on another date
     const insRun2 = await dbPool.query(
       `INSERT INTO delivery_runs (
         run_code, route_id, driver_id, vehicle_id, delivery_date, status,
@@ -344,10 +368,10 @@ describe('Route-Based Delivery Date Availability and Order Scheduling Test Suite
       ) VALUES ($1, $2, $3, $4, $5::date, 'ASSIGNED', TRUE, '07:00 AM - 10:00 AM', 1, $6)
       RETURNING id`,
       [
-        `RUN-${secondDate.replace(/-/g, '')}-TEST2`,
+        `RUN-${secondDate.replace(/-/g, '')}-TEST2-${Date.now().toString(36).toUpperCase()}`,
         testRouteId,
-        testDriverId,
-        testVehicleId,
+        run2DriverId,
+        run2VehicleId,
         secondDate,
         adminUser.id,
       ]

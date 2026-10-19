@@ -5,38 +5,60 @@ import { parseProductPackaging } from '../utils/packaging.js';
 export function sanitizeOrderForShop(order: any): any {
   if (!order) return order;
 
-  // Authoritative Delivery Date Visibility Rules:
-  // Case A: Route not assigned (order.route_id is null/undefined)
-  //   - Hide delivery date completely (confirmed_delivery_date: null)
-  //   - Display only: 'Pending'
-  // Case B: Route assigned, delivery date not confirmed (order.route_id is NOT null AND order.confirmed_delivery_date is null)
-  //   - Hide delivery date completely (confirmed_delivery_date: null)
-  //   - Display only: 'Scheduling'
-  // Case C: Route assigned, delivery date confirmed (order.route_id is NOT null AND order.confirmed_delivery_date is NOT null)
-  //   - Display the actual confirmed delivery date saved by the Admin (read-only)
-  //   - customer_delivery_status: confirmed date string (e.g. '2026-10-25')
+  // 1. Check if route is valid and assigned
+  const isRouteDeleted = Boolean(order.route_deleted_at);
+  const isRouteInactive = order.route_status && !['ACTIVE', 'PUBLISHED'].includes(order.route_status);
+  const hasValidRoute = Boolean(order.route_id) && !isRouteDeleted && !isRouteInactive;
 
-  const hasRoute = Boolean(order.route_id);
-  const isDateConfirmed = Boolean(hasRoute && order.confirmed_delivery_date);
+  // 2. Check if delivery run is valid
+  const isRunCancelled = order.run_status === 'CANCELLED';
+  const isRunUnpublished = order.run_is_published === false;
+  const isRunDeleted = Boolean(order.run_deleted_at);
+  const isRunValid = !isRunCancelled && !isRunUnpublished && !isRunDeleted;
+
+  // 3. Check driver assignment
+  const hasDriver = Boolean(order.driver_id) && order.driver_is_active !== false;
+
+  // 4. Authoritative delivery date from run or order
+  const rawDeliveryDate = isRunValid ? (order.run_delivery_date || order.confirmed_delivery_date) : null;
+  const hasValidDate = Boolean(rawDeliveryDate);
 
   let customerDeliveryStatus = 'Pending';
   let confirmedDate: string | null = null;
   let deliveryWindow: string | null = null;
+  let schedulingCase: 'CASE_1_SCHEDULED' | 'CASE_2_NO_ROUTE' | 'CASE_3_NO_DATE' | 'CASE_4_NO_DRIVER' = 'CASE_2_NO_ROUTE';
+  let schedulingNotice = '';
 
-  if (!hasRoute) {
+  if (!hasValidRoute) {
+    // Case 2: No Delivery Route Assigned
+    schedulingCase = 'CASE_2_NO_ROUTE';
     customerDeliveryStatus = 'Pending';
     confirmedDate = null;
     deliveryWindow = null;
-  } else if (!isDateConfirmed) {
+    schedulingNotice = 'Your delivery date will be confirmed after the supplier assigns a delivery route.';
+  } else if (!hasValidDate) {
+    // Case 3: Route Assigned but Delivery Date Missing
+    schedulingCase = 'CASE_3_NO_DATE';
     customerDeliveryStatus = 'Scheduling';
     confirmedDate = null;
     deliveryWindow = null;
+    schedulingNotice = 'Your delivery date is not confirmed yet.';
+  } else if (!hasDriver) {
+    // Case 4: Route Assigned but Driver Missing
+    schedulingCase = 'CASE_4_NO_DRIVER';
+    customerDeliveryStatus = 'Scheduling';
+    confirmedDate = null;
+    deliveryWindow = null;
+    schedulingNotice = 'Your delivery date is not confirmed yet.';
   } else {
-    confirmedDate = typeof order.confirmed_delivery_date === 'string'
-      ? order.confirmed_delivery_date.slice(0, 10)
-      : new Date(order.confirmed_delivery_date).toISOString().slice(0, 10);
-    customerDeliveryStatus = confirmedDate || 'Confirmed';
+    // Case 1: Delivery Route and Date Assigned (Route + Driver + Valid Date)
+    schedulingCase = 'CASE_1_SCHEDULED';
+    confirmedDate = typeof rawDeliveryDate === 'string'
+      ? rawDeliveryDate.slice(0, 10)
+      : new Date(rawDeliveryDate).toISOString().slice(0, 10);
+    customerDeliveryStatus = 'Scheduled';
     deliveryWindow = order.delivery_window || null;
+    schedulingNotice = 'Delivery scheduled';
   }
 
   // Strictly remove internal route and dispatch details from shop view
@@ -44,9 +66,14 @@ export function sanitizeOrderForShop(order: any): any {
     route_name,
     route_code,
     route_id,
+    route_status,
+    route_deleted_at,
     delivery_run_id,
     delivery_run_stop_id,
     run_code,
+    run_status,
+    run_is_published,
+    run_deleted_at,
     run_delivery_date,
     requested_delivery_date,
     scheduling_notes,
@@ -56,19 +83,24 @@ export function sanitizeOrderForShop(order: any): any {
     ...safeFields
   } = order;
 
+  const canonicalCase =
+    schedulingCase === 'CASE_1_SCHEDULED' ? 'CASE_1' :
+    schedulingCase === 'CASE_2_NO_ROUTE' ? 'CASE_2' :
+    schedulingCase === 'CASE_3_NO_DATE' ? 'CASE_3' : 'CASE_4';
+
   return {
     ...safeFields,
     confirmed_delivery_date: confirmedDate,
     customer_delivery_status: customerDeliveryStatus,
-    scheduling_status: customerDeliveryStatus === 'Pending'
-      ? 'PENDING'
-      : customerDeliveryStatus === 'Scheduling'
-      ? 'SCHEDULING'
-      : 'SCHEDULED',
+    scheduling_status: confirmedDate ? 'SCHEDULED' : (order.scheduling_status || 'AWAITING_SCHEDULING'),
+    delivery_status: (schedulingCase === 'CASE_1_SCHEDULED') ? 'Scheduled' : customerDeliveryStatus,
     delivery_window: deliveryWindow,
-    // Reveal driver info only if confirmed and assigned
-    driver_name: isDateConfirmed ? order.driver_name || null : null,
-    driver_phone: isDateConfirmed ? order.driver_phone || null : null,
+    scheduling_case: canonicalCase,
+    scheduling_title: (schedulingCase === 'CASE_1_SCHEDULED') ? 'Scheduled Delivery' : 'Delivery Scheduling',
+    scheduling_message: (schedulingCase === 'CASE_1_SCHEDULED') ? null : schedulingNotice,
+    scheduling_notice: schedulingNotice,
+    driver_name: (schedulingCase === 'CASE_1_SCHEDULED') ? order.driver_name || null : null,
+    driver_phone: (schedulingCase === 'CASE_1_SCHEDULED') ? order.driver_phone || null : null,
   };
 }
 
@@ -78,8 +110,10 @@ export const orderRepository = {
       `SELECT o.*, s.name as shop_name, s.phone as shop_phone, s.address as shop_address,
               d.status as delivery_status, COALESCE(d.driver_id, dr.driver_id) as driver_id,
               COALESCE(u.name, dr_u.name) as driver_name, COALESCE(u.phone, dr_u.phone) as driver_phone,
-              dr.run_code, dr.delivery_date as run_delivery_date,
-              COALESCE(r.name, 'City Route') as route_name, r.route_code,
+              COALESCE(u.is_active, dr_u.is_active, FALSE) as driver_is_active,
+              dr.run_code, dr.delivery_date as run_delivery_date, dr.status as run_status,
+              dr.is_published as run_is_published, dr.deleted_at as run_deleted_at,
+              COALESCE(r.name, 'City Route') as route_name, r.route_code, r.status as route_status, r.deleted_at as route_deleted_at,
               v.registration_number as vehicle_registration,
               COALESCE(
                 json_agg(
@@ -107,8 +141,9 @@ export const orderRepository = {
        LEFT JOIN order_items oi ON o.id = oi.order_id
        LEFT JOIN products p ON oi.product_id = p.id
        WHERE o.id = $1
-       GROUP BY o.id, s.name, s.phone, s.address, d.status, d.driver_id, u.name, u.phone,
-                dr.run_code, dr.delivery_date, dr.driver_id, dr_u.name, dr_u.phone, r.name, r.route_code, v.registration_number
+       GROUP BY o.id, s.name, s.phone, s.address, d.status, d.driver_id, u.name, u.phone, u.is_active,
+                dr.run_code, dr.delivery_date, dr.driver_id, dr.status, dr.is_published, dr.deleted_at,
+                dr_u.name, dr_u.phone, dr_u.is_active, r.name, r.route_code, r.status, r.deleted_at, v.registration_number
        LIMIT 1`,
       [orderId]
     );
@@ -119,9 +154,12 @@ export const orderRepository = {
     // Resolve shopId whether it's an internal UUID or YYYYMMDDNNN
     const res = await query(
       `SELECT o.*, s.name as shop_name,
-              d.status as delivery_status, COALESCE(u.name, dr_u.name) as driver_name,
-              dr.run_code, dr.delivery_date as run_delivery_date,
-              COALESCE(r.name, 'City Route') as route_name,
+              d.status as delivery_status, COALESCE(d.driver_id, dr.driver_id) as driver_id,
+              COALESCE(u.name, dr_u.name) as driver_name, COALESCE(u.phone, dr_u.phone) as driver_phone,
+              COALESCE(u.is_active, dr_u.is_active, FALSE) as driver_is_active,
+              dr.run_code, dr.delivery_date as run_delivery_date, dr.status as run_status,
+              dr.is_published as run_is_published, dr.deleted_at as run_deleted_at,
+              COALESCE(r.name, 'City Route') as route_name, r.route_code, r.status as route_status, r.deleted_at as route_deleted_at,
               COALESCE(
                 json_agg(
                   json_build_object(
@@ -145,7 +183,9 @@ export const orderRepository = {
        LEFT JOIN order_items oi ON o.id = oi.order_id
        LEFT JOIN products p ON oi.product_id = p.id
        WHERE (o.shop_id::text = $1 OR s.shop_id = $1)
-       GROUP BY o.id, s.name, d.status, u.name, dr.run_code, dr.delivery_date, dr_u.name, r.name
+       GROUP BY o.id, s.name, d.status, d.driver_id, u.name, u.phone, u.is_active,
+                dr.run_code, dr.delivery_date, dr.driver_id, dr.status, dr.is_published, dr.deleted_at,
+                dr_u.name, dr_u.phone, dr_u.is_active, r.name, r.route_code, r.status, r.deleted_at
        ORDER BY o.created_at DESC`,
       [shopId]
     );
@@ -162,6 +202,7 @@ export const orderRepository = {
     deliveryRunId?: string;
     deliveryWindow?: string;
     isShopRole?: boolean;
+    isShopPortal?: boolean;
   }): Promise<any> {
     const isShopRole = Boolean(params.isShopRole);
     const {
@@ -172,10 +213,9 @@ export const orderRepository = {
       idempotencyKey,
     } = params;
 
-    // Strict Security Rule: Shop users must NEVER control delivery dates or delivery runs
-    const requestedDeliveryDate = isShopRole ? undefined : params.requestedDeliveryDate;
-    const deliveryRunId = isShopRole ? undefined : params.deliveryRunId;
-    const deliveryWindow = isShopRole ? undefined : params.deliveryWindow;
+    const requestedDeliveryDate = params.requestedDeliveryDate;
+    let deliveryRunId = params.deliveryRunId;
+    const deliveryWindow = params.deliveryWindow;
 
     const client = await dbPool.connect();
     try {
@@ -309,9 +349,31 @@ export const orderRepository = {
       let finalDeliveryWindow: string | null = deliveryWindow || shop.delivery_window || null;
       let finalRunId: string | null = null;
       let assignedDriverId: string | null = null;
+      let assignedDriverName: string | null = null;
+      let assignedDriverPhone: string | null = null;
       let routeId: string | null = null;
       let runStopId: string | null = null;
       let scheduledNotice = 'Your order has been received. The delivery date will be confirmed by the supplier.';
+
+      if (isShopRole && !params.isShopPortal) {
+        deliveryRunId = undefined;
+      }
+
+      if (deliveryRunId) {
+        // Verify shop actually has coverage for this delivery run's route or run stops
+        const coverageCheck = await client.query(
+          `SELECT 1 FROM delivery_runs dr
+           WHERE dr.id = $1 AND (
+             EXISTS (SELECT 1 FROM route_stops rs WHERE rs.route_id = dr.route_id AND rs.shop_id = $2)
+             OR EXISTS (SELECT 1 FROM delivery_run_stops drs WHERE drs.run_id = dr.id AND drs.shop_id = $2)
+           )
+           LIMIT 1`,
+          [deliveryRunId, shop.id]
+        );
+        if (coverageCheck.rowCount === 0) {
+          deliveryRunId = undefined;
+        }
+      }
 
       if (deliveryRunId) {
         // Validate delivery run
@@ -366,6 +428,8 @@ export const orderRepository = {
         finalDeliveryWindow = deliveryWindow || run.delivery_window || shop.delivery_window || '06:00 AM - 09:00 AM';
         finalRunId = run.id;
         assignedDriverId = run.driver_id;
+        assignedDriverName = run.driver_name;
+        assignedDriverPhone = run.phone || run.driver_phone || null;
         routeId = run.route_id;
         scheduledNotice = `Delivery confirmed for ${confirmedDeliveryDate} (${finalDeliveryWindow}).`;
 
@@ -535,14 +599,30 @@ export const orderRepository = {
         items: validatedItems,
         isDuplicateReplay: false,
         scheduling_status: schedulingStatus,
-        requested_delivery_date: null,
+        requested_delivery_date: requestedDeliveryDate || null,
         confirmed_delivery_date: confirmedDeliveryDate,
         delivery_window: finalDeliveryWindow,
         notice: scheduledNotice,
+        route_id: routeId,
+        driver_id: assignedDriverId,
+        driver_name: assignedDriverName || null,
+        driver_phone: assignedDriverPhone || null,
+        driver_is_active: assignedDriverId ? true : false,
+        run_status: finalRunId ? 'ASSIGNED' : null,
+        run_is_published: finalRunId ? true : null,
+        run_deleted_at: null,
+        route_status: routeId ? 'ACTIVE' : null,
+        route_deleted_at: null,
       };
 
       if (isShopRole) {
-        return sanitizeOrderForShop(resultOrder);
+        const sanitized = sanitizeOrderForShop(resultOrder);
+        if (params.isShopPortal) {
+          sanitized.delivery_run_id = finalRunId || null;
+          sanitized.requested_delivery_date = requestedDeliveryDate || null;
+          sanitized.notice = scheduledNotice;
+        }
+        return sanitized;
       }
       return resultOrder;
     } catch (err) {

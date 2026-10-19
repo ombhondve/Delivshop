@@ -135,8 +135,17 @@ describe('Route Assignment, Delivery Date Visibility, and Shop Security Verifica
 
     // 5. Setup Published Delivery Run for Schedule Confirmation
     const existingRun = await dbPool.query(
-      `SELECT id, delivery_date FROM delivery_runs 
-       WHERE is_published = TRUE AND status IN ('ASSIGNED', 'PUBLISHED')
+      `SELECT dr.id, dr.delivery_date 
+       FROM delivery_runs dr
+       JOIN users u ON dr.driver_id = u.id
+       JOIN vehicles v ON dr.vehicle_id = v.id
+       WHERE dr.is_published = TRUE 
+         AND dr.status IN ('ASSIGNED', 'PUBLISHED')
+         AND dr.deleted_at IS NULL
+         AND u.is_active = TRUE
+         AND u.deleted_at IS NULL
+         AND v.is_active = TRUE
+         AND v.status = 'AVAILABLE'
        LIMIT 1`
     );
 

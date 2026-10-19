@@ -32,6 +32,7 @@ router.post('/orders', (req: Request, res: Response, next: NextFunction) => {
   if (req.user?.shopId) {
     req.body.shopId = req.user.shopId;
   }
+  req.body.isShopPortal = true;
   return orderController.createOrder(req, res, next);
 });
 
