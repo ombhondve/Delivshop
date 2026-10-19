@@ -111,7 +111,7 @@ BEGIN
     END IF;
 
     -- Order 1: DS-26-8891 (216 L liquid milk, 20 crates total, delivered)
-    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8891') THEN
+    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8891') AND v_prod_cow_1l IS NOT NULL AND v_prod_toned_500 IS NOT NULL AND v_prod_curd_500 IS NOT NULL THEN
         INSERT INTO orders (
             order_number, shop_id, status, subtotal, delivery_fee, total,
             total_volume_litres, total_crates_count, total_packages_count,
@@ -141,7 +141,7 @@ BEGIN
     END IF;
 
     -- Order 2: DS-26-8892 (312 L liquid milk, 26 crates, in transit)
-    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8892') THEN
+    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8892') AND v_prod_cow_1l IS NOT NULL AND v_prod_toned_500 IS NOT NULL THEN
         INSERT INTO orders (
             order_number, shop_id, status, subtotal, delivery_fee, total,
             total_volume_litres, total_crates_count, total_packages_count,
@@ -167,7 +167,7 @@ BEGIN
     END IF;
 
     -- Order 3: DS-26-8893 (96 L liquid milk, 10 crates, delivered)
-    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8893') THEN
+    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8893') AND v_prod_buf_1l IS NOT NULL AND v_prod_paneer_200 IS NOT NULL THEN
         INSERT INTO orders (
             order_number, shop_id, status, subtotal, delivery_fee, total,
             total_volume_litres, total_crates_count, total_packages_count,
@@ -193,7 +193,7 @@ BEGIN
     END IF;
 
     -- Order 4: DS-26-8894 (264 L liquid milk, 22 crates, disputed shortage)
-    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8894') THEN
+    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8894') AND v_prod_cow_1l IS NOT NULL AND v_prod_toned_500 IS NOT NULL THEN
         INSERT INTO orders (
             order_number, shop_id, status, subtotal, delivery_fee, total,
             total_volume_litres, total_crates_count, total_packages_count,
@@ -219,7 +219,7 @@ BEGIN
     END IF;
 
     -- Order 5: DS-26-8895 (108 L liquid milk, 9 crates, prepared for dispatch)
-    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8895') THEN
+    IF NOT EXISTS (SELECT 1 FROM orders WHERE order_number = 'DS-26-8895') AND v_prod_toned_500 IS NOT NULL THEN
         INSERT INTO orders (
             order_number, shop_id, status, subtotal, delivery_fee, total,
             total_volume_litres, total_crates_count, total_packages_count,

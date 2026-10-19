@@ -33,7 +33,7 @@ INSERT INTO driver_employee_id_counters (counter_prefix, last_sequence, updated_
 VALUES (
     'EMP-DRV',
     COALESCE(
-        (SELECT MAX(NULLIF(regexp_replace(employee_id, '\D', '', 'g'), '')::int) FROM users WHERE role = 'DRIVER' AND employee_id IS NOT NULL),
+        (SELECT MAX(NULLIF(SUBSTRING(employee_id FROM 9), '')::int) FROM users WHERE role = 'DRIVER' AND employee_id ~ '^EMP-DRV-\d+$'),
         1005
     ),
     NOW()
