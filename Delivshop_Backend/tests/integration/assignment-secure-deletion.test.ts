@@ -38,33 +38,57 @@ describe('Assignments Secure Deletion & Operational Lifecycle Test Suite', () =>
       });
     });
 
-    // Query active driver
+    // Ensure test driver exists
     const drvRes = await dbPool.query("SELECT id FROM users WHERE role = 'DRIVER' AND is_active = TRUE AND deleted_at IS NULL LIMIT 1");
-    driverId = drvRes.rows[0]?.id;
-
-    // Query active vehicle without conflicting active runs from other dates
-    const vehRes = await dbPool.query(
-      `SELECT id FROM vehicles 
-       WHERE is_active = TRUE AND deleted_at IS NULL 
-       AND id NOT IN (
-         SELECT vehicle_id FROM delivery_runs 
-         WHERE status IN ('ASSIGNED', 'READY', 'IN_PROGRESS') AND deleted_at IS NULL AND delivery_date < '2026-12-01'
-       ) 
-       LIMIT 1`
-    );
-    vehicleId = vehRes.rows[0]?.id;
-    if (!vehicleId) {
-      const fallbackVeh = await dbPool.query("SELECT id FROM vehicles WHERE is_active = TRUE AND deleted_at IS NULL LIMIT 1");
-      vehicleId = fallbackVeh.rows[0]?.id;
-    }
-    if (vehicleId) {
-      await dbPool.query("UPDATE vehicles SET status = 'AVAILABLE' WHERE id = $1", [vehicleId]);
-      await dbPool.query("UPDATE vehicle_documents SET expiry_date = '2028-12-31' WHERE vehicle_id = $1", [vehicleId]);
+    if (drvRes.rows[0]) {
+      driverId = drvRes.rows[0].id;
+    } else {
+      const createdDrv = await dbPool.query(`
+        INSERT INTO users (email, password_hash, name, role, is_active, employee_id)
+        VALUES ('test_sec_del_drv@delivshop.internal', 'hash', 'Test Sec Del Driver', 'DRIVER', TRUE, 'EMP-DRV-9998')
+        RETURNING id;
+      `);
+      driverId = createdDrv.rows[0].id;
     }
 
-    // Query active or published route
+    // Ensure test vehicle with valid documents exists
+    const vehRes = await dbPool.query(`
+      SELECT v.id FROM vehicles v 
+      WHERE v.is_active = TRUE AND v.deleted_at IS NULL 
+        AND v.status = 'AVAILABLE'
+      LIMIT 1
+    `);
+    if (vehRes.rows[0]) {
+      vehicleId = vehRes.rows[0].id;
+    } else {
+      const createdVeh = await dbPool.query(`
+        INSERT INTO vehicles (vehicle_code, registration_number, vehicle_type, max_crate_capacity, status, is_active)
+        VALUES ('VEH-TEST-98', 'MH-12-TEST-9998', 'REFRIGERATED_VAN', 100, 'AVAILABLE', TRUE)
+        RETURNING id;
+      `);
+      vehicleId = createdVeh.rows[0].id;
+      await dbPool.query(`
+        INSERT INTO vehicle_documents (vehicle_id, document_type, document_number, expiry_date, verification_status)
+        VALUES 
+          ($1, 'RC', 'RC-TEST-98', '2028-12-31', 'VERIFIED'),
+          ($1, 'INSURANCE', 'INS-TEST-98', '2028-12-31', 'VERIFIED'),
+          ($1, 'PUC', 'PUC-TEST-98', '2028-12-31', 'VERIFIED')
+        ON CONFLICT DO NOTHING;
+      `, [vehicleId]);
+    }
+
+    // Ensure active test route exists
     const routeRes = await dbPool.query("SELECT id FROM routes WHERE status IN ('ACTIVE', 'PUBLISHED') AND deleted_at IS NULL LIMIT 1");
-    routeId = routeRes.rows[0]?.id;
+    if (routeRes.rows[0]) {
+      routeId = routeRes.rows[0].id;
+    } else {
+      const createdRoute = await dbPool.query(`
+        INSERT INTO routes (route_code, name, status)
+        VALUES ('RT-TEST-98', 'Test Sec Del Route', 'ACTIVE')
+        RETURNING id;
+      `);
+      routeId = createdRoute.rows[0].id;
+    }
 
     // Clean up any test runs from previous test attempts
     await dbPool.query("DELETE FROM delivery_collections WHERE run_id IN (SELECT id FROM delivery_runs WHERE delivery_date >= '2026-12-01')");
@@ -76,6 +100,11 @@ describe('Assignments Secure Deletion & Operational Lifecycle Test Suite', () =>
     await dbPool.query("DELETE FROM delivery_collections WHERE run_id IN (SELECT id FROM delivery_runs WHERE delivery_date >= '2026-12-01')");
     await dbPool.query("DELETE FROM delivery_run_stops WHERE run_id IN (SELECT id FROM delivery_runs WHERE delivery_date >= '2026-12-01')");
     await dbPool.query("DELETE FROM delivery_runs WHERE delivery_date >= '2026-12-01'");
+    await dbPool.query("DELETE FROM delivery_runs WHERE route_id IN (SELECT id FROM routes WHERE route_code = 'RT-TEST-98');");
+    await dbPool.query("DELETE FROM routes WHERE route_code = 'RT-TEST-98';");
+    await dbPool.query("DELETE FROM vehicle_documents WHERE vehicle_id IN (SELECT id FROM vehicles WHERE vehicle_code = 'VEH-TEST-98');");
+    await dbPool.query("DELETE FROM vehicles WHERE vehicle_code = 'VEH-TEST-98';");
+    await dbPool.query("DELETE FROM users WHERE email = 'test_sec_del_drv@delivshop.internal';");
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
     });
