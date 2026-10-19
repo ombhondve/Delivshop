@@ -18,6 +18,7 @@ describe('Driver Creation Flow Verification Suite (Add Driver Modal & Backend)',
 
   let generatedEmployeeId: string;
   let createdDriverId: string;
+  let provisionedPassword: string;
 
   beforeAll(async () => {
     const app = createApp();
@@ -95,6 +96,9 @@ describe('Driver Creation Flow Verification Suite (Add Driver Modal & Backend)',
     expect(body.data.city).toBe('Saswad (Purandar)');
     expect(body.data.state).toBe('Maharashtra');
     expect(body.data.name).toBe('Sanjay Tukaram Jadhav');
+    expect(body.data.credentials).toBeDefined();
+    expect(body.data.credentials.temporaryPassword).toBeDefined();
+    provisionedPassword = body.data.credentials.temporaryPassword;
 
     createdDriverId = body.data.id;
   });
@@ -105,7 +109,7 @@ describe('Driver Creation Flow Verification Suite (Add Driver Modal & Backend)',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: generatedEmployeeId, // Driver logs in with Employee ID
-        password: 'Driver@12345',   // Standard secure provisioned password
+        password: provisionedPassword, // Temporary password provisioned via shop login mechanism
       }),
     });
 

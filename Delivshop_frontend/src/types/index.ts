@@ -300,6 +300,11 @@ export interface DriverUser {
   current_shop_name?: string | null;
   status?: 'AVAILABLE' | 'ON_DELIVERY' | 'OFF_DUTY' | 'INACTIVE';
   rating?: number;
+  credentials?: {
+    employeeId: string;
+    temporaryPassword?: string;
+    mustChangePassword?: boolean;
+  };
 }
 
 export interface DriverRosterSummary {

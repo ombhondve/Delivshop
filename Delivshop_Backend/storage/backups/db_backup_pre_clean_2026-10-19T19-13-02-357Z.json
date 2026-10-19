@@ -1,0 +1,286 @@
+{
+  "metadata": {
+    "timestamp": "2026-10-19T19:13:03.401Z",
+    "totalTables": 48,
+    "tableCounts": {
+      "audit_logs": 0,
+      "companies": 0,
+      "company_code_counters": 1,
+      "deliveries": 0,
+      "delivery_collections": 0,
+      "delivery_reconciliations": 0,
+      "delivery_run_pickup_items": 0,
+      "delivery_run_pickups": 0,
+      "delivery_run_stops": 0,
+      "delivery_runs": 0,
+      "driver_attendance": 0,
+      "driver_documents": 0,
+      "driver_employee_id_counters": 1,
+      "driver_incidents": 0,
+      "driver_payroll_records": 0,
+      "driver_salary_configs": 0,
+      "inventory_batches": 0,
+      "inventory_movement_counters": 1,
+      "inventory_movements": 0,
+      "invoices": 0,
+      "order_items": 0,
+      "order_scheduling_history": 0,
+      "orders": 0,
+      "payments": 0,
+      "playing_with_neon": 0,
+      "products": 0,
+      "route_code_counters": 0,
+      "route_stops": 0,
+      "route_versions": 0,
+      "routes": 0,
+      "schema_migrations": 25,
+      "shop_accounts": 0,
+      "shop_devices": 0,
+      "shop_documents": 0,
+      "shop_id_counters": 0,
+      "shop_order_reminders": 0,
+      "shops": 0,
+      "supplier_bill_items": 0,
+      "supplier_billing_counters": 0,
+      "supplier_bills": 0,
+      "supplier_payments": 0,
+      "supplier_scheduling_settings": 1,
+      "suppliers": 0,
+      "users": 1,
+      "vehicle_documents": 0,
+      "vehicle_inspections": 0,
+      "vehicle_maintenance": 0,
+      "vehicles": 0
+    }
+  },
+  "tables": {
+    "audit_logs": [],
+    "companies": [],
+    "company_code_counters": [
+      {
+        "counter_prefix": "CMP",
+        "last_sequence": 1000,
+        "updated_at": "2026-10-19T19:12:10.282Z"
+      }
+    ],
+    "deliveries": [],
+    "delivery_collections": [],
+    "delivery_reconciliations": [],
+    "delivery_run_pickup_items": [],
+    "delivery_run_pickups": [],
+    "delivery_run_stops": [],
+    "delivery_runs": [],
+    "driver_attendance": [],
+    "driver_documents": [],
+    "driver_employee_id_counters": [
+      {
+        "counter_prefix": "EMP-DRV",
+        "last_sequence": 1000,
+        "updated_at": "2026-10-19T19:12:10.456Z"
+      }
+    ],
+    "driver_incidents": [],
+    "driver_payroll_records": [],
+    "driver_salary_configs": [],
+    "inventory_batches": [],
+    "inventory_movement_counters": [
+      {
+        "counter_prefix": "MOV",
+        "last_sequence": 1000,
+        "updated_at": "2026-10-19T19:12:10.561Z"
+      }
+    ],
+    "inventory_movements": [],
+    "invoices": [],
+    "order_items": [],
+    "order_scheduling_history": [],
+    "orders": [],
+    "payments": [],
+    "playing_with_neon": [],
+    "products": [],
+    "route_code_counters": [],
+    "route_stops": [],
+    "route_versions": [],
+    "routes": [],
+    "schema_migrations": [
+      {
+        "version": "001_initial_schema.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "002_shop_management.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "003_order_idempotency.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "004_shop_documents.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "005_company_management.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "006_products_and_inventory.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "007_deactivation_first_deletion.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "008_drivers_roster.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "009_fleet_routes_assignments.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "010_expand_routes_status_and_metrics.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "011_route_code_counters.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "012_driver_management_system.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "013_driver_and_vehicle_management_enhancements.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "014_vehicle_fleet_enterprise_enhancements.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "015_driver_inspections_incidents_delivery_completion.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "016_assignment_deletion_and_lifecycle_enhancements.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "017_orders_dispatch_and_packaging_enhancements.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "018_route_based_scheduling.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "019_company_coordinates_and_pickup_fulfillment.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "020_shop_order_reminders.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "021_supplier_billing_and_pickup_verification.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "022_retire_warehouse_inventory_dependencies.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "023_ensure_inventory_archive_tables.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "024_canonical_units_and_schema_repair.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      },
+      {
+        "version": "025_inventory_movement_counters.sql",
+        "applied_at": "2026-10-19T16:59:47.223Z"
+      }
+    ],
+    "shop_accounts": [],
+    "shop_devices": [],
+    "shop_documents": [],
+    "shop_id_counters": [],
+    "shop_order_reminders": [],
+    "shops": [],
+    "supplier_bill_items": [],
+    "supplier_billing_counters": [],
+    "supplier_bills": [],
+    "supplier_payments": [],
+    "supplier_scheduling_settings": [
+      {
+        "id": "0052cc71-9136-4a69-bee1-d3e2d417194b",
+        "operating_city": "Pune",
+        "order_cutoff_time": "18:00",
+        "min_lead_days": 1,
+        "max_advance_booking_days": 7,
+        "default_delivery_window": "06:00 AM - 09:00 AM",
+        "allow_ordering_without_published_run": true,
+        "timezone": "Asia/Kolkata",
+        "operating_days": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "holidays": [],
+        "created_at": "2026-10-19T16:59:47.223Z",
+        "updated_at": "2026-10-19T16:59:47.223Z"
+      }
+    ],
+    "suppliers": [],
+    "users": [
+      {
+        "id": "eff88d78-5b73-448f-8e41-330c46923b79",
+        "email": "admin@gmail.com",
+        "password_hash": "$argon2id$v=19$m=19456,t=2,p=1$sF8O/HyHt64juRrZXOgDHA$4lVRF69tVGvnchXCEbv8WphJNDRFrLkOdfrwT5775gU",
+        "name": "System Administrator",
+        "role": "ADMIN",
+        "phone": null,
+        "is_active": true,
+        "created_at": "2026-10-14T13:24:10.159Z",
+        "updated_at": "2026-10-18T13:26:38.779Z",
+        "deleted_at": null,
+        "deleted_by": null,
+        "deletion_reason": null,
+        "employee_id": null,
+        "vehicle_number": null,
+        "vehicle_type": null,
+        "assigned_route": null,
+        "license_number": null,
+        "license_expiry": null,
+        "joining_date": "2026-10-15",
+        "emergency_contact": null,
+        "notes": null,
+        "alternate_phone": null,
+        "address": null,
+        "city": "Pune",
+        "state": "Maharashtra",
+        "pincode": null,
+        "date_of_birth": null,
+        "gender": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "emergency_contact_relation": null,
+        "license_class": "LMV-TR (Transport)",
+        "must_change_password": false,
+        "employment_status": "ACTIVE",
+        "account_status": "ACTIVE"
+      }
+    ],
+    "vehicle_documents": [],
+    "vehicle_inspections": [],
+    "vehicle_maintenance": [],
+    "vehicles": []
+  }
+}

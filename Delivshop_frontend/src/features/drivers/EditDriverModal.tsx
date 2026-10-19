@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   User,
@@ -8,10 +8,18 @@ import {
   CheckCircle2,
   Phone,
   MapPin,
+  Lock,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { AutocompleteInput, AutocompleteOption } from '../../components/common/AutocompleteInput';
 import { api } from '../../services/api/endpoints';
 import { DriverUser, UpdateDriverPayload } from '../../types';
+import {
+  searchStates,
+  searchCities,
+  getCitiesForState,
+  isValidCity,
+} from '../../utils/indianLocations';
 
 interface EditDriverModalProps {
   isOpen: boolean;
@@ -29,6 +37,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
   const [formData, setFormData] = useState<UpdateDriverPayload>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationErrors, setLocationErrors] = useState<{ state?: string; city?: string }>({});
 
   useEffect(() => {
     if (driver) {
@@ -46,7 +55,6 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
         city: driver.city || '',
         state: driver.state || '',
         pincode: driver.pincode || '',
-        dateOfBirth: driver.date_of_birth ? String(driver.date_of_birth).split('T')[0] : '',
         gender: driver.gender || 'MALE',
         emergencyContact: driver.emergency_contact || '',
         emergencyContactName: driver.emergency_contact_name || '',
@@ -56,14 +64,78 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
         notes: driver.notes || '',
       });
       setError(null);
+      setLocationErrors({});
     }
   }, [driver]);
 
+  // Autocomplete Options for States
+  const stateOptions = useMemo<AutocompleteOption[]>(() => {
+    const query = formData.state || '';
+    return searchStates(query).map((s) => ({
+      label: s,
+      value: s,
+      secondary: `${getCitiesForState(s).length} registered locations`,
+    }));
+  }, [formData.state]);
+
+  // Autocomplete Options for Cities / Villages
+  const cityOptions = useMemo<AutocompleteOption[]>(() => {
+    if (!formData.state || !formData.state.trim()) return [];
+    const query = formData.city || '';
+    const results = searchCities(query, formData.state);
+
+    const options: AutocompleteOption[] = results.map((entry) => ({
+      label: entry.city,
+      value: entry.city,
+      secondary: entry.state,
+    }));
+
+    const trimmedQuery = query.trim();
+    if (
+      trimmedQuery.length >= 2 &&
+      !results.some((r) => r.city.toLowerCase() === trimmedQuery.toLowerCase())
+    ) {
+      options.unshift({
+        label: `"${trimmedQuery}" (Custom village/city in ${formData.state})`,
+        value: trimmedQuery,
+        badge: 'Custom Location',
+        secondary: formData.state,
+      });
+    }
+
+    return options;
+  }, [formData.city, formData.state]);
+
   if (!isOpen || !driver) return null;
+
+  const handleStateChange = (newState: string) => {
+    setLocationErrors((prev) => ({ ...prev, state: undefined }));
+    setFormData((prev) => {
+      const stateChanged = (prev.state || '').trim().toLowerCase() !== newState.trim().toLowerCase();
+      return {
+        ...prev,
+        state: newState,
+        city: stateChanged ? '' : prev.city,
+      };
+    });
+  };
+
+  const handleStateSelect = (selectedState: string) => {
+    setLocationErrors((prev) => ({ ...prev, state: undefined }));
+    setFormData((prev) => {
+      const stateChanged = (prev.state || '').trim().toLowerCase() !== selectedState.trim().toLowerCase();
+      return {
+        ...prev,
+        state: selectedState,
+        city: stateChanged ? '' : prev.city,
+      };
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLocationErrors({});
 
     if (!formData.name?.trim()) {
       setError('Driver full name cannot be blank');
@@ -74,9 +146,42 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
       return;
     }
 
+    if (formData.state?.trim() && formData.city?.trim()) {
+      if (!isValidCity(formData.city.trim(), formData.state.trim())) {
+        setLocationErrors({ city: `"${formData.city}" does not match ${formData.state}` });
+        setError(`Invalid location: "${formData.city}" does not belong to ${formData.state}`);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
-      const updated = await api.deliveries.updateDriver(driver.id, formData);
+      // Clean payload: send validated data without birth date
+      const payload: UpdateDriverPayload = {
+        name: formData.name?.trim(),
+        phone: formData.phone?.trim(),
+        alternatePhone: formData.alternatePhone?.trim() || null,
+        email: formData.email?.trim() || undefined,
+        address: formData.address?.trim() || null,
+        city: formData.city?.trim() || null,
+        state: formData.state?.trim() || null,
+        pincode: formData.pincode?.trim() || null,
+        gender: formData.gender || null,
+        licenseNumber: formData.licenseNumber?.trim() || null,
+        licenseExpiry: formData.licenseExpiry || null,
+        licenseClass: formData.licenseClass || null,
+        joiningDate: formData.joiningDate || null,
+        emergencyContactName: formData.emergencyContactName?.trim() || null,
+        emergencyContactPhone: formData.emergencyContactPhone?.trim() || null,
+        emergencyContactRelation: formData.emergencyContactRelation?.trim() || null,
+        emergencyContact: formData.emergencyContactPhone?.trim()
+          ? `${formData.emergencyContactName?.trim() || ''} (${formData.emergencyContactPhone.trim()})`.trim()
+          : null,
+        employmentStatus: formData.employmentStatus,
+        notes: formData.notes?.trim() || null,
+      };
+
+      const updated = await api.deliveries.updateDriver(driver.id, payload);
       onSuccess(updated);
       onClose();
     } catch (err: any) {
@@ -125,16 +230,48 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#FAFAF7',
           }}
         >
-          <div>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Edit Driver Profile: {driver.name}
-            </h3>
-            <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
-              Employee ID: <code style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{driver.employee_id || 'N/A'}</code>
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
+                color: 'var(--color-primary, #16805D)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <User size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Edit Driver Profile: {driver.name}
+                </h3>
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    color: 'var(--color-primary)',
+                    backgroundColor: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    padding: '1px 6px',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {driver.employee_id || 'N/A'}
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+                Update driver contact, residential location, and KYC credentials.
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -146,10 +283,9 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
               cursor: 'pointer',
               color: '#64748B',
               padding: '4px',
-              borderRadius: '6px',
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -175,10 +311,10 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             </div>
           )}
 
-          {/* Contact Details */}
+          {/* Section 1: Contact Details */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <User size={14} /> Personal & Contact Details
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-primary, #16805D)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <User size={14} /> 1. Personal & Contact Details
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               <div>
@@ -190,7 +326,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   required
                   value={formData.name || ''}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -203,7 +339,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   required
                   value={formData.phone || ''}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -215,7 +351,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="tel"
                   value={formData.alternatePhone || ''}
                   onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -227,30 +363,18 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Date of Birth
-                </label>
-                <input
-                  type="date"
-                  value={formData.dateOfBirth || ''}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-
-              <div>
+              <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Gender
                 </label>
                 <select
                   value={formData.gender || 'MALE'}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#FFFFFF' }}
+                  style={{ width: '100%', height: '36px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', backgroundColor: '#FFFFFF', outline: 'none' }}
                 >
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
@@ -260,13 +384,13 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             </div>
           </div>
 
-          {/* Address */}
+          {/* Section 2: Residential Address & Dependent City/Village */}
           <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MapPin size={14} /> Address & Location
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-primary, #16805D)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MapPin size={14} /> 2. Residential Address & Location
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-              <div style={{ gridColumn: 'span 4' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Street Address
                 </label>
@@ -274,35 +398,56 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.address || ''}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                />
+              </div>
+
+              {/* State Autocomplete */}
+              <div>
+                <AutocompleteInput
+                  id="edit-driver-state"
+                  label="State"
+                  placeholder="Select or type state..."
+                  value={formData.state || ''}
+                  onChange={handleStateChange}
+                  onSelect={(opt) => handleStateSelect(opt.value)}
+                  options={stateOptions}
+                  error={locationErrors.state}
+                  hint="Select state first"
+                />
+              </div>
+
+              {/* City / Village Autocomplete */}
+              <div>
+                <AutocompleteInput
+                  id="edit-driver-city"
+                  label="City / Village"
+                  disabled={!formData.state || !formData.state.trim()}
+                  placeholder={
+                    !formData.state || !formData.state.trim()
+                      ? 'Select state first...'
+                      : 'Search or type city/village...'
+                  }
+                  value={formData.city || ''}
+                  onChange={(val) => {
+                    setLocationErrors((prev) => ({ ...prev, city: undefined }));
+                    setFormData((prev) => ({ ...prev, city: val }));
+                  }}
+                  onSelect={(opt) => {
+                    setLocationErrors((prev) => ({ ...prev, city: undefined }));
+                    setFormData((prev) => ({ ...prev, city: opt.value }));
+                  }}
+                  options={cityOptions}
+                  error={locationErrors.city}
+                  hint={
+                    !formData.state || !formData.state.trim()
+                      ? 'Requires state selection'
+                      : `${cityOptions.length} suggested locations`
+                  }
                 />
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={formData.city || ''}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={formData.state || ''}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-
-              <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Pincode
                 </label>
@@ -310,76 +455,27 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="text"
                   value={formData.pincode || ''}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Employment & Status */}
-          <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Shield size={14} /> Employment Status & Identity
+          {/* Section 3: Driving License & Employment */}
+          <div style={{ marginBottom: '14px' }}>
+            <h4 style={{ fontSize: '12.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-primary, #16805D)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Shield size={14} /> 3. Driving License & Employment Status
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Employee ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.employeeId || ''}
-                  onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#F8FAFC' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Joining Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.joiningDate || ''}
-                  onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Employment Status
-                </label>
-                <select
-                  value={formData.employmentStatus || 'ACTIVE'}
-                  onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#FFFFFF' }}
-                >
-                  <option value="ACTIVE">Active (Full-Time)</option>
-                  <option value="PROBATION">Probationary</option>
-                  <option value="ON_LEAVE">On Leave</option>
-                  <option value="SUSPENDED">Suspended</option>
-                  <option value="TERMINATED">Terminated</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* License & Verification */}
-          <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <FileText size={14} /> License Details & Compliance
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Commercial License No.
+                  License Number
                 </label>
                 <input
                   type="text"
                   value={formData.licenseNumber || ''}
                   onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
@@ -391,87 +487,31 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   type="date"
                   value={formData.licenseExpiry || ''}
                   onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  License Class
+                  Employment Status
                 </label>
                 <select
-                  value={formData.licenseClass || 'LMV-TR'}
-                  onChange={(e) => setFormData({ ...formData, licenseClass: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', backgroundColor: '#FFFFFF' }}
+                  value={formData.employmentStatus || 'ACTIVE'}
+                  onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
+                  style={{ width: '100%', height: '36px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', backgroundColor: '#FFFFFF', outline: 'none' }}
                 >
-                  <option value="LMV">LMV</option>
-                  <option value="LMV-TR">LMV-TR (Commercial)</option>
-                  <option value="HMV">HMV (Heavy)</option>
-                  <option value="MCWG">MCWG</option>
+                  <option value="ACTIVE">Active (Full-Time)</option>
+                  <option value="PROBATION">Probationary</option>
+                  <option value="ON_LEAVE">On Leave</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="TERMINATED">Terminated</option>
                 </select>
               </div>
             </div>
           </div>
-
-          {/* Emergency Contact */}
-          <div style={{ marginBottom: '18px' }}>
-            <h4 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Phone size={14} /> Emergency Contact (Next of Kin)
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Contact Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.emergencyContactName || ''}
-                  onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Emergency Phone
-                </label>
-                <input
-                  type="tel"
-                  value={formData.emergencyContactPhone || ''}
-                  onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Relationship
-                </label>
-                <input
-                  type="text"
-                  value={formData.emergencyContactRelation || ''}
-                  onChange={(e) => setFormData({ ...formData, emergencyContactRelation: e.target.value })}
-                  style={{ width: '100%', height: '34px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-              Operational Notes & Remarks
-            </label>
-            <textarea
-              rows={2}
-              value={formData.notes || ''}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              style={{ width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none', resize: 'vertical' }}
-            />
-          </div>
         </form>
 
-        {/* Footer */}
+        {/* Footer Actions */}
         <div
           style={{
             padding: '14px 22px',
@@ -479,18 +519,17 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '10px',
-            backgroundColor: 'var(--bg-primary)',
+            backgroundColor: '#FAFAF7',
           }}
         >
           <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={loading} icon={<CheckCircle2 size={16} />}>
-            {loading ? 'Saving Changes...' : 'Save Driver Profile'}
+            {loading ? 'Saving Changes...' : 'Save Changes'}
           </Button>
         </div>
       </div>
     </div>
   );
 };
-

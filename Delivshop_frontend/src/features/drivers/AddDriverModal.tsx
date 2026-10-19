@@ -13,6 +13,9 @@ import {
   MapPin,
   ExternalLink,
   Sparkles,
+  Copy,
+  Check,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { AutocompleteInput, AutocompleteOption } from '../../components/common/AutocompleteInput';
@@ -68,6 +71,15 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [locationErrors, setLocationErrors] = useState<{ state?: string; city?: string }>({});
   const [createdDriver, setCreatedDriver] = useState<DriverUser | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  const handleCopyPassword = () => {
+    if (createdDriver?.credentials?.temporaryPassword) {
+      navigator.clipboard.writeText(createdDriver.credentials.temporaryPassword);
+      setCopiedPassword(true);
+      setTimeout(() => setCopiedPassword(false), 2000);
+    }
+  };
 
   // Automatically fetch or generate unique Employee ID on popup open
   useEffect(() => {
@@ -379,85 +391,172 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
         {/* Success Screen after Onboarding */}
         {createdDriver ? (
-          <div style={{ padding: '36px 28px', textAlign: 'center', overflowY: 'auto' }}>
+          <div style={{ padding: '28px 24px', overflowY: 'auto' }}>
             <div
               style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-success-bg, #E6F4EA)',
-                color: 'var(--color-success, #16805D)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '16px',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid var(--color-success, #16805D)',
+                borderRadius: '8px',
+                padding: '16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '14px',
+                marginBottom: '18px',
               }}
             >
-              <CheckCircle2 size={36} />
+              <CheckCircle2 color="var(--color-success, #16805D)" size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <h4 style={{ color: '#065F46', fontWeight: 700, fontSize: '15px', margin: 0 }}>
+                  {createdDriver.name} is now onboarded!
+                </h4>
+                <p style={{ color: '#047857', fontSize: '13px', margin: '4px 0 0 0' }}>
+                  The driver profile has been created in PostgreSQL with an authoritative Employee ID and login account.
+                </p>
+              </div>
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
-              Driver Successfully Onboarded!
-            </h3>
-            <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '480px', margin: '0 auto 24px auto' }}>
-              Driver record for <strong>{createdDriver.name}</strong> has been registered into the roster. Vehicle allocations and route dispatches can be scheduled under Assignments.
-            </p>
-
+            {/* Official Employee ID / Driver Login Identifier Box */}
             <div
               style={{
                 backgroundColor: '#F8FAFC',
-                border: '1px solid #D6D3C8',
-                borderRadius: '10px',
-                padding: '20px',
-                maxWidth: '440px',
-                margin: '0 auto 28px auto',
-                textAlign: 'left',
+                border: '1px solid #CBD5E1',
+                borderRadius: '8px',
+                padding: '16px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #D6D3C8' }}>
-                <span style={{ fontSize: '13px', color: '#64748B' }}>Assigned Employee ID:</span>
+              <div>
+                <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
+                  Driver Login Identifier (Employee ID)
+                </div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: '#16805D', fontFamily: 'monospace', marginTop: '2px' }}>
+                  {createdDriver.employee_id}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                  Driver enters this Employee ID to sign in on the Delivshop Driver App.
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
                 <span
                   style={{
-                    fontFamily: 'monospace',
+                    backgroundColor: '#E6F4EA',
+                    color: '#16805D',
+                    fontSize: '11px',
                     fontWeight: 700,
-                    fontSize: '13.5px',
-                    color: 'var(--color-primary, #16805D)',
-                    backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    border: '1px solid #A7F3D0',
                   }}
                 >
-                  {createdDriver.employee_id}
+                  ACTIVE
                 </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748B' }}>Full Name:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>{createdDriver.name}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748B' }}>Primary Phone:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>{createdDriver.phone}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748B' }}>Operating Location:</span>
-                <span style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B' }}>
-                  {createdDriver.city ? `${createdDriver.city}, ${createdDriver.state || ''}` : createdDriver.state || 'N/A'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: '#64748B' }}>Vehicle & Route Allocation:</span>
-                <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#D97706' }}>Unassigned (Separate Module)</span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            {/* Single-Reveal Temporary Login Password Card */}
+            {createdDriver.credentials?.temporaryPassword && (
+              <div
+                style={{
+                  backgroundColor: '#FEF2F2',
+                  border: '1px solid #FECACA',
+                  borderRadius: '8px',
+                  padding: '16px 20px',
+                  marginBottom: '18px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B91C1C', fontWeight: 700, fontSize: '13.5px', marginBottom: '6px' }}>
+                  <ShieldAlert size={17} />
+                  Single-Reveal Temporary Login Password
+                </div>
+                <p style={{ fontSize: '12px', color: '#7F1D1D', marginBottom: '12px', lineHeight: 1.4 }}>
+                  This temporary password was generated and hashed with <strong>Argon2id</strong> following Delivshop authentication standards. For security, it will <strong>never be shown again</strong>. Provide it to the driver securely; they will be prompted to set a new password on first mobile login.
+                </p>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#FFFFFF',
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #FCA5A5',
+                      fontFamily: 'monospace',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      letterSpacing: '0.05em',
+                      color: '#991B1B',
+                      userSelect: 'all',
+                    }}
+                  >
+                    {createdDriver.credentials.temporaryPassword}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyPassword}
+                    style={{
+                      padding: '10px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#B91C1C',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {copiedPassword ? <Check size={15} /> : <Copy size={15} />}
+                    {copiedPassword ? 'Copied!' : 'Copy Password'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Overview Details */}
+            <div
+              style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '14px 18px',
+                marginBottom: '20px',
+              }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '12.5px' }}>
+                <div>
+                  <span style={{ color: '#64748B' }}>Full Name: </span>
+                  <span style={{ fontWeight: 600, color: '#1E293B' }}>{createdDriver.name}</span>
+                </div>
+                <div>
+                  <span style={{ color: '#64748B' }}>Primary Phone: </span>
+                  <span style={{ fontWeight: 600, color: '#1E293B' }}>{createdDriver.phone}</span>
+                </div>
+                <div>
+                  <span style={{ color: '#64748B' }}>Location: </span>
+                  <span style={{ fontWeight: 500, color: '#1E293B' }}>
+                    {createdDriver.city ? `${createdDriver.city}, ${createdDriver.state || ''}` : createdDriver.state || 'N/A'}
+                  </span>
+                </div>
+                <div>
+                  <span style={{ color: '#64748B' }}>Vehicle Allocation: </span>
+                  <span style={{ fontWeight: 600, color: '#D97706' }}>Unassigned (Separate Module)</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <Button variant="secondary" onClick={handleResetAndClose}>
                 Done / Back to Roster
               </Button>
               <Button
                 variant="primary"
                 onClick={handleOpenDetails}
-                icon={<ExternalLink size={16} />}
+                icon={<ExternalLink size={15} />}
               >
                 Open Full Driver Profile
               </Button>

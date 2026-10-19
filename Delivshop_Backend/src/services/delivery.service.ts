@@ -4,7 +4,7 @@ import { deliveryRepository } from '../repositories/delivery.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { auditService } from './audit.service.js';
 import { AppError } from '../utils/errors.js';
-import { hashPassword } from '../utils/password.js';
+import { hashPassword, generateTemporaryPassword } from '../utils/password.js';
 import { generateDriverEmployeeId } from './driver-employee-id.service.js';
 import { attendanceService } from './attendance.service.js';
 import { fileService, getStorageDir } from './file.service.js';
@@ -170,8 +170,8 @@ export const deliveryService = {
       throw new AppError(`An account with email "${targetEmail}" already exists.`, 409);
     }
 
-    // 3. Password handling
-    const rawPassword = data.password || 'Driver@12345';
+    // 3. Password handling (reuses shop account-provisioning workflow)
+    const rawPassword = data.password?.trim() || generateTemporaryPassword();
     const passwordHash = await hashPassword(rawPassword);
 
     const created = await deliveryRepository.createDriver({
@@ -218,7 +218,14 @@ export const deliveryService = {
       ipAddress,
     });
 
-    return created;
+    return {
+      ...created,
+      credentials: {
+        employeeId: created.employee_id,
+        temporaryPassword: rawPassword,
+        mustChangePassword: true,
+      },
+    };
   },
 
   async updateDriver(

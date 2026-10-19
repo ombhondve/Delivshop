@@ -1,17 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X, User, Truck, Shield, FileText, Clock, CheckCircle2,
-  AlertTriangle, MapPin, Calendar, Phone, Mail, History,
-  Activity, Package, DollarSign, Lock, AlertCircle, Edit, Plus, Trash2
+  X,
+  User,
+  Truck,
+  Shield,
+  FileText,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  MapPin,
+  Calendar,
+  Phone,
+  Mail,
+  History,
+  Activity,
+  Package,
+  DollarSign,
+  Lock,
+  AlertCircle,
+  Edit,
+  Plus,
+  Trash2,
+  ExternalLink,
 } from 'lucide-react';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 import { api } from '../../services/api/endpoints';
-import { DriverUser, DriverDeliveryRecord, DriverAuditRecord, DriverFullProfile } from '../../types';
+import { DriverUser, DriverDeliveryRecord, DriverAuditRecord } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { DriverSalaryModal } from './DriverSalaryModal';
 import { DriverDocumentModal } from './DriverDocumentModal';
+import { useNavigation } from '../../context/NavigationContext';
 
 interface DriverDetailsDrawerProps {
   isOpen: boolean;
@@ -22,17 +42,7 @@ interface DriverDetailsDrawerProps {
   onDriverDeleted?: () => void;
 }
 
-type TabType = 
-  | 'OVERVIEW' 
-  | 'EMPLOYMENT' 
-  | 'SALARY' 
-  | 'PAYMENTS' 
-  | 'DOCUMENTS' 
-  | 'ATTENDANCE' 
-  | 'DELIVERIES' 
-  | 'PERFORMANCE' 
-  | 'ACCESS' 
-  | 'AUDIT';
+type TabType = 'OVERVIEW' | 'OPERATIONS' | 'COMPENSATION_DOCS';
 
 export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
   isOpen,
@@ -42,8 +52,9 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
   onAssignVehicle,
   onDriverDeleted,
 }) => {
+  const { navigate } = useNavigation();
   const [activeTab, setActiveTab] = useState<TabType>('OVERVIEW');
-  const [profile, setProfile] = useState<DriverFullProfile | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,28 +77,18 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
       setLoading(true);
       setError(null);
       const res = await api.deliveries.getFullProfile(id);
-      if (res.data?.success) {
-        setProfile(res.data.data);
+      if (res && res.driver) {
+        setProfile(res);
       } else {
-        // Fallback to basic getDriver if full profile is missing
         const basicRes = await api.deliveries.getDriver(id);
         setProfile({
           driver: basicRes.driver,
-          employment: {
-            employeeId: basicRes.driver.employee_id || 'DRV-1001',
-            employmentType: 'FULL_TIME',
-            joinedDate: basicRes.driver.created_at,
-            city: (basicRes.driver as any).city || 'Pune',
-            depot: 'Pune Central Depot'
-          },
+          deliveries: basicRes.deliveries || [],
+          runs: [],
           salaryConfig: null,
           payrollRecords: [],
           documents: [],
-          attendance: { daysPresentMonth: 24, daysAbsentMonth: 1, currentShift: 'MORNING' },
-          deliveryHistory: basicRes.deliveries || [],
-          performance: { totalRuns: 42, onTimePercentage: 97.5, completedDrops: 184 },
-          accessStatus: { isDriverAppActive: basicRes.driver.is_active, lastLoginAt: (basicRes.driver as any).last_active_at || basicRes.driver.created_at },
-          auditHistory: basicRes.auditHistory || []
+          auditHistory: basicRes.auditHistory || [],
         });
       }
     } catch (err: any) {
@@ -99,7 +100,10 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  const driver = profile?.driver;
+  const driver: DriverUser | undefined = profile?.driver;
+  const deliveries: any[] = profile?.deliveries || [];
+  const documents: any[] = profile?.documents || [];
+  const salaryConfig = profile?.salaryConfig || null;
 
   const isLicenseExpiringSoon = () => {
     if (!driver?.license_expiry) return false;
@@ -116,16 +120,16 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <div className="drawer-panel" style={{ maxWidth: '880px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="drawer-panel" style={{ maxWidth: '820px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="drawer-header" style={{ padding: '20px 24px' }}>
+        <div className="drawer-header" style={{ padding: '18px 24px', borderBottom: '1px solid #CBD5E1' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
                 width: '44px',
                 height: '44px',
                 borderRadius: '10px',
-                backgroundColor: 'var(--color-navy)',
+                backgroundColor: '#0F172A',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -134,11 +138,11 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
                 fontSize: '16px',
               }}
             >
-              {driver?.name ? driver.name.charAt(0) : 'D'}
+              {driver?.name ? driver.name.charAt(0).toUpperCase() : 'D'}
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary, #0F172A)', margin: 0 }}>
                   {driver?.name || 'Driver Profile'}
                 </h2>
                 <code
@@ -146,463 +150,502 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
                     fontFamily: 'monospace',
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: 'var(--color-primary)',
-                    backgroundColor: 'var(--color-primary-subtle)',
+                    color: 'var(--color-primary, #16805D)',
+                    backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    border: '1px solid #6EE7B7',
+                    border: '1px solid #A7F3D0',
                   }}
+                  title="Authoritative Driver Employee ID"
                 >
-                  {driver?.employee_id || profile?.employment?.employeeId || 'DRV'}
+                  {driver?.employee_id || 'N/A'}
                 </code>
                 <Badge variant={driver?.is_active ? 'success' : 'neutral'}>
                   {driver?.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
-              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span>{driver?.phone}</span>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span>{driver?.phone || 'No phone'}</span>
                 <span>•</span>
                 <span>{driver?.email || 'No email registered'}</span>
                 <span>•</span>
-                <span>City: {(driver as any)?.city || 'Pune'}</span>
+                <span>{driver?.city ? `${driver.city}, ${driver.state || ''}` : driver?.state || 'Base Station'}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {driver && (
               <>
                 <button
+                  type="button"
                   onClick={() => onEdit(driver)}
-                  className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#334155',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <Edit className="w-3.5 h-3.5" />
-                  <span>Edit Profile</span>
+                  <Edit size={13} />
+                  <span>Edit</span>
                 </button>
                 <button
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="px-3 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    navigate(`/admin/drivers/${driver.id}`);
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: 'var(--color-primary, #16805D)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
+                  <ExternalLink size={13} />
+                  <span>Full View</span>
                 </button>
               </>
             )}
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#94A3B8',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '6px',
+              }}
             >
-              <X className="w-5 h-5" />
+              <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* 10-Tab Navigation Bar */}
-        <div className="flex border-b border-slate-200 bg-white overflow-x-auto px-4 text-xs font-semibold">
+        {/* Streamlined 3-Tab Navigation Bar */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: '0 20px' }}>
           {[
-            { id: 'OVERVIEW', label: '1. Overview', icon: User },
-            { id: 'EMPLOYMENT', label: '2. Employment', icon: Shield },
-            { id: 'SALARY', label: '3. Salary Config', icon: DollarSign },
-            { id: 'PAYMENTS', label: '4. Payroll Payments', icon: DollarSign },
-            { id: 'DOCUMENTS', label: '5. Documents & DL', icon: FileText },
-            { id: 'ATTENDANCE', label: '6. Attendance', icon: Clock },
-            { id: 'DELIVERIES', label: '7. Run History', icon: Truck },
-            { id: 'PERFORMANCE', label: '8. Performance', icon: Activity },
-            { id: 'ACCESS', label: '9. App Access', icon: Lock },
-            { id: 'AUDIT', label: '10. Audit History', icon: History },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
-              className={`py-3 px-3 border-b-2 whitespace-nowrap transition-colors flex items-center space-x-1.5 ${
-                activeTab === tab.id
-                  ? 'border-emerald-600 text-emerald-700 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <span>{tab.label}</span>
-            </button>
-          ))}
+            { id: 'OVERVIEW', label: 'Overview & Profile', icon: User },
+            { id: 'OPERATIONS', label: 'Operations & Vehicle', icon: Truck, count: deliveries.length },
+            { id: 'COMPENSATION_DOCS', label: 'Salary & Documents', icon: FileText, count: documents.length },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as TabType)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '12px 16px',
+                  border: 'none',
+                  background: 'none',
+                  borderBottom: isActive ? '2px solid var(--color-primary, #16805D)' : '2px solid transparent',
+                  color: isActive ? 'var(--color-primary, #16805D)' : '#64748B',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Icon size={15} />
+                <span>{tab.label}</span>
+                {typeof tab.count === 'number' && tab.count > 0 && (
+                  <span
+                    style={{
+                      backgroundColor: isActive ? 'var(--color-primary-subtle, #E6F4EA)' : '#F1F5F9',
+                      color: isActive ? 'var(--color-primary, #16805D)' : '#64748B',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: '999px',
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', backgroundColor: '#F8FAFC' }}>
           {loading ? (
-            <div className="flex items-center justify-center p-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
+              <div style={{ color: 'var(--color-primary, #16805D)', fontSize: '13px', fontWeight: 600 }}>Loading driver profile...</div>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div style={{ padding: '16px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', color: '#B91C1C', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <AlertCircle size={16} />
               <span>{error}</span>
             </div>
-          ) : profile ? (
+          ) : driver ? (
             <>
-              {/* TAB 1: OVERVIEW */}
+              {/* Expiry Warning if applicable */}
+              {(isLicenseExpired() || isLicenseExpiringSoon()) && (
+                <div
+                  style={{
+                    backgroundColor: isLicenseExpired() ? '#FEF2F2' : '#FFFBEB',
+                    border: `1px solid ${isLicenseExpired() ? '#FCA5A5' : '#FCD34D'}`,
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '12.5px',
+                    color: isLicenseExpired() ? '#991B1B' : '#92400E',
+                  }}
+                >
+                  <AlertTriangle size={18} color={isLicenseExpired() ? '#DC2626' : '#D97706'} />
+                  <span>
+                    Licence No. {driver.license_number || 'N/A'}{' '}
+                    {isLicenseExpired()
+                      ? `has expired (${driver.license_expiry ? formatDate(driver.license_expiry) : ''})`
+                      : `expires soon on ${driver.license_expiry ? formatDate(driver.license_expiry) : ''}`}
+                    .
+                  </span>
+                </div>
+              )}
+
+              {/* TAB 1: OVERVIEW & PROFILE */}
               {activeTab === 'OVERVIEW' && (
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                      <span className="text-xs font-semibold text-slate-400 uppercase">Assigned Fleet</span>
-                      <p className="text-sm font-bold font-mono text-slate-900 mt-1">
-                        {driver?.vehicle_number || 'No Vehicle Assigned'}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5">{driver?.vehicle_type || 'Fleet Vehicle'}</p>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                      <span className="text-xs font-semibold text-slate-400 uppercase">Driving Licence</span>
-                      <p className="text-sm font-bold font-mono text-slate-900 mt-1">
-                        {driver?.license_number || 'Pending Submission'}
-                      </p>
-                      <p className={`text-xs mt-0.5 font-medium ${
-                        isLicenseExpired() ? 'text-red-600' : isLicenseExpiringSoon() ? 'text-amber-600' : 'text-emerald-600'
-                      }`}>
-                        Exp: {driver?.license_expiry ? formatDate(driver.license_expiry) : 'N/A'}
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                      <span className="text-xs font-semibold text-slate-400 uppercase">Monthly Base Pay</span>
-                      <p className="text-sm font-bold text-emerald-700 mt-1">
-                        {profile.salaryConfig ? `₹${(profile.salaryConfig.baseSalary || 0).toLocaleString('en-IN')}` : 'Not Configured'}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5">Cycle: {profile.salaryConfig?.paymentCycle || 'Monthly'}</p>
-                    </div>
-                  </div>
-
-                  <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
-                    <h4 className="font-bold text-slate-900 text-sm">Personal & Emergency Contact Information</h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Summary Card */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', fontSize: '13px' }}>
                       <div>
-                        <span className="text-slate-400">Full Legal Name:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{driver?.name}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Primary Contact Phone:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{driver?.phone}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Registered Email:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{driver?.email || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Current Operational City:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{(driver as any)?.city || 'Pune, Maharashtra'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: EMPLOYMENT */}
-              {activeTab === 'EMPLOYMENT' && (
-                <div className="space-y-4">
-                  <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4">
-                    <h4 className="font-bold text-slate-900 text-sm">Corporate Employment Details</h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="text-slate-400">Employee ID:</span>
-                        <p className="font-mono font-bold text-slate-800 mt-0.5">{profile.employment?.employeeId || 'DRV-1001'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Employment Contract:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{profile.employment?.employmentType || 'FULL_TIME'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Date of Joining:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{formatDate(profile.employment?.joinedDate || driver?.created_at || '')}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Reporting Depot:</span>
-                        <p className="font-semibold text-slate-800 mt-0.5">{profile.employment?.depot || 'Pune Central Depot'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: SALARY CONFIG */}
-              {activeTab === 'SALARY' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Monthly Compensation Structure</h4>
-                      <p className="text-xs text-slate-500">Effective compensation rules, allowances and statutory deductions.</p>
-                    </div>
-                    <button
-                      onClick={() => setIsSalaryModalOpen(true)}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow-sm"
-                    >
-                      <DollarSign className="w-3.5 h-3.5" />
-                      <span>{profile.salaryConfig ? 'Modify Salary' : 'Configure Salary'}</span>
-                    </button>
-                  </div>
-
-                  {profile.salaryConfig ? (
-                    <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-xs text-slate-500">Base Salary:</span>
-                        <span className="text-sm font-bold text-slate-900">₹{(profile.salaryConfig.baseSalary || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-xs text-slate-500">Payment Cycle:</span>
-                        <span className="text-xs font-semibold text-slate-800">{profile.salaryConfig.paymentCycle}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-xs text-slate-500">Allowances (HRA / Fuel):</span>
-                        <span className="text-xs font-mono font-semibold text-emerald-700">
-                          ₹{((profile.salaryConfig.allowances?.hra || 0) + (profile.salaryConfig.allowances?.fuel || 0)).toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-xs text-slate-500">Statutory Deductions (PF):</span>
-                        <span className="text-xs font-mono font-semibold text-red-600">
-                          -₹{(profile.salaryConfig.deductions?.pf || 0).toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center pt-2">
-                        <span className="text-xs font-bold text-slate-800">Effective Date:</span>
-                        <span className="text-xs font-semibold text-slate-600">{profile.salaryConfig.effectiveFromDate}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                      <DollarSign className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-600 font-medium text-sm">No Salary Configured</p>
-                      <p className="text-xs text-slate-400 mt-1">Set up baseline salary and allowances to enable payroll disbursement.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 4: PAYMENTS */}
-              {activeTab === 'PAYMENTS' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Disbursed Payroll Vouchers</h4>
-                      <p className="text-xs text-slate-500">Historical records of paid wages, bank references, and tax receipts.</p>
-                    </div>
-                    <button
-                      onClick={() => setIsSalaryModalOpen(true)}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Record Payment</span>
-                    </button>
-                  </div>
-
-                  {profile.payrollRecords && profile.payrollRecords.length > 0 ? (
-                    <div className="space-y-3">
-                      {profile.payrollRecords.map((pay) => (
-                        <div key={pay.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900 text-sm">₹{(pay.netAmount || 0).toLocaleString('en-IN')}</span>
-                              <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-medium">
-                                {pay.paymentStatus}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-1">
-                              Period: {pay.periodStartDate} to {pay.periodEndDate} • Ref: <span className="font-mono">{pay.paymentReference}</span>
-                            </p>
-                          </div>
-                          <div className="text-right text-xs text-slate-400">
-                            {pay.paymentMethod}
-                          </div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Employee ID</div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-primary, #16805D)', marginTop: '2px' }}>
+                          {driver.employee_id || 'N/A'}
                         </div>
-                      ))}
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Phone</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                          {driver.phone || '—'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Fleet Vehicle</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 600, color: driver.vehicle_number ? '#0F172A' : '#D97706', marginTop: '2px' }}>
+                          {driver.vehicle_number || 'Unassigned'}
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                      <p className="text-slate-500 text-sm font-medium">No payroll payment vouchers recorded yet.</p>
+                  </div>
+
+                  {/* Personal & Contact */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 12px 0' }}>
+                      Personal & Contact Information
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', fontSize: '12.5px' }}>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Full Name: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.name}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Primary Phone: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.phone || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Alternate Phone: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.alternate_phone || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Email: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.email || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Gender: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.gender || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Emergency Contact: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>
+                          {driver.emergency_contact_name
+                            ? `${driver.emergency_contact_name} (${driver.emergency_contact_phone || ''})`
+                            : driver.emergency_contact || '—'}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Address & Location */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 12px 0' }}>
+                      Address & Location
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', fontSize: '12.5px' }}>
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <span style={{ color: '#64748B' }}>Street Address: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.address || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>City / Village: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.city || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>State: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.state || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Pincode: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.pincode || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Employment & Driving License */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 12px 0' }}>
+                      Employment & KYC Verification
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', fontSize: '12.5px' }}>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Employee ID: </span>
+                        <span style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-primary, #16805D)' }}>{driver.employee_id || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Joined: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.joining_date ? formatDate(driver.joining_date) : '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>Commercial DL No: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.license_number || '—'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>DL Expiry: </span>
+                        <span style={{ fontWeight: 600, color: isLicenseExpired() ? '#DC2626' : '#0F172A' }}>
+                          {driver.license_expiry ? formatDate(driver.license_expiry) : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B' }}>License Class: </span>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{driver.license_class || 'LMV-TR'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* TAB 5: DOCUMENTS & DL */}
-              {activeTab === 'DOCUMENTS' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Legal & Compliance Documents</h4>
-                      <p className="text-xs text-slate-500">Driving licence, Aadhaar, PAN, and police verification status.</p>
+              {/* TAB 2: OPERATIONS & VEHICLE */}
+              {activeTab === 'OPERATIONS' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Vehicle Assignment Banner */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Current Vehicle Assignment</div>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: driver.vehicle_number ? '#0F172A' : '#D97706', fontFamily: 'monospace', marginTop: '2px' }}>
+                          {driver.vehicle_number || 'No Vehicle Assigned'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                          {driver.vehicle_type ? `Type: ${driver.vehicle_type}` : 'Independent driver allocation'}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onAssignVehicle(driver)}
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: 'var(--color-primary, #16805D)',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Truck size={14} />
+                        <span>{driver.vehicle_number ? 'Change Vehicle' : 'Assign Vehicle'}</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setIsDocModalOpen(true)}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Upload Document</span>
-                    </button>
                   </div>
 
-                  {profile.documents && profile.documents.length > 0 ? (
-                    <div className="space-y-3">
-                      {profile.documents.map((doc) => (
-                        <div key={doc.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-2 bg-blue-50 text-blue-700 rounded-lg">
-                              <FileText className="w-5 h-5" />
-                            </div>
+                  {/* Delivery Metrics */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    <div style={{ backgroundColor: '#FFFFFF', padding: '14px 16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Today's Drops</div>
+                      <div style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{driver.today_deliveries || 0}</div>
+                    </div>
+                    <div style={{ backgroundColor: '#FFFFFF', padding: '14px 16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Active In Progress</div>
+                      <div style={{ fontSize: '22px', fontWeight: 800, color: '#0284C7', marginTop: '2px' }}>{driver.active_deliveries || 0}</div>
+                    </div>
+                    <div style={{ backgroundColor: '#FFFFFF', padding: '14px 16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Completed Drops</div>
+                      <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-primary, #16805D)', marginTop: '2px' }}>{driver.completed_deliveries || 0}</div>
+                    </div>
+                  </div>
+
+                  {/* Run / Delivery History Table */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 12px 0' }}>
+                      Delivery History
+                    </h4>
+                    {deliveries.length === 0 ? (
+                      <div style={{ padding: '24px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                        No delivery runs on record for this driver yet.
+                      </div>
+                    ) : (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>
+                              <th style={{ padding: '8px 10px' }}>Order</th>
+                              <th style={{ padding: '8px 10px' }}>Shop</th>
+                              <th style={{ padding: '8px 10px' }}>Status</th>
+                              <th style={{ padding: '8px 10px' }}>Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {deliveries.slice(0, 8).map((d: any, idx: number) => (
+                              <tr key={d.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                <td style={{ padding: '10px', fontFamily: 'monospace', fontWeight: 600 }}>#{d.orderNumber || d.order_number || d.id?.slice(0, 8)}</td>
+                                <td style={{ padding: '10px' }}>{d.shopName || d.shop_name || 'Merchant'}</td>
+                                <td style={{ padding: '10px' }}>
+                                  <Badge variant={d.status === 'DELIVERED' ? 'success' : d.status === 'FAILED' ? 'danger' : 'info'}>
+                                    {d.status || 'PENDING'}
+                                  </Badge>
+                                </td>
+                                <td style={{ padding: '10px', color: '#64748B', fontSize: '11.5px' }}>
+                                  {d.createdAt || d.created_at ? formatDate(d.createdAt || d.created_at) : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: COMPENSATION & DOCUMENTS */}
+              {activeTab === 'COMPENSATION_DOCS' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Salary Structure */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                        Salary Structure
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => setIsSalaryModalOpen(true)}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
+                          color: 'var(--color-primary, #16805D)',
+                          border: '1px solid #A7F3D0',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Configure Salary
+                      </button>
+                    </div>
+
+                    {salaryConfig ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', fontSize: '12.5px' }}>
+                        <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Base Salary</div>
+                          <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{formatCurrency(salaryConfig.baseSalary || 0)}</div>
+                        </div>
+                        <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Daily Allowance</div>
+                          <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{formatCurrency(salaryConfig.dailyAllowance || 0)}</div>
+                        </div>
+                        <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Per Drop Incentive</div>
+                          <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{formatCurrency(salaryConfig.perDeliveryRate || 0)}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '12.5px', color: '#64748B', padding: '8px 0' }}>
+                        No salary structure configured for this driver yet.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* KYC Documents */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '18px 20px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                        KYC Documents ({documents.length})
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => setIsDocModalOpen(true)}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: 'var(--color-primary, #16805D)',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <Plus size={13} /> Upload Document
+                      </button>
+                    </div>
+
+                    {documents.length === 0 ? (
+                      <div style={{ fontSize: '12.5px', color: '#64748B', padding: '8px 0' }}>
+                        No documents uploaded yet. Upload commercial driving licence or Aadhaar card.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {documents.map((doc: any, idx: number) => (
+                          <div key={doc.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '12.5px' }}>
                             <div>
-                              <div className="flex items-center space-x-2">
-                                <h5 className="font-bold text-slate-900 text-sm">{(doc.documentType || doc.document_type || 'DOCUMENT').replace('_', ' ')}</h5>
-                                <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                                  doc.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                }`}>
-                                  {doc.verificationStatus}
-                                </span>
-                              </div>
-                              <p className="text-xs font-mono text-slate-600 mt-1">ID: {doc.documentNumber}</p>
-                              {doc.expiryDate && (
-                                <p className="text-xs text-slate-400 mt-0.5">Expires: {doc.expiryDate}</p>
-                              )}
+                              <span style={{ fontWeight: 600, color: '#0F172A' }}>{doc.document_type || doc.documentType}</span>
+                              <span style={{ color: '#64748B', marginLeft: '8px', fontFamily: 'monospace' }}>({doc.document_number || doc.documentNumber})</span>
                             </div>
+                            <Badge variant={(doc.verification_status || doc.verificationStatus) === 'VERIFIED' ? 'success' : 'neutral'}>
+                              {doc.verification_status || doc.verificationStatus || 'PENDING'}
+                            </Badge>
                           </div>
-                          {doc.fileUrl && (
-                            <a
-                              href={doc.fileUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
-                            >
-                              View PDF
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                      <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-600 font-medium text-sm">No Documents Uploaded</p>
-                      <p className="text-xs text-slate-400 mt-1">Upload verified driver identity and driving licence papers.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 6: ATTENDANCE */}
-              {activeTab === 'ATTENDANCE' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
-                      <span className="text-xs text-slate-400 font-medium">Days Present (Month)</span>
-                      <p className="text-xl font-bold text-emerald-600 mt-1">{profile.attendance?.daysPresentMonth || 24} Days</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
-                      <span className="text-xs text-slate-400 font-medium">Days Absent</span>
-                      <p className="text-xl font-bold text-slate-900 mt-1">{profile.attendance?.daysAbsentMonth || 1} Day</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
-                      <span className="text-xs text-slate-400 font-medium">Shift Assignment</span>
-                      <p className="text-sm font-bold text-blue-600 mt-2">{profile.attendance?.currentShift || 'MORNING_6AM'}</p>
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-
-              {/* TAB 7: DELIVERIES / RUN HISTORY */}
-              {activeTab === 'DELIVERIES' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-slate-900 text-sm">Completed & Scheduled Delivery Runs</h4>
-                  {profile.deliveryHistory && profile.deliveryHistory.length > 0 ? (
-                    profile.deliveryHistory.map((run: any) => (
-                      <div key={run.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">{run.route_name || run.routeName || 'Delivery Corridor'}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            Date: {formatDate(run.delivery_date || run.deliveryDate)} • Stops: {run.stops_completed || run.completedStopsCount || 0}
-                          </p>
-                        </div>
-                        <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800">
-                          {run.status || 'COMPLETED'}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                      <Truck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-500 text-sm">No past delivery runs found for this driver.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 8: PERFORMANCE */}
-              {activeTab === 'PERFORMANCE' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
-                      <span className="text-xs text-slate-400 font-medium">Total Runs Handled</span>
-                      <p className="text-xl font-bold text-slate-900 mt-1">{profile.performance?.totalRuns || 42}</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
-                      <span className="text-xs text-slate-400 font-medium">On-Time Accuracy</span>
-                      <p className="text-xl font-bold text-emerald-600 mt-1">{profile.performance?.onTimePercentage || 98.2}%</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
-                      <span className="text-xs text-slate-400 font-medium">Completed Drops</span>
-                      <p className="text-xl font-bold text-blue-600 mt-1">{profile.performance?.completedDrops || 184}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 9: ACCESS */}
-              {activeTab === 'ACCESS' && (
-                <div className="space-y-4">
-                  <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
-                    <h4 className="font-bold text-slate-900 text-sm">Mobile Driver App Authentication</h4>
-                    <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-800">Mobile Login Enabled</p>
-                        <p className="text-xs text-slate-400 mt-0.5">Permits authentication on the Delivshop Driver Android/iOS application.</p>
-                      </div>
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                        profile.accessStatus?.isDriverAppActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {profile.accessStatus?.isDriverAppActive ? 'Authorized' : 'Disabled'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between py-2">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-800">Last Active Session</p>
-                        <p className="text-xs text-slate-400 mt-0.5">Most recent mobile ping or route dispatch event.</p>
-                      </div>
-                      <span className="text-xs text-slate-600 font-mono">
-                        {profile.accessStatus?.lastLoginAt ? formatDate(profile.accessStatus.lastLoginAt) : 'Never'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 10: AUDIT */}
-              {activeTab === 'AUDIT' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-slate-900 text-sm">Security & Administrative Audit Log</h4>
-                  {profile.auditHistory && profile.auditHistory.length > 0 ? (
-                    profile.auditHistory.map((a: any) => (
-                      <div key={a.id} className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex items-start space-x-3 text-xs">
-                        <History className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-semibold text-slate-800">{a.action || 'Driver record updated'}</p>
-                          <p className="text-slate-500 mt-0.5">
-                            Performed by: {a.actor || 'Administrator'} • {formatDate(a.timestamp || a.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-                      <p className="text-slate-500 text-sm">No audit events recorded.</p>
-                    </div>
-                  )}
                 </div>
               )}
             </>
@@ -631,7 +674,7 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
           />
         )}
 
-        {/* Delete Driver Confirmation Modal */}
+        {/* Delete Confirmation */}
         {isDeleteModalOpen && driver && (
           <DeleteConfirmModal
             isOpen={isDeleteModalOpen}
@@ -644,22 +687,8 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
             details={[
               { label: 'Driver Name', value: driver.name },
               { label: 'Employee ID', value: driver.employee_id || 'N/A' },
-              { label: 'Current Account Status', value: driver.is_active ? 'Active' : 'Inactive' },
-              {
-                label: 'Active Assignments',
-                value: (driver.active_deliveries || 0) > 0 ? `${driver.active_deliveries} active deliveries` : 'None (Available)',
-              },
             ]}
-            blockingReason={
-              (driver.active_deliveries || 0) > 0
-                ? `Driver currently has ${driver.active_deliveries} active deliveries assigned. Deliveries must be completed or reassigned before deleting.`
-                : null
-            }
-            customWarning="Drivers with historical dispatches, completed deliveries, payment collections, or payroll records will be safely archived and deactivated to maintain statutory audit and compliance records. Drivers with zero historical records will be permanently purged."
-            onDeactivateRequested={async () => {
-              await api.deliveries.updateDriverStatus(driver.id, false, 'Deactivated prior to deletion');
-              fetchFullProfile(driver.id);
-            }}
+            customWarning="Drivers with historical dispatches will be safely archived to maintain records."
             onConfirm={async (reason) => {
               await api.deliveries.deleteDriver(driver.id, reason);
               setIsDeleteModalOpen(false);
@@ -668,9 +697,7 @@ export const DriverDetailsDrawer: React.FC<DriverDetailsDrawerProps> = ({
             }}
           />
         )}
-
       </div>
     </div>
   );
 };
-
