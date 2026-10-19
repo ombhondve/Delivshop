@@ -494,6 +494,10 @@ export const api = {
       }>(`deliveries/drivers/${driverId}`);
     },
 
+    async generateEmployeeId(): Promise<{ employeeId: string }> {
+      return apiClient<{ employeeId: string }>('deliveries/drivers/generate-employee-id');
+    },
+
     async createDriver(payload: CreateDriverPayload): Promise<DriverUser> {
       return apiClient<DriverUser>('deliveries/drivers', {
         method: 'POST',

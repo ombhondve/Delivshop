@@ -49,6 +49,13 @@ router.get(
   deliveryController.getRosterSummary
 );
 
+router.get(
+  '/drivers/generate-employee-id',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  deliveryController.getNextEmployeeId
+);
+
 router.post(
   '/drivers',
   authenticate,

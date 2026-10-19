@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   User,
@@ -15,9 +15,16 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { AutocompleteInput, AutocompleteOption } from '../../components/common/AutocompleteInput';
 import { api } from '../../services/api/endpoints';
 import { DriverUser, CreateDriverPayload } from '../../types';
 import { useNavigation } from '../../context/NavigationContext';
+import {
+  searchStates,
+  searchCities,
+  getCitiesForState,
+  isValidCity,
+} from '../../utils/indianLocations';
 
 interface AddDriverModalProps {
   isOpen: boolean;
@@ -37,8 +44,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
     phone: '',
     alternatePhone: '',
     email: '',
-    employeeId: '', // Blank will trigger monotonic auto-generation on server
-    password: 'Driver@12345',
+    employeeId: '',
     licenseNumber: '',
     licenseExpiry: '',
     licenseClass: 'LMV-TR',
@@ -47,7 +53,6 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
     city: 'Pune',
     state: 'Maharashtra',
     pincode: '',
-    dateOfBirth: '',
     gender: 'MALE',
     emergencyContact: '',
     emergencyContactName: '',
@@ -57,28 +62,134 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
     notes: '',
   });
 
+  const [generatedEmpId, setGeneratedEmpId] = useState<string>('');
+  const [isGeneratingId, setIsGeneratingId] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationErrors, setLocationErrors] = useState<{ state?: string; city?: string }>({});
   const [createdDriver, setCreatedDriver] = useState<DriverUser | null>(null);
+
+  // Automatically fetch or generate unique Employee ID on popup open
+  useEffect(() => {
+    let isMounted = true;
+    if (isOpen) {
+      setIsGeneratingId(true);
+      setError(null);
+      setLocationErrors({});
+
+      api.deliveries
+        .generateEmployeeId()
+        .then((res) => {
+          if (isMounted && res.employeeId) {
+            setGeneratedEmpId(res.employeeId);
+            setFormData((prev) => ({ ...prev, employeeId: res.employeeId }));
+          }
+        })
+        .catch((err) => {
+          console.warn('Fallback generating client-side candidate ID:', err);
+          let digits = '';
+          for (let i = 0; i < 10; i++) {
+            digits += Math.floor(Math.random() * 10).toString();
+          }
+          const candidate = `EMP-${digits}`;
+          if (isMounted) {
+            setGeneratedEmpId(candidate);
+            setFormData((prev) => ({ ...prev, employeeId: candidate }));
+          }
+        })
+        .finally(() => {
+          if (isMounted) setIsGeneratingId(false);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
+
+  // Autocomplete Options for States
+  const stateOptions = useMemo<AutocompleteOption[]>(() => {
+    const query = formData.state || '';
+    return searchStates(query).map((s) => ({
+      label: s,
+      value: s,
+      secondary: `${getCitiesForState(s).length} registered locations`,
+    }));
+  }, [formData.state]);
+
+  // Autocomplete Options for Cities / Villages
+  const cityOptions = useMemo<AutocompleteOption[]>(() => {
+    if (!formData.state || !formData.state.trim()) return [];
+    const query = formData.city || '';
+    const results = searchCities(query, formData.state);
+
+    const options: AutocompleteOption[] = results.map((entry) => ({
+      label: entry.city,
+      value: entry.city,
+      secondary: entry.state,
+    }));
+
+    // If user has typed a custom village/city not present in dataset, allow choosing it
+    const trimmedQuery = query.trim();
+    if (
+      trimmedQuery.length >= 2 &&
+      !results.some((r) => r.city.toLowerCase() === trimmedQuery.toLowerCase())
+    ) {
+      options.unshift({
+        label: `"${trimmedQuery}" (Custom village/city in ${formData.state})`,
+        value: trimmedQuery,
+        badge: 'Custom Location',
+        secondary: formData.state,
+      });
+    }
+
+    return options;
+  }, [formData.city, formData.state]);
 
   if (!isOpen) return null;
 
   const handleResetAndClose = () => {
     setCreatedDriver(null);
     setError(null);
+    setLocationErrors({});
     setLoading(false);
     onClose();
+  };
+
+  const handleStateChange = (newState: string) => {
+    setLocationErrors((prev) => ({ ...prev, state: undefined }));
+    setFormData((prev) => {
+      // Clear city if state has changed so an invalid state-city combination cannot be saved
+      const stateChanged = (prev.state || '').trim().toLowerCase() !== newState.trim().toLowerCase();
+      return {
+        ...prev,
+        state: newState,
+        city: stateChanged ? '' : prev.city,
+      };
+    });
+  };
+
+  const handleStateSelect = (selectedState: string) => {
+    setLocationErrors((prev) => ({ ...prev, state: undefined }));
+    setFormData((prev) => {
+      const stateChanged = (prev.state || '').trim().toLowerCase() !== selectedState.trim().toLowerCase();
+      return {
+        ...prev,
+        state: selectedState,
+        city: stateChanged ? '' : prev.city,
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLocationErrors({});
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       setError('Driver full name is required');
       return;
     }
-    if (!formData.phone.trim()) {
+    if (!formData.phone?.trim()) {
       setError('Driver primary phone number is required');
       return;
     }
@@ -87,27 +198,45 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
       return;
     }
 
+    if (!formData.state?.trim()) {
+      setLocationErrors({ state: 'Please select or enter the state' });
+      setError('Driver state is required');
+      return;
+    }
+
+    if (!formData.city?.trim()) {
+      setLocationErrors({ city: 'Please select or enter a city or village' });
+      setError('Driver city or village is required');
+      return;
+    }
+
+    // Validate that city does not contradict a known different state
+    if (!isValidCity(formData.city.trim(), formData.state.trim())) {
+      setLocationErrors({ city: `"${formData.city}" does not match the selected state (${formData.state})` });
+      setError(`Invalid location: "${formData.city}" does not belong to ${formData.state}`);
+      return;
+    }
+
     try {
       setLoading(true);
-      // Clean payload: Remove blank strings for optional fields and never include vehicle/fleet
+
+      // Clean payload: send validated data without requiring birth date or password
       const cleanPayload: CreateDriverPayload = {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
-        password: formData.password?.trim() || 'Driver@12345',
+        employeeId: generatedEmpId || formData.employeeId || undefined,
+        city: formData.city.trim(),
+        state: formData.state.trim(),
       };
 
       if (formData.alternatePhone?.trim()) cleanPayload.alternatePhone = formData.alternatePhone.trim();
       if (formData.email?.trim()) cleanPayload.email = formData.email.trim();
-      if (formData.employeeId?.trim()) cleanPayload.employeeId = formData.employeeId.trim();
       if (formData.licenseNumber?.trim()) cleanPayload.licenseNumber = formData.licenseNumber.trim();
       if (formData.licenseExpiry?.trim()) cleanPayload.licenseExpiry = formData.licenseExpiry.trim();
       if (formData.licenseClass?.trim()) cleanPayload.licenseClass = formData.licenseClass.trim();
       if (formData.joiningDate?.trim()) cleanPayload.joiningDate = formData.joiningDate.trim();
       if (formData.address?.trim()) cleanPayload.address = formData.address.trim();
-      if (formData.city?.trim()) cleanPayload.city = formData.city.trim();
-      if (formData.state?.trim()) cleanPayload.state = formData.state.trim();
       if (formData.pincode?.trim()) cleanPayload.pincode = formData.pincode.trim();
-      if (formData.dateOfBirth?.trim()) cleanPayload.dateOfBirth = formData.dateOfBirth.trim();
       if (formData.gender?.trim()) cleanPayload.gender = formData.gender.trim();
       if (formData.employmentStatus?.trim()) cleanPayload.employmentStatus = formData.employmentStatus.trim();
       if (formData.emergencyContactName?.trim()) cleanPayload.emergencyContactName = formData.emergencyContactName.trim();
@@ -168,7 +297,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
           overflow: 'hidden',
         }}
       >
-        {/* Header */}
+        {/* Header with Auto-Generated Employee ID in Top-Left */}
         <div
           style={{
             padding: '16px 22px',
@@ -179,29 +308,57 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
             backgroundColor: '#FFFFFF',
           }}
         >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--color-primary-subtle)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <User size={18} />
-              </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Onboard New Driver Personnel
-              </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
+                color: 'var(--color-primary, #16805D)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <User size={20} />
             </div>
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 40px' }}>
-              Register driver identity, mobile credentials, and contact details without vehicle assignment.
-            </p>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary, #0F172A)', margin: 0 }}>
+                  Add New Driver
+                </h3>
+                {/* Auto-Generated Employee ID displayed in Top-Left, Read-Only */}
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '2px 8px',
+                    backgroundColor: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: '6px',
+                    fontSize: '11.5px',
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    color: 'var(--color-primary, #16805D)',
+                    letterSpacing: '0.02em',
+                    userSelect: 'none',
+                  }}
+                  title="Auto-generated unique Driver Employee ID (read-only)"
+                >
+                  <Lock size={11} color="#64748B" />
+                  <span style={{ fontSize: '10px', color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
+                    ID:
+                  </span>
+                  <span>{isGeneratingId ? 'Generating...' : generatedEmpId || formData.employeeId || 'EMP-AUTO'}</span>
+                </div>
+              </div>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 0' }}>
+                Register driver identity, location, and KYC credentials without vehicle allocation.
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -228,8 +385,8 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                backgroundColor: 'var(--color-success-bg)',
-                color: 'var(--color-success)',
+                backgroundColor: 'var(--color-success-bg, #E6F4EA)',
+                color: 'var(--color-success, #16805D)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -243,7 +400,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               Driver Successfully Onboarded!
             </h3>
             <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '480px', margin: '0 auto 24px auto' }}>
-              Driver record for <strong>{createdDriver.name}</strong> has been registered into the roster without vehicle allocation. Login access credentials have been provisioned.
+              Driver record for <strong>{createdDriver.name}</strong> has been registered into the roster. Vehicle allocations and route dispatches can be scheduled under Assignments.
             </p>
 
             <div
@@ -264,8 +421,8 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     fontFamily: 'monospace',
                     fontWeight: 700,
                     fontSize: '13.5px',
-                    color: 'var(--color-primary)',
-                    backgroundColor: 'var(--color-primary-subtle)',
+                    color: 'var(--color-primary, #16805D)',
+                    backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
                     padding: '2px 8px',
                     borderRadius: '4px',
                   }}
@@ -282,8 +439,10 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 <span style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>{createdDriver.phone}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748B' }}>Login Username:</span>
-                <span style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B' }}>{createdDriver.email || createdDriver.employee_id}</span>
+                <span style={{ fontSize: '13px', color: '#64748B' }}>Operating Location:</span>
+                <span style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B' }}>
+                  {createdDriver.city ? `${createdDriver.city}, ${createdDriver.state || ''}` : createdDriver.state || 'N/A'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '13px', color: '#64748B' }}>Vehicle & Route Allocation:</span>
@@ -336,19 +495,19 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 border: '1px solid #6EE7B7',
                 borderRadius: '8px',
                 fontSize: '12px',
-                color: '#1E40AF',
+                color: '#065F46',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
               }}
             >
-              <Sparkles size={16} color="#3B82F6" />
+              <Sparkles size={16} color="#059669" />
               <span>
                 <strong>Independent Onboarding:</strong> Vehicle allocations and route dispatches are managed separately under the <strong>Assignments</strong> section. Drivers can be onboarded without vehicle or fleet requirements.
               </span>
             </div>
 
-            {/* Section 1: Personal & Contact Information */}
+            {/* Section 1: Personal & Contact Information (Date of Birth removed) */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -356,7 +515,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: 'var(--color-primary)',
+                  color: 'var(--color-primary, #16805D)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -378,7 +537,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -400,7 +559,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -421,7 +580,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -442,7 +601,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -452,27 +611,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth || ''}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    style={{
-                      width: '100%',
-                      height: '34px',
-                      padding: '0 10px',
-                      fontSize: '13px',
-                      borderRadius: '6px',
-                      border: '1px solid #A7AE9F',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div>
+                <div style={{ gridColumn: 'span 2' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Gender
                   </label>
@@ -481,7 +620,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 8px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -498,7 +637,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </div>
             </div>
 
-            {/* Section 2: Residential Address */}
+            {/* Section 2: Residential Address & Geographic Location (State and City/Village searchable combobox) */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -506,17 +645,17 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: 'var(--color-primary)',
+                  color: 'var(--color-primary, #16805D)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                 }}
               >
-                <MapPin size={15} /> 2. Residential Address
+                <MapPin size={15} /> 2. Residential Address & Geographic Location
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                <div style={{ gridColumn: 'span 4' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+                <div style={{ gridColumn: 'span 2' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Street Address & Flat / House No.
                   </label>
@@ -527,59 +666,64 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
                       border: '1px solid #A7AE9F',
                       outline: 'none',
                     }}
+                  />
+                </div>
+
+                {/* State: Searchable & Selectable Dropdown */}
+                <div>
+                  <AutocompleteInput
+                    id="driver-state-autocomplete"
+                    label="State"
+                    required
+                    placeholder="Search or select state (e.g. Maharashtra)..."
+                    value={formData.state || ''}
+                    onChange={handleStateChange}
+                    onSelect={(opt) => handleStateSelect(opt.value)}
+                    options={stateOptions}
+                    error={locationErrors.state}
+                    hint="Select state first to enable city/village"
+                  />
+                </div>
+
+                {/* City / Village: Searchable & Selectable Dropdown, Disabled until State is selected */}
+                <div>
+                  <AutocompleteInput
+                    id="driver-city-autocomplete"
+                    label="City / Village"
+                    required
+                    disabled={!formData.state || !formData.state.trim()}
+                    placeholder={
+                      !formData.state || !formData.state.trim()
+                        ? 'Select state above first...'
+                        : 'Search or type city/village...'
+                    }
+                    value={formData.city || ''}
+                    onChange={(val) => {
+                      setLocationErrors((prev) => ({ ...prev, city: undefined }));
+                      setFormData((prev) => ({ ...prev, city: val }));
+                    }}
+                    onSelect={(opt) => {
+                      setLocationErrors((prev) => ({ ...prev, city: undefined }));
+                      setFormData((prev) => ({ ...prev, city: opt.value }));
+                    }}
+                    options={cityOptions}
+                    error={locationErrors.city}
+                    hint={
+                      !formData.state || !formData.state.trim()
+                        ? 'Requires state selection first'
+                        : `${cityOptions.length} suggested locations in ${formData.state}`
+                    }
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Pune"
-                    value={formData.city || ''}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    style={{
-                      width: '100%',
-                      height: '34px',
-                      padding: '0 10px',
-                      fontSize: '13px',
-                      borderRadius: '6px',
-                      border: '1px solid #A7AE9F',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Maharashtra"
-                    value={formData.state || ''}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    style={{
-                      width: '100%',
-                      height: '34px',
-                      padding: '0 10px',
-                      fontSize: '13px',
-                      borderRadius: '6px',
-                      border: '1px solid #A7AE9F',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Pincode
                   </label>
@@ -590,7 +734,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -602,7 +746,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </div>
             </div>
 
-            {/* Section 3: Employment Identity */}
+            {/* Section 3: Employment Identity (Employee ID is read-only) */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -610,7 +754,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: 'var(--color-primary)',
+                  color: 'var(--color-primary, #16805D)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -621,29 +765,39 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Employee ID
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                    <span>Employee ID</span>
+                    <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <Lock size={11} /> Read-only
+                    </span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Auto-generated if blank"
-                    value={formData.employeeId || ''}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                  <div
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       fontFamily: 'monospace',
                       borderRadius: '6px',
-                      border: '1px solid #A7AE9F',
-                      backgroundColor: '#F8FAFC',
-                      outline: 'none',
+                      border: '1px solid #CBD5E1',
+                      backgroundColor: '#F1F5F9',
+                      color: '#0F172A',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
+                      cursor: 'not-allowed',
                     }}
-                  />
-                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginTop: '2px' }}>
-                    Leave blank for automatic sequential ID (e.g. EMP-DRV-1006)
+                    title="Auto-generated unique Driver Employee ID cannot be edited manually"
+                  >
+                    <span>{generatedEmpId || formData.employeeId || 'EMP-AUTO'}</span>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#16805D', backgroundColor: '#E6F4EA', padding: '2px 6px', borderRadius: '4px' }}>
+                      AUTO
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginTop: '3px' }}>
+                    System-generated sequential ID according to Delivshop standards.
                   </span>
                 </div>
 
@@ -657,7 +811,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -676,7 +830,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 8px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -693,7 +847,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </div>
             </div>
 
-            {/* Section 4: Driving License & Compliance */}
+            {/* Section 4: Driving License & KYC Verification */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -701,7 +855,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: 'var(--color-primary)',
+                  color: 'var(--color-primary, #16805D)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -722,7 +876,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -742,7 +896,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -761,7 +915,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, licenseClass: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 8px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -780,14 +934,14 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
             </div>
 
             {/* Section 5: Emergency Contact */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <h4
                 style={{
                   fontSize: '13px',
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  color: 'var(--color-primary)',
+                  color: 'var(--color-primary, #16805D)',
                   marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -808,7 +962,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -829,7 +983,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -850,7 +1004,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, emergencyContactRelation: e.target.value })}
                     style={{
                       width: '100%',
-                      height: '34px',
+                      height: '36px',
                       padding: '0 10px',
                       fontSize: '13px',
                       borderRadius: '6px',
@@ -861,48 +1015,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Section 6: Mobile App Credentials */}
-            <div style={{ marginBottom: '16px', backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '8px', border: '1px solid #D6D3C8' }}>
-              <h4
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  marginBottom: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Lock size={15} color="var(--color-primary)" /> 6. Driver Mobile App Credentials
-              </h4>
-              <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '10px' }}>
-                The driver will sign in using their <strong>Employee ID</strong> (or Email) and this initial access password.
-              </p>
-              <div style={{ maxWidth: '300px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Initial Access Password (Min 8 characters)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  style={{
-                    width: '100%',
-                    height: '34px',
-                    padding: '0 10px',
-                    fontSize: '13px',
-                    fontFamily: 'monospace',
-                    borderRadius: '6px',
-                    border: '1px solid #A7AE9F',
-                    backgroundColor: '#FFFFFF',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
+            {/* Note: Section 6 'Driver Mobile App Credentials' has been completely removed as requested */}
           </form>
         )}
 
@@ -930,4 +1043,3 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
     </div>
   );
 };
-

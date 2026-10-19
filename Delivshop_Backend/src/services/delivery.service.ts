@@ -116,6 +116,10 @@ export const deliveryService = {
     return deliveryRepository.getDriverDeliveries(driverId);
   },
 
+  async generateEmployeeId(): Promise<string> {
+    return generateDriverEmployeeId();
+  },
+
   async createDriver(
     data: {
       name: string;

@@ -106,6 +106,15 @@ export const deliveryController = {
     }
   },
 
+  async getNextEmployeeId(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const employeeId = await deliveryService.generateEmployeeId();
+      sendSuccess(res, { employeeId });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async createDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const driver = await deliveryService.createDriver(
