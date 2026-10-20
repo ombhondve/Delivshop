@@ -624,7 +624,6 @@ export const api = {
       vehicleType?: string;
       depot?: string;
       city?: string;
-      compliance?: string;
       sortBy?: string;
       sortOrder?: string;
       page?: number;
@@ -636,7 +635,6 @@ export const api = {
       if (params?.vehicleType) query.set('vehicleType', params.vehicleType);
       if (params?.depot) query.set('depot', params.depot);
       if (params?.city) query.set('city', params.city);
-      if (params?.compliance) query.set('compliance', params.compliance);
       if (params?.sortBy) query.set('sortBy', params.sortBy);
       if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
       if (params?.page) query.set('page', String(params.page));
@@ -672,19 +670,6 @@ export const api = {
       return apiClient<any>(`vehicles/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status, notes }),
-      });
-    },
-
-    async addDocument(id: string, payload: any): Promise<any> {
-      return apiClient<any>(`vehicles/${id}/documents`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-    },
-
-    async deleteDocument(id: string, docId: string): Promise<any> {
-      return apiClient<any>(`vehicles/${id}/documents/${docId}`, {
-        method: 'DELETE',
       });
     },
 

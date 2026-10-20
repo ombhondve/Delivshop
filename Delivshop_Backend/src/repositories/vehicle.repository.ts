@@ -699,56 +699,8 @@ export const vehicleRepository = {
       reasons.push(`Vehicle ${vehicle.registration_number} is currently undergoing maintenance in workshop.`);
     }
 
-    // 3. Document compliance check
-    const docs = await this.getDocuments(vehicleId);
-    const docMap = new Map<string, any>();
-    docs.forEach((d) => docMap.set(d.document_type, d));
-
-    let mandatoryDocumentsValid = true;
-
-    // RC check
-    const rc = docMap.get('RC');
-    if (!rc) {
-      reasons.push('Vehicle is missing mandatory Registration Certificate (RC).');
-      mandatoryDocumentsValid = false;
-    } else if (rc.verification_status === 'REJECTED') {
-      reasons.push('Vehicle Registration Certificate (RC) was rejected during compliance audit.');
-      mandatoryDocumentsValid = false;
-    } else if (rc.expiry_date && new Date(rc.expiry_date) < new Date(dateToCheck)) {
-      reasons.push(`Vehicle Registration Certificate (RC) expired on ${rc.expiry_date}.`);
-      mandatoryDocumentsValid = false;
-    }
-
-    // Insurance check
-    const ins = docMap.get('INSURANCE');
-    if (!ins) {
-      reasons.push('Vehicle is missing mandatory Commercial Insurance policy.');
-      mandatoryDocumentsValid = false;
-    } else if (ins.verification_status === 'REJECTED') {
-      reasons.push('Commercial Insurance was rejected during compliance audit.');
-      mandatoryDocumentsValid = false;
-    } else if (ins.expiry_date && new Date(ins.expiry_date) < new Date(dateToCheck)) {
-      reasons.push(`Commercial Insurance expired on ${ins.expiry_date}.`);
-      mandatoryDocumentsValid = false;
-    } else if (ins.expiry_date) {
-      const daysLeft = Math.ceil((new Date(ins.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-      if (daysLeft <= 15) {
-        warnings.push(`Commercial Insurance will expire soon (in ${daysLeft} days).`);
-      }
-    }
-
-    // PUC check (Warning/Block if expired)
-    const puc = docMap.get('PUC');
-    if (puc && puc.expiry_date && new Date(puc.expiry_date) < new Date(dateToCheck)) {
-      warnings.push(`Pollution Under Control (PUC) certificate expired on ${puc.expiry_date}.`);
-    }
-
-    // Fitness certificate check
-    const fit = docMap.get('FITNESS');
-    if (fit && fit.expiry_date && new Date(fit.expiry_date) < new Date(dateToCheck)) {
-      reasons.push(`RTO Commercial Fitness Certificate expired on ${fit.expiry_date}.`);
-      mandatoryDocumentsValid = false;
-    }
+    // 3. Document compliance check - vehicle document requirements removed
+    const mandatoryDocumentsValid = true;
 
     // 4. Conflicting Assignment Check on target date
     const conflictSql = options?.excludeRunId

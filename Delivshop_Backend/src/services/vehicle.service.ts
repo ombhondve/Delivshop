@@ -1,8 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import { vehicleRepository, VehicleRecord, ListVehiclesResult } from '../repositories/vehicle.repository.js';
 import { auditService } from './audit.service.js';
-import { fileService, getStorageDir } from './file.service.js';
 import { AppError } from '../utils/errors.js';
 
 export const vehicleService = {
@@ -31,8 +28,7 @@ export const vehicleService = {
       throw new AppError('Vehicle asset not found in fleet', 404);
     }
 
-    const [documents, maintenance, assignments, eligibility, activity] = await Promise.all([
-      vehicleRepository.getDocuments(id),
+    const [maintenance, assignments, eligibility, activity] = await Promise.all([
       vehicleRepository.getMaintenanceRecords(id),
       vehicleRepository.getAssignmentHistory(id),
       vehicleRepository.checkDispatchEligibility(id),
@@ -41,7 +37,6 @@ export const vehicleService = {
 
     return {
       ...vehicle,
-      documents,
       maintenance,
       assignments,
       eligibility,
@@ -159,149 +154,6 @@ export const vehicleService = {
     return updated;
   },
 
-  async upsertDocument(vehicleId: string, data: any, actorId?: string, ipAddress?: string): Promise<any> {
-    const vehicle = await vehicleRepository.findById(vehicleId);
-    if (!vehicle) {
-      throw new AppError('Vehicle not found', 404);
-    }
-
-    let storagePath: string | undefined = undefined;
-    let fileSizeBytes: number | undefined = undefined;
-    let mimeType = data.mimeType || 'application/pdf';
-    let fileName = data.fileName || data.originalFilename || undefined;
-
-    // Secure file processing if fileData (base64 string) is provided
-    if (data.fileData) {
-      let base64Content = data.fileData;
-      if (base64Content.includes(',')) {
-        base64Content = base64Content.split(',')[1];
-      }
-
-      const buffer = Buffer.from(base64Content, 'base64');
-      fileSizeBytes = buffer.length;
-
-      if (buffer.length > 5 * 1024 * 1024) {
-        throw new AppError('File size exceeds the 5MB maximum allowed limit.', 400);
-      }
-
-      const allowedMimes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
-      if (!allowedMimes.has(mimeType)) {
-        throw new AppError(`Disallowed document file type "${mimeType}". Allowed: PDF, JPEG, PNG, WebP.`, 400);
-      }
-
-      if (!fileService.validateFileSignature(buffer, mimeType)) {
-        throw new AppError('File content does not match declared MIME signature. Corrupted or disallowed file rejected.', 400);
-      }
-
-      const ext =
-        mimeType === 'application/pdf'
-          ? '.pdf'
-          : mimeType === 'image/jpeg'
-          ? '.jpg'
-          : mimeType === 'image/png'
-          ? '.png'
-          : '.webp';
-
-      const storageFilename = `veh_${vehicleId.slice(0, 8)}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
-      const storageDir = getStorageDir();
-      storagePath = path.join(storageDir, storageFilename);
-
-      await fs.promises.writeFile(storagePath, buffer);
-      fileName = fileName ? path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_') : storageFilename;
-    }
-
-    const payload = {
-      ...data,
-      vehicleId,
-      fileName,
-      storagePath,
-      mimeType,
-      fileSizeBytes,
-      verifiedBy: actorId,
-    };
-
-    const doc = await vehicleRepository.upsertDocument(payload);
-
-    // If storage file was created, generate authenticated download URL
-    if (doc.id && storagePath) {
-      const fileUrl = `/api/vehicles/${vehicleId}/documents/${doc.id}/download`;
-      await vehicleRepository.upsertDocument({
-        ...payload,
-        fileUrl,
-      });
-      doc.file_url = fileUrl;
-    }
-
-    await auditService.log({
-      actorId: actorId || undefined,
-      action: 'VEHICLE_DOCUMENT_VERIFIED',
-      entityType: 'VEHICLE',
-      entityId: vehicleId,
-      details: {
-        documentType: data.documentType,
-        documentNumber: data.documentNumber,
-        expiryDate: data.expiryDate,
-        verificationStatus: data.verificationStatus,
-        hasAttachment: Boolean(storagePath || data.fileUrl),
-      },
-      ipAddress,
-    });
-
-    return doc;
-  },
-
-  async downloadDocument(vehicleId: string, docId: string): Promise<{
-    filePath: string;
-    filename: string;
-    mimeType: string;
-  }> {
-    const vehicle = await vehicleRepository.findById(vehicleId);
-    if (!vehicle) throw new AppError('Vehicle asset not found', 404);
-
-    const doc = await vehicleRepository.getDocumentById(vehicleId, docId);
-    if (!doc) throw new AppError('Vehicle document not found', 404);
-
-    if (!doc.storage_path || !fs.existsSync(doc.storage_path)) {
-      throw new AppError('Document binary file is not available on storage disk.', 404);
-    }
-
-    return {
-      filePath: doc.storage_path,
-      filename: doc.file_name || `vehicle_${doc.document_type.toLowerCase()}_${doc.document_number}.pdf`,
-      mimeType: doc.mime_type || 'application/pdf',
-    };
-  },
-
-  async deleteDocument(vehicleId: string, docId: string, actorId?: string, ipAddress?: string): Promise<void> {
-    const vehicle = await vehicleRepository.findById(vehicleId);
-    if (!vehicle) throw new AppError('Vehicle asset not found', 404);
-
-    const doc = await vehicleRepository.getDocumentById(vehicleId, docId);
-    if (!doc) throw new AppError('Vehicle document not found', 404);
-
-    // If physical file exists, delete it
-    if (doc.storage_path && fs.existsSync(doc.storage_path)) {
-      try {
-        await fs.promises.unlink(doc.storage_path);
-      } catch (err: any) {
-        console.warn(`[VehicleService] Could not unlink document file: ${err.message}`);
-      }
-    }
-
-    await vehicleRepository.deleteDocument(vehicleId, docId);
-
-    await auditService.log({
-      actorId: actorId || undefined,
-      action: 'VEHICLE_DOCUMENT_DELETED',
-      entityType: 'VEHICLE',
-      entityId: vehicleId,
-      details: {
-        documentType: doc.document_type,
-        documentNumber: doc.document_number,
-      },
-      ipAddress,
-    });
-  },
 
   async addMaintenance(vehicleId: string, data: any, actorId?: string, ipAddress?: string): Promise<any> {
     const vehicle = await vehicleRepository.findById(vehicleId);

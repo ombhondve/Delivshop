@@ -37,7 +37,6 @@ import { api } from '../../services/api/endpoints';
 import { Vehicle, VehicleSummary } from '../../types';
 import { AddVehicleModal } from './AddVehicleModal';
 import { EditVehicleModal } from './EditVehicleModal';
-import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
 import { AddMaintenanceModal } from './AddMaintenanceModal';
 import { useNavigation } from '../../context/NavigationContext';
 
@@ -69,22 +68,19 @@ export const VehiclesOverview: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [depotFilter, setDepotFilter] = useState('ALL');
-  const [complianceFilter, setComplianceFilter] = useState('ALL');
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Modals & Action Menus
+  // Modals & Actions
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
-  const [docVehicle, setDocVehicle] = useState<Vehicle | null>(null);
   const [maintVehicle, setMaintVehicle] = useState<Vehicle | null>(null);
   const [statusConfirmVehicle, setStatusConfirmVehicle] = useState<Vehicle | null>(null);
   const [deleteVehicle, setDeleteVehicle] = useState<Vehicle | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
-  const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -92,18 +88,6 @@ export const VehiclesOverview: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Close action menus when clicking outside
-  useEffect(() => {
-    if (!actionMenuOpenId) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.vehicle-action-menu-container')) {
-        setActionMenuOpenId(null);
-      }
-    };
-    window.addEventListener('click', handleOutsideClick);
-    return () => window.removeEventListener('click', handleOutsideClick);
-  }, [actionMenuOpenId]);
 
   // Debounce search term
   useEffect(() => {
@@ -130,18 +114,12 @@ export const VehiclesOverview: React.FC = () => {
     setPage(1);
   };
 
-  const handleComplianceFilterChange = (val: string) => {
-    setComplianceFilter(val);
-    setPage(1);
-  };
-
   const clearAllFilters = () => {
     setSearch('');
     setDebouncedSearch('');
     setStatusFilter('ALL');
     setTypeFilter('ALL');
     setDepotFilter('ALL');
-    setComplianceFilter('ALL');
     setPage(1);
   };
 
@@ -150,10 +128,9 @@ export const VehiclesOverview: React.FC = () => {
       debouncedSearch.trim() !== '' ||
       statusFilter !== 'ALL' ||
       typeFilter !== 'ALL' ||
-      depotFilter !== 'ALL' ||
-      complianceFilter !== 'ALL'
+      depotFilter !== 'ALL'
     );
-  }, [debouncedSearch, statusFilter, typeFilter, depotFilter, complianceFilter]);
+  }, [debouncedSearch, statusFilter, typeFilter, depotFilter]);
 
   // Fetch summary and vehicle list
   const fetchVehicles = useCallback(async () => {
@@ -167,7 +144,6 @@ export const VehiclesOverview: React.FC = () => {
           status: statusFilter !== 'ALL' ? statusFilter : undefined,
           vehicleType: typeFilter !== 'ALL' ? typeFilter : undefined,
           depot: depotFilter !== 'ALL' ? depotFilter : undefined,
-          compliance: complianceFilter !== 'ALL' ? complianceFilter : undefined,
           page,
           limit: pageSize,
         }),
@@ -195,7 +171,7 @@ export const VehiclesOverview: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter, typeFilter, depotFilter, complianceFilter, page, pageSize]);
+  }, [debouncedSearch, statusFilter, typeFilter, depotFilter, page, pageSize]);
 
   useEffect(() => {
     fetchVehicles();
@@ -234,7 +210,6 @@ export const VehiclesOverview: React.FC = () => {
 
   // Quick status toggle with confirmation
   const handleToggleStatus = (v: Vehicle) => {
-    setActionMenuOpenId(null);
     setStatusConfirmVehicle(v);
   };
 
@@ -270,55 +245,6 @@ export const VehiclesOverview: React.FC = () => {
       return <Badge variant="info">ASSIGNED</Badge>;
     }
     return <Badge variant="success">AVAILABLE</Badge>;
-  };
-
-  // Compliance Badge Component
-  const renderComplianceBadge = (v: Vehicle) => {
-    const expiredCount = v.expired_documents_count || 0;
-    const expiringCount = v.expiring_documents_count || 0;
-    const totalDocs = v.total_documents_count || 0;
-
-    if (expiredCount > 0) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <Badge variant="danger" icon={<AlertTriangle size={11} />}>
-            Expired ({expiredCount})
-          </Badge>
-          <span style={{ fontSize: '10.5px', color: 'var(--color-danger)', fontWeight: 500 }}>
-            Mandatory renewal needed
-          </span>
-        </div>
-      );
-    }
-
-    if (expiringCount > 0) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <Badge variant="warning" icon={<Clock size={11} />}>
-            Expiring ({expiringCount})
-          </Badge>
-          {v.nearest_expiry_date && (
-            <span style={{ fontSize: '10.5px', color: '#B45309' }}>
-              Due: {v.nearest_expiry_date}
-            </span>
-          )}
-        </div>
-      );
-    }
-
-    if (totalDocs < 2) {
-      return (
-        <Badge variant="neutral">
-          Missing Docs ({totalDocs}/4)
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge variant="success" icon={<ShieldCheck size={11} />}>
-        Compliant
-      </Badge>
-    );
   };
 
   // Fuel Type Badge
@@ -440,7 +366,7 @@ export const VehiclesOverview: React.FC = () => {
             </div>
           </div>
           <p className="page-desc">
-            Manage commercial vehicles, compliance documents, dispatch availability, and fleet maintenance.
+            Manage commercial vehicles, dispatch availability, and fleet maintenance.
             <span style={{ marginLeft: '10px', color: '#94A3B8', fontSize: '11.5px' }}>
               Last synchronized: {lastSyncTime}
             </span>
@@ -486,13 +412,12 @@ export const VehiclesOverview: React.FC = () => {
           className="metric-card"
           onClick={() => {
             setStatusFilter('ALL');
-            setComplianceFilter('ALL');
             setPage(1);
           }}
           style={{
             cursor: 'pointer',
-            borderColor: statusFilter === 'ALL' && complianceFilter === 'ALL' ? 'var(--color-primary)' : undefined,
-            backgroundColor: statusFilter === 'ALL' && complianceFilter === 'ALL' ? 'var(--color-primary-subtle)' : undefined,
+            borderColor: statusFilter === 'ALL' ? 'var(--color-primary)' : undefined,
+            backgroundColor: statusFilter === 'ALL' ? 'var(--color-primary-subtle)' : undefined,
           }}
           title="Click to view all registered fleet vehicles"
         >
@@ -554,25 +479,25 @@ export const VehiclesOverview: React.FC = () => {
           </div>
         </div>
 
-        {/* 4. Attention Required */}
+        {/* 4. Decommissioned / Inactive */}
         <div
           className="metric-card"
-          onClick={() => handleComplianceFilterChange('ATTENTION_REQUIRED')}
+          onClick={() => handleStatusFilterChange('INACTIVE')}
           style={{
             cursor: 'pointer',
-            borderColor: complianceFilter === 'ATTENTION_REQUIRED' ? 'var(--color-danger)' : undefined,
-            backgroundColor: complianceFilter === 'ATTENTION_REQUIRED' ? 'var(--color-danger-bg)' : undefined,
+            borderColor: statusFilter === 'INACTIVE' ? 'var(--color-danger)' : undefined,
+            backgroundColor: statusFilter === 'INACTIVE' ? 'var(--color-danger-bg)' : undefined,
           }}
-          title="Vehicles with expired or expiring compliance documents"
+          title="Click to filter decommissioned or inactive vehicles"
         >
-          <div className="metric-icon" style={{ backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}>
-            <AlertTriangle size={18} />
+          <div className="metric-icon" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+            <Power size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Attention Req.</span>
-            <span className="metric-value">{summary.attentionRequired || 0}</span>
-            <span className="metric-trend" style={{ color: 'var(--color-danger)' }}>
-              Expired / Expiring docs
+            <span className="metric-title">Decommissioned</span>
+            <span className="metric-value">{summary.inactiveVehicles || 0}</span>
+            <span className="metric-trend" style={{ color: '#DC2626' }}>
+              Off duty / Inactive
             </span>
           </div>
         </div>
@@ -687,24 +612,6 @@ export const VehiclesOverview: React.FC = () => {
             </select>
           </div>
 
-          {/* Document Compliance Filter */}
-          <div className="filter-select-wrapper">
-            <ShieldCheck size={16} className="filter-leading-icon" />
-            <select
-              className="toolbar-select-field"
-              value={complianceFilter}
-              onChange={(e) => handleComplianceFilterChange(e.target.value)}
-              aria-label="Filter by document compliance"
-            >
-              <option value="ALL">All Compliance</option>
-              <option value="COMPLIANT">Fully Compliant</option>
-              <option value="EXPIRING_SOON">Expiring Soon (≤ 30d)</option>
-              <option value="EXPIRED">Expired Documents</option>
-              <option value="MISSING_DOCS">Missing Required Docs</option>
-              <option value="ATTENTION_REQUIRED">Attention Required</option>
-            </select>
-          </div>
-
           {/* Clear Filters Button */}
           {isFiltered && (
             <button
@@ -765,13 +672,12 @@ export const VehiclesOverview: React.FC = () => {
             <table className="business-table">
               <thead>
                 <tr>
-                  <th style={{ width: '220px', minWidth: '200px' }}>Vehicle Asset</th>
-                  <th style={{ width: '190px', minWidth: '175px' }}>Type & Specifications</th>
-                  <th style={{ width: '170px', minWidth: '155px' }}>Depot / Location</th>
-                  <th style={{ width: '120px', minWidth: '110px' }}>Capacity</th>
-                  <th style={{ width: '135px', minWidth: '125px' }}>Operational Status</th>
-                  <th style={{ width: '160px', minWidth: '145px' }}>Compliance</th>
-                  <th style={{ width: '140px', minWidth: '130px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '240px', minWidth: '220px' }}>Vehicle Asset</th>
+                  <th style={{ width: '200px', minWidth: '180px' }}>Type & Specifications</th>
+                  <th style={{ width: '190px', minWidth: '170px' }}>Depot / Location</th>
+                  <th style={{ width: '130px', minWidth: '120px' }}>Capacity</th>
+                  <th style={{ width: '150px', minWidth: '140px' }}>Operational Status</th>
+                  <th style={{ width: '100px', minWidth: '90px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -974,211 +880,32 @@ export const VehiclesOverview: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* 6. Compliance */}
-                    <td style={{ width: '160px', minWidth: '145px' }}>
-                      {renderComplianceBadge(v)}
-                    </td>
-
-                    {/* 7. Actions */}
-                    <td style={{ width: '150px', minWidth: '140px', textAlign: 'right' }}>
-                      <div className="vehicle-action-menu-container" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/admin/vehicles/${v.id}`)}
-                          className="btn btn-secondary btn-table-action"
-                          style={{
-                            height: '28px',
-                            padding: '0 10px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: 'var(--color-primary)',
-                            backgroundColor: 'var(--color-primary-subtle)',
-                            border: '1px solid #6EE7B7',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                          }}
-                          title={`View full details for ${v.registration_number}`}
-                          aria-label={`View full details for ${v.registration_number}`}
-                        >
-                          <Eye size={13} />
-                          <span>Details</span>
-                        </button>
-
-                        {/* Overflow contextual menu toggle */}
-                        <button
-                          type="button"
-                          className="btn-icon-square"
-                          style={{ width: '28px', height: '28px' }}
-                          onClick={() => setActionMenuOpenId(actionMenuOpenId === v.id ? null : v.id)}
-                          title="More actions"
-                          aria-label="More actions"
-                        >
-                          <MoreVertical size={13} />
-                        </button>
-
-                        {/* Standardized Dropdown Menu */}
-                        {actionMenuOpenId === v.id && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              right: 0,
-                              top: '32px',
-                              zIndex: 1050,
-                              backgroundColor: '#FFFFFF',
-                              borderRadius: '8px',
-                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                              border: '1px solid var(--border-color)',
-                              minWidth: '200px',
-                              padding: '6px 0',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionMenuOpenId(null);
-                                navigate(`/admin/vehicles/${v.id}`);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: 'var(--text-primary)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <Eye size={13} style={{ color: 'var(--color-primary)' }} /> View Vehicle Details
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionMenuOpenId(null);
-                                setEditVehicle(v);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: 'var(--text-primary)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <Pencil size={13} style={{ color: 'var(--color-primary)' }} /> Edit Specifications
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionMenuOpenId(null);
-                                setDocVehicle(v);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: 'var(--text-primary)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <FileText size={13} style={{ color: 'var(--color-success)' }} /> Upload Document
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionMenuOpenId(null);
-                                setMaintVehicle(v);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: 'var(--text-primary)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <Wrench size={13} style={{ color: '#D97706' }} /> Log Service Record
-                            </button>
-
-                            <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
-
-                            <button
-                              type="button"
-                              onClick={() => handleToggleStatus(v)}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: v.is_active ? 'var(--color-danger)' : 'var(--color-success)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <Power size={13} />
-                              {v.is_active ? 'Deactivate Vehicle...' : 'Activate Vehicle...'}
-                            </button>
-
-                            <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionMenuOpenId(null);
-                                setDeleteVehicle(v);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: 'var(--color-danger, #DC2626)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <Trash2 size={13} />
-                              Delete Vehicle...
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                    {/* 6. Actions */}
+                    <td style={{ width: '100px', minWidth: '90px', textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/admin/vehicles/${v.id}`)}
+                        className="btn btn-secondary btn-table-action"
+                        style={{
+                          height: '28px',
+                          padding: '0 10px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--color-primary)',
+                          backgroundColor: 'var(--color-primary-subtle)',
+                          border: '1px solid #6EE7B7',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                        }}
+                        title={`View full details for ${v.registration_number}`}
+                        aria-label={`View full details for ${v.registration_number}`}
+                      >
+                        <Eye size={13} />
+                        <span>Details</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -1250,9 +977,6 @@ export const VehiclesOverview: React.FC = () => {
           showToast('Vehicle asset registered to fleet registry');
           fetchVehicles();
         }}
-        onUploadDocumentForVehicle={(v) => {
-          setDocVehicle(v);
-        }}
       />
 
       {/* Edit Vehicle Modal */}
@@ -1264,21 +988,6 @@ export const VehiclesOverview: React.FC = () => {
           onVehicleUpdated={() => {
             showToast('Vehicle asset specifications updated');
             setEditVehicle(null);
-            fetchVehicles();
-          }}
-        />
-      )}
-
-      {/* Add Document Modal */}
-      {docVehicle && (
-        <AddVehicleDocumentModal
-          isOpen={Boolean(docVehicle)}
-          vehicleId={docVehicle.id}
-          registrationNumber={docVehicle.registration_number}
-          onClose={() => setDocVehicle(null)}
-          onDocumentAdded={() => {
-            showToast('Compliance document uploaded & verified');
-            setDocVehicle(null);
             fetchVehicles();
           }}
         />
@@ -1337,7 +1046,7 @@ export const VehiclesOverview: React.FC = () => {
               </p>
             ) : (
               <p style={{ margin: 0 }}>
-                Activating <strong style={{ color: 'var(--text-primary)' }}>{statusConfirmVehicle.registration_number}</strong> will restore its active fleet standing, making it eligible for route allocation once mandatory compliance documents are verified.
+                Activating <strong style={{ color: 'var(--text-primary)' }}>{statusConfirmVehicle.registration_number}</strong> will restore its active fleet standing, making it eligible for route allocation.
               </p>
             )}
           </div>

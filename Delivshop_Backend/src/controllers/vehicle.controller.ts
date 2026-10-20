@@ -106,48 +106,6 @@ export const vehicleController = {
     }
   },
 
-  async upsertDocument(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const doc = await vehicleService.upsertDocument(id, req.body, req.user?.id, req.ip);
-      res.json({
-        success: true,
-        message: 'Vehicle document verified and saved',
-        data: doc,
-      });
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async downloadDocument(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id: vehicleId, docId } = req.params;
-      const { filePath, filename, mimeType } = await vehicleService.downloadDocument(vehicleId, docId);
-
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-
-      res.sendFile(filePath);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async deleteDocument(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id: vehicleId, docId } = req.params;
-      await vehicleService.deleteDocument(vehicleId, docId, req.user?.id, req.ip);
-      res.json({
-        success: true,
-        message: 'Document deleted successfully',
-      });
-    } catch (err) {
-      next(err);
-    }
-  },
 
   async addMaintenance(req: Request, res: Response, next: NextFunction) {
     try {

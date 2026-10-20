@@ -76,28 +76,6 @@ export const updateVehicleStatusSchema = z.object({
   }),
 });
 
-export const upsertVehicleDocumentSchema = z.object({
-  body: z.object({
-    documentType: z.enum([
-      'RC',
-      'INSURANCE',
-      'PUC',
-      'FITNESS',
-      'PERMIT',
-      'TEMPERATURE_CALIBRATION',
-      'OTHER',
-    ]),
-    documentNumber: z.string().trim().min(2, 'Document reference number is required').max(100),
-    issueDate: z.string().optional().nullable(),
-    expiryDate: z.string().optional().nullable(),
-    verificationStatus: z.enum(['VALID', 'EXPIRING', 'EXPIRED', 'PENDING', 'REJECTED']).default('VALID'),
-    fileUrl: z.string().trim().optional().nullable().or(z.literal('')),
-    fileName: z.string().trim().max(255).optional().nullable(),
-    fileData: z.string().optional().nullable(), // Base64 uploaded document
-    mimeType: z.string().trim().optional().nullable(),
-    notes: z.string().trim().max(500).optional().nullable(),
-  }),
-});
 
 export const addVehicleMaintenanceSchema = z.object({
   body: z.object({

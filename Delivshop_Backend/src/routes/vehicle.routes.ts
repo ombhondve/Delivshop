@@ -7,7 +7,6 @@ import {
   createVehicleSchema,
   updateVehicleSchema,
   updateVehicleStatusSchema,
-  upsertVehicleDocumentSchema,
   addVehicleMaintenanceSchema,
   listVehiclesQuerySchema,
 } from '../schemas/vehicle.schema.js';
@@ -98,30 +97,6 @@ router.patch(
   vehicleController.updateStatus
 );
 
-// Upsert/verify vehicle document (supports base64 file upload)
-router.post(
-  '/:id/documents',
-  authenticate,
-  authorizeRoles('ADMIN'),
-  validateRequest(upsertVehicleDocumentSchema),
-  vehicleController.upsertDocument
-);
-
-// Stream authenticated private vehicle document download
-router.get(
-  '/:id/documents/:docId/download',
-  authenticate,
-  authorizeRoles('ADMIN', 'SUPPLIER', 'DRIVER'),
-  vehicleController.downloadDocument
-);
-
-// Delete vehicle document
-router.delete(
-  '/:id/documents/:docId',
-  authenticate,
-  authorizeRoles('ADMIN'),
-  vehicleController.deleteDocument
-);
 
 // Add maintenance service log
 router.post(

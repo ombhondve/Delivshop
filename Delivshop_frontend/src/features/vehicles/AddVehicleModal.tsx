@@ -20,7 +20,6 @@ interface AddVehicleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVehicleCreated: (vehicle: Vehicle) => void;
-  onUploadDocumentForVehicle?: (vehicle: Vehicle) => void;
 }
 
 const INITIAL_FORM_DATA = {
@@ -45,7 +44,6 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
   isOpen,
   onClose,
   onVehicleCreated,
-  onUploadDocumentForVehicle,
 }) => {
   const { navigate } = useNavigation();
   const [loading, setLoading] = useState(false);
@@ -112,18 +110,6 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
       const vId = createdVehicle.id;
       handleResetAndClose();
       navigate(`/admin/vehicles/${vId}`);
-    }
-  };
-
-  const handleUploadDoc = () => {
-    if (createdVehicle) {
-      const v = createdVehicle;
-      handleResetAndClose();
-      if (onUploadDocumentForVehicle) {
-        onUploadDocumentForVehicle(v);
-      } else {
-        navigate(`/admin/vehicles/${v.id}`);
-      }
     }
   };
 
@@ -234,34 +220,8 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
             >
               {createdVehicle.vehicle_code}
             </code>
-            . You may now attach RC book, fitness certificates, and insurance policies.
+            . Specifications and operational profile are now active in the fleet registry.
           </p>
-
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 18px',
-              backgroundColor: 'var(--bg-hover)',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              marginBottom: '8px',
-            }}
-          >
-            <FileText size={18} style={{ color: 'var(--color-primary)' }} />
-            <span style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>
-              Next step: Upload vehicle compliance documents for dispatch clearance.
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleUploadDoc}
-              style={{ padding: '4px 10px', fontSize: '12px' }}
-            >
-              Upload Documents
-            </Button>
-          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
