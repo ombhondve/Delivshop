@@ -31,12 +31,11 @@ export interface CleanupResult {
  * 5. Operates entirely inside a PostgreSQL transaction (automatic ROLLBACK on error).
  */
 export async function cleanDatabase(options: CleanupOptions = {}): Promise<CleanupResult> {
-  const isProduction = ENV.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-  const hasConfirmation = options.confirm || process.env.ALLOW_PRODUCTION_CLEAN === 'true' || process.argv.includes('--confirm');
+  const isExplicitlyAllowed = process.env.ALLOW_DESTRUCTIVE_CLEANUP_EXPLICIT === 'true';
 
-  if (isProduction && !hasConfirmation) {
+  if (!isExplicitlyAllowed) {
     const errorMsg =
-      '[SECURITY ERROR] Destructive database cleanup aborted: Running cleanup in production requires explicit confirmation (--confirm or ALLOW_PRODUCTION_CLEAN=true).';
+      '[DATA PRESERVATION POLICY ENFORCED] Destructive database cleanup aborted: Real business data preservation is active. Running cleanDatabase is disabled by default to protect shops, drivers, products, and orders.';
     logger.error(errorMsg);
     throw new Error(errorMsg);
   }
