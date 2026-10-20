@@ -132,10 +132,10 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             </div>
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Reset Driver Access Password
+                Reset Password
               </h3>
               <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-                {driver.name} • ID: <code style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{driver.employee_id || 'N/A'}</code>
+                {driver.name} ({driver.employee_id || 'N/A'})
               </p>
             </div>
           </div>
@@ -168,10 +168,10 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
               <CheckCircle2 size={30} />
             </div>
             <h4 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
-              Password Reset Successfully!
+              Password Reset
             </h4>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-              Share these updated credentials with <strong>{driver.name}</strong>. The driver will log in with their <strong>Employee ID</strong>.
+              Share these credentials with <strong>{driver.name}</strong>.
             </p>
 
             <div
@@ -185,14 +185,14 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
               }}
             >
               <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
-                Driver Login Identifier:
+                Employee ID:
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '12px' }}>
                 {driver.employee_id}
               </div>
 
               <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
-                New Temporary Password:
+                Temporary Password:
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div
@@ -244,24 +244,10 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
               </div>
             )}
 
-            <div
-              style={{
-                marginBottom: '16px',
-                padding: '10px 12px',
-                backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: '8px',
-                fontSize: '12px',
-                color: '#475569',
-              }}
-            >
-              The driver logs in to the mobile application using their <strong>Employee ID ({driver.employee_id || 'ID'})</strong>.
-            </div>
-
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-                  New Access Password (Min 8 characters)
+                  New Password
                 </label>
                 <button
                   type="button"

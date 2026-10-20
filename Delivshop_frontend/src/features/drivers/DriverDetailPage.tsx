@@ -262,7 +262,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         </p>
         <Button variant="primary" onClick={() => navigate('/admin/drivers')}>
           <ArrowLeft size={16} style={{ marginRight: '8px' }} />
-          Back to Employee Roster
+          Back
         </Button>
       </div>
     );
@@ -294,7 +294,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
           <Button variant="secondary" onClick={() => navigate('/admin/drivers')}>
-            Back to Roster
+            Back
           </Button>
           <Button variant="primary" onClick={fetchDriverProfile}>
             <RefreshCw size={14} style={{ marginRight: '6px' }} />
@@ -375,7 +375,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
           >
             <ArrowLeft size={16} />
-            <span>Back to Roster</span>
+            <span>Back</span>
           </button>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
@@ -406,7 +406,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             onClick={() => setIsEditModalOpen(true)}
             icon={<Pencil size={14} />}
           >
-            Edit Profile
+            Edit
           </Button>
 
           {/* Context Menu Dropdown */}
@@ -504,7 +504,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <Power size={14} />
-                  <span>{driver.is_active ? 'Deactivate Employee' : 'Reactivate Employee'}</span>
+                  <span>{driver.is_active ? 'Deactivate' : 'Activate'}</span>
                 </button>
 
                 <button
@@ -532,7 +532,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <Trash2 size={14} />
-                  <span>Delete Employee</span>
+                  <span>Delete</span>
                 </button>
               </div>
             )}
@@ -540,7 +540,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         </div>
       </div>
 
-      {/* Profile Overview Card (Clean, simplified summary without vehicle assignments or compliance badges) */}
+      {/* Profile Overview Card */}
       <Card style={{ padding: '20px 24px', marginBottom: '22px', border: '1px solid #CBD5E1' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '22px', alignItems: 'center' }}>
           <div
@@ -564,7 +564,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Employee Name
+                Name
               </div>
               <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>
                 {driver.name}
@@ -576,7 +576,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Employee ID & Joining
+                Employee ID
               </div>
               <div style={{ fontSize: '14.5px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-primary, #16805D)', marginTop: '2px' }}>
                 {driver.employee_id || 'N/A'}
@@ -588,7 +588,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Phone Number
+                Phone
               </div>
               <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                 {driver.phone || '—'}
@@ -602,19 +602,16 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Base City & State
+                Location
               </div>
               <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                 {driver.city ? `${driver.city}, ${driver.state || ''}` : driver.state || 'N/A'}
-              </div>
-              <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                {driver.pincode ? `PIN: ${driver.pincode}` : 'Operational Base'}
               </div>
             </div>
 
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Employment Status
+                Status
               </div>
               <div style={{ marginTop: '4px' }}>
                 <Badge variant={driver.is_active ? 'success' : 'danger'}>
@@ -637,10 +634,10 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         }}
       >
         {[
-          { key: 'profile', label: 'Employee Information', icon: User },
-          { key: 'deliveries', label: 'Delivery History & Runs', icon: Package, count: deliveries.length },
-          { key: 'salary', label: 'Salary Management', icon: DollarSign },
-          { key: 'audit', label: 'Activity History', icon: History, count: auditHistory.length },
+          { key: 'profile', label: 'Information', icon: User },
+          { key: 'deliveries', label: 'Delivery History', icon: Package, count: deliveries.length },
+          { key: 'salary', label: 'Salary', icon: DollarSign },
+          { key: 'audit', label: 'Activity', icon: History, count: auditHistory.length },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -689,22 +686,22 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       {/* TAB 1: EMPLOYEE INFORMATION */}
       {activeTab === 'profile' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Section 1: Personal and Contact Information */}
+          {/* Section 1: Information */}
           <Card style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <User size={18} color="var(--color-primary, #16805D)" />
-                1. Personal and Contact Information
+                Information
               </h3>
               <Button variant="secondary" onClick={() => setIsEditModalOpen(true)} icon={<Pencil size={13} />}>
-                Edit Information
+                Edit
               </Button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Full Legal Name
+                  Full Name
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.name}
@@ -713,7 +710,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Primary Phone
+                  Phone
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.phone || '—'}
@@ -722,7 +719,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Alternate Phone
+                  Alt Phone
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.alternate_phone || '—'}
@@ -731,7 +728,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Email Address
+                  Email
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.email || '—'}
@@ -767,12 +764,12 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             </div>
           </Card>
 
-          {/* Section 2: Address and Location */}
+          {/* Section 2: Address */}
           <Card style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <MapPin size={18} color="var(--color-primary, #16805D)" />
-                2. Address and Base Location
+                Address
               </h3>
             </div>
 
@@ -788,7 +785,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  City or Village
+                  City
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.city || '—'}
@@ -806,7 +803,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Postal / PIN Code
+                  PIN Code
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.pincode || '—'}
@@ -815,12 +812,12 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             </div>
           </Card>
 
-          {/* Section 3: Employment Details */}
+          {/* Section 3: Employment */}
           <Card style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Shield size={18} color="var(--color-primary, #16805D)" />
-                3. Employment Details
+                Employment
               </h3>
             </div>
 
@@ -845,7 +842,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Employment Status
+                  Status
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.employment_status || (driver.is_active ? 'Active' : 'Inactive')}
@@ -854,7 +851,7 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
 
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  System Role
+                  Role
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                   {driver.role || 'DRIVER'}
@@ -1565,12 +1562,12 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        title="Delete Employee Record"
+        title="Delete Employee"
         entityType="Employee"
         entityName={driver.name}
         entityIdentifier={driver.employee_id}
         isActive={Boolean(driver.is_active)}
-        customWarning={`Are you sure you want to delete employee "${driver.name}" (${driver.employee_id})? If they have completed deliveries or salary payment records, their profile will be safely archived to preserve financial records.`}
+        customWarning={`Delete this employee? Historical deliveries and salary records will be preserved.`}
         details={[
           { label: 'Employee Name', value: driver.name },
           { label: 'Employee ID', value: driver.employee_id || 'N/A' },

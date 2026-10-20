@@ -107,7 +107,7 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                {formatMonthTitle(monthSummary.salaryMonth)} Payment Transactions
+                {formatMonthTitle(monthSummary.salaryMonth)} Payments
               </h2>
               <Badge
                 variant={
@@ -126,7 +126,7 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
               </Badge>
             </div>
             <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-              Employee: <strong>{driver.name}</strong> ({driver.employee_id})
+              {driver.name} ({driver.employee_id})
             </p>
           </div>
           <button
@@ -187,7 +187,7 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
           >
             <div>
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                Salary Obligation
+                Salary Due
               </div>
               <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
                 {formatCurrency(monthSummary.salaryAmountDue)}
@@ -223,7 +223,7 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
           {/* Transactions List */}
           <div style={{ marginBottom: '16px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 12px 0' }}>
-              Individual Payment Records ({monthSummary.transactions.length})
+              Payments ({monthSummary.transactions.length})
             </h3>
 
             {monthSummary.transactions.length === 0 ? (
@@ -261,9 +261,9 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
                       <th style={{ padding: '10px 14px' }}>Date</th>
                       <th style={{ padding: '10px 14px' }}>Amount</th>
                       <th style={{ padding: '10px 14px' }}>Method</th>
-                      <th style={{ padding: '10px 14px' }}>Reference / Notes</th>
+                      <th style={{ padding: '10px 14px' }}>Reference & Notes</th>
                       <th style={{ padding: '10px 14px' }}>Status</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'right' }}>Action</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -375,13 +375,10 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
                 <ShieldAlert size={20} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div style={{ flex: 1 }}>
                   <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#991B1B' }}>
-                    Reverse Payment of {formatCurrency(reversingPayment.amount)}
+                    Reverse Payment ({formatCurrency(reversingPayment.amount)})
                   </h4>
-                  <p style={{ margin: '4px 0 12px 0', fontSize: '12px', color: '#B91C1C' }}>
-                    Reversing will mark this transaction as cancelled in financial records and restore the outstanding balance. It will NOT be deleted from the audit trail.
-                  </p>
 
-                  <form onSubmit={handleExecuteReversal}>
+                  <form onSubmit={handleExecuteReversal} style={{ marginTop: '12px' }}>
                     <label
                       htmlFor="reversalReason"
                       style={{
@@ -392,13 +389,13 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
                         marginBottom: '4px',
                       }}
                     >
-                      Reversal Reason <span style={{ color: '#DC2626' }}>*</span>
+                      Reason <span style={{ color: '#DC2626' }}>*</span>
                     </label>
                     <textarea
                       id="reversalReason"
                       required
                       rows={2}
-                      placeholder="e.g. Disbursed to wrong bank account, transaction duplicate correction..."
+                      placeholder="Enter reason..."
                       value={reversalReason}
                       onChange={(e) => setReversalReason(e.target.value)}
                       style={{
@@ -428,7 +425,7 @@ export const SalaryBreakdownModal: React.FC<SalaryBreakdownModalProps> = ({
                         variant="danger"
                         disabled={submittingReversal}
                       >
-                        {submittingReversal ? 'Reversing Payment...' : 'Confirm Reversal'}
+                        {submittingReversal ? 'Reversing...' : 'Reverse'}
                       </Button>
                     </div>
                   </form>

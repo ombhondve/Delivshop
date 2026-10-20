@@ -335,7 +335,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
           >
             <ArrowLeft size={16} />
-            <span>Back to Fleet Vehicles</span>
+            <span>Back</span>
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -346,7 +346,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           </div>
         </div>
 
-        {/* Action Controls: Edit Profile and Actions Dropdown (OUTSIDE the bordered card) */}
+        {/* Action Controls: Edit and Actions Dropdown (OUTSIDE the bordered card) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
@@ -378,7 +378,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             onClick={() => setIsEditModalOpen(true)}
             icon={<Pencil size={14} />}
           >
-            Edit Profile
+            Edit
           </Button>
 
           {/* Context Menu Dropdown */}
@@ -454,7 +454,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <Power size={14} />
-                  <span>{vehicle?.is_active ? 'Deactivate Vehicle' : 'Activate Vehicle'}</span>
+                  <span>{vehicle?.is_active ? 'Deactivate' : 'Activate'}</span>
                 </button>
 
                 <div style={{ height: '1px', backgroundColor: '#E2E8F0', margin: '4px 0' }} />
@@ -484,7 +484,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <Trash2 size={14} />
-                  <span>Delete Vehicle</span>
+                  <span>Delete</span>
                 </button>
               </div>
             )}
@@ -514,7 +514,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Asset Identifier
+                Asset ID
               </div>
               <div style={{ marginTop: '2px' }}>
                 <code
@@ -545,19 +545,19 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 {vehicle?.make_model}
               </div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>
-                {vehicle?.fuel_type} Powertrain
+                {vehicle?.fuel_type}
               </div>
             </div>
 
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Vehicle Classification
+                Classification
               </div>
               <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                 {vehicle?.vehicle_type}
               </div>
               <div style={{ fontSize: '12px', color: vehicle?.is_refrigerated ? '#0284C7' : '#64748B' }}>
-                {vehicle?.is_refrigerated ? 'Active Cold-Chain Chiller' : 'Ambient Dry Cargo'}
+                {vehicle?.is_refrigerated ? 'Refrigerated' : 'Ambient'}
               </div>
             </div>
 
@@ -568,14 +568,11 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                 {vehicle?.depot || 'Not specified'}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B' }}>
-                Base Operating Depot
-              </div>
             </div>
 
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Fleet Status
+                Status
               </div>
               <div style={{ marginTop: '4px' }}>
                 {vehicle && getStatusBadge(vehicle.status, vehicle.is_active)}
@@ -831,25 +828,25 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             whiteSpace: 'nowrap',
           }}
         >
-          Runs History ({vehicle?.assignments?.length || 0})
+          Runs ({vehicle?.assignments?.length || 0})
         </button>
       </div>
 
       {/* Tab 1: Overview & Specs */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-          <Card title="Vehicle Specifications & Technical Profile" noPadding>
+          <Card title="Specifications" noPadding>
             <div style={{ padding: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '18px' }}>
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Registration Number:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Registration:</span>
                   <span style={{ fontSize: '15px', fontWeight: 800, color: '#1F2937' }}>
                     {vehicle?.registration_number}
                   </span>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Asset Identifier:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Asset ID:</span>
                   <span style={{ fontSize: '14px', fontWeight: 700, color: '#0369A1', fontFamily: 'monospace' }}>
                     {vehicle?.vehicle_code}
                   </span>
@@ -863,37 +860,37 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Vehicle Classification:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Classification:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.vehicle_type}
                   </span>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Fuel / Propulsion Type:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Fuel Type:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.fuel_type}
                   </span>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Refrigeration Chiller:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Refrigeration:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: vehicle?.is_refrigerated ? '#0284C7' : '#64748B' }}>
                     {vehicle?.is_refrigerated
                       ? `Active Chiller (${vehicle.temperature_min_c ?? -18}°C to ${vehicle.temperature_max_c ?? 4}°C)`
-                      : 'No (Ambient Dry Cargo)'}
+                      : 'Ambient'}
                   </span>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Payload Capacity:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Payload:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {Number(vehicle?.capacity_kg || 0).toLocaleString('en-IN')} KG
                   </span>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Current Odometer:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Odometer:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {Number(vehicle?.current_odometer_km || 0).toLocaleString('en-IN')} KM
                   </span>
@@ -907,7 +904,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Registered Timestamp:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Registered:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {formatDate(vehicle?.created_at || '')}
                   </span>
@@ -917,7 +914,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
               {vehicle?.notes && (
                 <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #D6D3C8' }}>
                   <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', display: 'block', marginBottom: '4px' }}>
-                    Operational & Maintenance Remarks:
+                    Notes:
                   </span>
                   <p style={{ fontSize: '13px', color: '#334155', margin: 0, backgroundColor: '#F8FAFC', padding: '10px 14px', borderRadius: '6px' }}>
                     {vehicle.notes}
@@ -927,7 +924,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             </div>
           </Card>
 
-          <Card title="Current Dispatch Status" noPadding>
+          <Card title="Status" noPadding>
             <div style={{ padding: '20px' }}>
               {vehicle?.active_run_code ? (
                 <div>
@@ -1293,8 +1290,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <Modal
               isOpen={confirmStatusToggleOpen}
               onClose={() => setConfirmStatusToggleOpen(false)}
-              title={vehicle.is_active ? 'Deactivate Vehicle Asset?' : 'Activate Vehicle Asset?'}
-              subtitle={`Operational status confirmation for ${vehicle.registration_number}`}
+              title={vehicle.is_active ? 'Deactivate Vehicle?' : 'Activate Vehicle?'}
               icon={<Power size={20} />}
               size="sm"
               footer={
@@ -1313,21 +1309,13 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                     onClick={handleStatusToggle}
                     loading={statusUpdating}
                   >
-                    {vehicle.is_active ? 'Confirm Deactivation' : 'Confirm Activation'}
+                    {vehicle.is_active ? 'Deactivate' : 'Activate'}
                   </Button>
                 </div>
               }
             >
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {vehicle.is_active ? (
-                  <>
-                    Deactivating <strong style={{ color: 'var(--text-primary)' }}>{vehicle.registration_number}</strong> will mark it as decommissioned and prevent it from being allocated to any new delivery runs.
-                  </>
-                ) : (
-                  <>
-                    Activating <strong style={{ color: 'var(--text-primary)' }}>{vehicle.registration_number}</strong> will restore its active fleet standing, making it eligible for dispatch assignment.
-                  </>
-                )}
+                {vehicle.is_active ? 'Deactivate this vehicle?' : 'Activate this vehicle?'}
               </p>
             </Modal>
           )}
@@ -1337,7 +1325,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             <DeleteConfirmModal
               isOpen={isDeleteModalOpen}
               onClose={() => setIsDeleteModalOpen(false)}
-              title="Delete Vehicle Asset"
+              title="Delete Vehicle"
               entityType="Vehicle"
               entityName={vehicle.registration_number}
               entityIdentifier={vehicle.vehicle_code}

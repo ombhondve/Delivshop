@@ -339,7 +339,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary, #0F172A)', margin: 0 }}>
-                  Add New Driver
+                  Add Driver
                 </h3>
                 {/* Auto-Generated Employee ID displayed in Top-Left, Read-Only */}
                 <div
@@ -367,9 +367,6 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   <span>{isGeneratingId ? 'Generating...' : generatedEmpId || formData.employeeId || 'EMP-AUTO'}</span>
                 </div>
               </div>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 0' }}>
-                Register driver identity, location, and KYC credentials without vehicle allocation.
-              </p>
             </div>
           </div>
           <button
@@ -407,10 +404,10 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               <CheckCircle2 color="var(--color-success, #16805D)" size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
                 <h4 style={{ color: '#065F46', fontWeight: 700, fontSize: '15px', margin: 0 }}>
-                  {createdDriver.name} is now onboarded!
+                  {createdDriver.name} added
                 </h4>
                 <p style={{ color: '#047857', fontSize: '13px', margin: '4px 0 0 0' }}>
-                  The driver profile has been created in PostgreSQL with an authoritative Employee ID and login account.
+                  Driver profile created successfully.
                 </p>
               </div>
             </div>
@@ -533,7 +530,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   <span style={{ fontWeight: 600, color: '#1E293B' }}>{createdDriver.name}</span>
                 </div>
                 <div>
-                  <span style={{ color: '#64748B' }}>Primary Phone: </span>
+                  <span style={{ color: '#64748B' }}>Phone: </span>
                   <span style={{ fontWeight: 600, color: '#1E293B' }}>{createdDriver.phone}</span>
                 </div>
                 <div>
@@ -543,22 +540,22 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span style={{ color: '#64748B' }}>Vehicle Allocation: </span>
-                  <span style={{ fontWeight: 600, color: '#D97706' }}>Unassigned (Separate Module)</span>
+                  <span style={{ color: '#64748B' }}>Vehicle: </span>
+                  <span style={{ fontWeight: 600, color: '#D97706' }}>Unassigned</span>
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <Button variant="secondary" onClick={handleResetAndClose}>
-                Done / Back to Roster
+                Done
               </Button>
               <Button
                 variant="primary"
                 onClick={handleOpenDetails}
                 icon={<ExternalLink size={15} />}
               >
-                Open Full Driver Profile
+                View Details
               </Button>
             </div>
           </div>
@@ -585,28 +582,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </div>
             )}
 
-            {/* Note separating driver onboarding from vehicles/assignments */}
-            <div
-              style={{
-                marginBottom: '18px',
-                padding: '10px 14px',
-                backgroundColor: '#D1FAE5',
-                border: '1px solid #6EE7B7',
-                borderRadius: '8px',
-                fontSize: '12px',
-                color: '#065F46',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <Sparkles size={16} color="#059669" />
-              <span>
-                <strong>Independent Onboarding:</strong> Vehicle allocations and route dispatches are managed separately under the <strong>Assignments</strong> section. Drivers can be onboarded without vehicle or fleet requirements.
-              </span>
-            </div>
-
-            {/* Section 1: Personal & Contact Information (Date of Birth removed) */}
+            {/* Section 1: Personal Details */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -621,12 +597,12 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   gap: '6px',
                 }}
               >
-                <User size={15} /> 1. Personal & Contact Information
+                <User size={15} /> Personal Details
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Driver Full Name <span style={{ color: '#EF4444' }}>*</span>
+                    Full Name <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -648,12 +624,12 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Primary Phone Number <span style={{ color: '#EF4444' }}>*</span>
+                    Phone <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. +91 98234 11223"
+                    placeholder="e.g. 9823411223"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     style={{
@@ -670,11 +646,11 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Alternate / WhatsApp Phone
+                    Alt Phone
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. +91 98234 55667"
+                    placeholder="e.g. 9823455667"
                     value={formData.alternatePhone || ''}
                     onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
                     style={{
@@ -691,11 +667,11 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Email Address (Optional)
+                    Email
                   </label>
                   <input
                     type="email"
-                    placeholder="e.g. ramesh.kumar@delivshop.com"
+                    placeholder="e.g. ramesh@delivshop.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     style={{
@@ -736,7 +712,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </div>
             </div>
 
-            {/* Section 2: Residential Address & Geographic Location (State and City/Village searchable combobox) */}
+            {/* Section 2: Address */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -751,16 +727,16 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   gap: '6px',
                 }}
               >
-                <MapPin size={15} /> 2. Residential Address & Geographic Location
+                <MapPin size={15} /> Address
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Street Address & Flat / House No.
+                    Address
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Flat 302, Green Meadows, Katraj-Kondhwa Road"
+                    placeholder="Enter street address"
                     value={formData.address || ''}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     style={{
@@ -781,27 +757,26 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     id="driver-state-autocomplete"
                     label="State"
                     required
-                    placeholder="Search or select state (e.g. Maharashtra)..."
+                    placeholder="Search or select state..."
                     value={formData.state || ''}
                     onChange={handleStateChange}
                     onSelect={(opt) => handleStateSelect(opt.value)}
                     options={stateOptions}
                     error={locationErrors.state}
-                    hint="Select state first to enable city/village"
                   />
                 </div>
 
-                {/* City / Village: Searchable & Selectable Dropdown, Disabled until State is selected */}
+                {/* City: Searchable & Selectable Dropdown */}
                 <div>
                   <AutocompleteInput
                     id="driver-city-autocomplete"
-                    label="City / Village"
+                    label="City"
                     required
                     disabled={!formData.state || !formData.state.trim()}
                     placeholder={
                       !formData.state || !formData.state.trim()
-                        ? 'Select state above first...'
-                        : 'Search or type city/village...'
+                        ? 'Select state first...'
+                        : 'Search or type city...'
                     }
                     value={formData.city || ''}
                     onChange={(val) => {
@@ -814,17 +789,12 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                     }}
                     options={cityOptions}
                     error={locationErrors.city}
-                    hint={
-                      !formData.state || !formData.state.trim()
-                        ? 'Requires state selection first'
-                        : `${cityOptions.length} suggested locations in ${formData.state}`
-                    }
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Pincode
+                    PIN Code
                   </label>
                   <input
                     type="text"
@@ -845,7 +815,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               </div>
             </div>
 
-            {/* Section 3: Employment Identity (Employee ID is read-only) */}
+            {/* Section 3: Employment */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -860,7 +830,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   gap: '6px',
                 }}
               >
-                <Shield size={15} /> 3. Employment Identity & Status
+                <Shield size={15} /> Employment
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 <div>
@@ -888,16 +858,12 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       userSelect: 'none',
                       cursor: 'not-allowed',
                     }}
-                    title="Auto-generated unique Driver Employee ID cannot be edited manually"
                   >
                     <span>{generatedEmpId || formData.employeeId || 'EMP-AUTO'}</span>
                     <span style={{ fontSize: '10px', fontWeight: 600, color: '#16805D', backgroundColor: '#E6F4EA', padding: '2px 6px', borderRadius: '4px' }}>
                       AUTO
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginTop: '3px' }}>
-                    System-generated sequential ID according to Delivshop standards.
-                  </span>
                 </div>
 
                 <div>
@@ -922,7 +888,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Employment Status
+                    Status
                   </label>
                   <select
                     value={formData.employmentStatus || 'ACTIVE'}
@@ -938,15 +904,15 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       outline: 'none',
                     }}
                   >
-                    <option value="ACTIVE">Active (Full-Time)</option>
-                    <option value="PROBATION">Probationary</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="PROBATION">Probation</option>
                     <option value="ON_LEAVE">On Leave</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Section 4: Driving License & KYC Verification */}
+            {/* Section 4: License & KYC */}
             <div style={{ marginBottom: '20px' }}>
               <h4
                 style={{
@@ -961,12 +927,12 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   gap: '6px',
                 }}
               >
-                <FileText size={15} /> 4. Driving License & KYC Verification
+                <FileText size={15} /> License & KYC
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Commercial Driving License No.
+                    License Number
                   </label>
                   <input
                     type="text"
@@ -987,7 +953,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    License Validity Expiry Date
+                    License Expiry
                   </label>
                   <input
                     type="date"
@@ -1007,7 +973,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    License Authorization Class
+                    License Class
                   </label>
                   <select
                     value={formData.licenseClass || 'LMV-TR'}
@@ -1023,10 +989,10 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                       outline: 'none',
                     }}
                   >
-                    <option value="LMV">LMV (Light Motor Vehicle)</option>
-                    <option value="LMV-TR">LMV-TR (Commercial Transport)</option>
-                    <option value="HMV">HMV (Heavy Motor Vehicle)</option>
-                    <option value="MCWG">MCWG (Motor Cycle with Gear)</option>
+                    <option value="LMV">LMV</option>
+                    <option value="LMV-TR">LMV-TR</option>
+                    <option value="HMV">HMV</option>
+                    <option value="MCWG">MCWG</option>
                   </select>
                 </div>
               </div>
@@ -1047,12 +1013,12 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                   gap: '6px',
                 }}
               >
-                <Phone size={15} /> 5. Emergency Contact (Next of Kin)
+                <Phone size={15} /> Emergency Contact
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Contact Name
+                    Name
                   </label>
                   <input
                     type="text"
@@ -1073,11 +1039,11 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Emergency Phone
+                    Phone
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. +91 98222 00000"
+                    placeholder="e.g. 9822200000"
                     value={formData.emergencyContactPhone || ''}
                     onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
                     style={{
@@ -1094,11 +1060,11 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Relationship
+                    Relation
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Spouse / Brother / Father"
+                    placeholder="e.g. Spouse"
                     value={formData.emergencyContactRelation || ''}
                     onChange={(e) => setFormData({ ...formData, emergencyContactRelation: e.target.value })}
                     style={{
@@ -1114,7 +1080,6 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 </div>
               </div>
             </div>
-            {/* Note: Section 6 'Driver Mobile App Credentials' has been completely removed as requested */}
           </form>
         )}
 
@@ -1134,7 +1099,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
               Cancel
             </Button>
             <Button variant="primary" onClick={handleSubmit} disabled={loading} icon={<CheckCircle2 size={16} />}>
-              {loading ? 'Registering Driver...' : 'Save & Onboard Driver'}
+              {loading ? 'Adding Driver...' : 'Add Driver'}
             </Button>
           </div>
         )}

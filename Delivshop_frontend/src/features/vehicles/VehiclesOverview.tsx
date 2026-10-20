@@ -345,32 +345,7 @@ export const VehiclesOverview: React.FC = () => {
       {/* 1. Page Header */}
       <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 className="page-title">Fleet & Vehicles Management</h1>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '2px 8px',
-                backgroundColor: 'var(--color-success-bg)',
-                border: '1px solid #BBF7D0',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--color-success)',
-              }}
-            >
-              <Radio size={11} className="spin-icon" />
-              <span>Live Database</span>
-            </div>
-          </div>
-          <p className="page-desc">
-            Manage commercial vehicles, dispatch availability, and fleet maintenance.
-            <span style={{ marginLeft: '10px', color: '#94A3B8', fontSize: '11.5px' }}>
-              Last synchronized: {lastSyncTime}
-            </span>
-          </p>
+          <h1 className="page-title">Vehicles</h1>
         </div>
 
         <div className="page-header-actions">
@@ -400,7 +375,7 @@ export const VehiclesOverview: React.FC = () => {
             onClick={() => setIsAddModalOpen(true)}
             icon={<Plus size={16} />}
           >
-            Register Vehicle
+            Add Vehicle
           </Button>
         </div>
       </div>
@@ -425,10 +400,10 @@ export const VehiclesOverview: React.FC = () => {
             <Truck size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Total Vehicles</span>
+            <span className="metric-title">Total</span>
             <span className="metric-value">{summary.totalVehicles || 0}</span>
             <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
-              {summary.activeVehicles || 0} active in fleet
+              {summary.activeVehicles || 0} active
             </span>
           </div>
         </div>
@@ -451,7 +426,7 @@ export const VehiclesOverview: React.FC = () => {
             <span className="metric-title">Available</span>
             <span className="metric-value">{summary.availableVehicles || 0}</span>
             <span className="metric-trend" style={{ color: 'var(--color-success)' }}>
-              Ready for dispatch
+              Ready
             </span>
           </div>
         </div>
@@ -471,10 +446,10 @@ export const VehiclesOverview: React.FC = () => {
             <Wrench size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">In Maintenance</span>
+            <span className="metric-title">Maintenance</span>
             <span className="metric-value">{summary.underMaintenanceVehicles || 0}</span>
             <span className="metric-trend" style={{ color: '#B45309' }}>
-              Under inspection / repairs
+              In workshop
             </span>
           </div>
         </div>
@@ -494,10 +469,10 @@ export const VehiclesOverview: React.FC = () => {
             <Power size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Decommissioned</span>
+            <span className="metric-title">Inactive</span>
             <span className="metric-value">{summary.inactiveVehicles || 0}</span>
             <span className="metric-trend" style={{ color: '#DC2626' }}>
-              Off duty / Inactive
+              Off duty
             </span>
           </div>
         </div>
@@ -511,7 +486,7 @@ export const VehiclesOverview: React.FC = () => {
             <input
               type="text"
               className="toolbar-search-input"
-              placeholder="Search registration, vehicle ID, make/model, driver, depot..."
+              placeholder="Search vehicles..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search vehicles"
@@ -628,10 +603,9 @@ export const VehiclesOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Commercial Fleet Registry Table Card */}
+      {/* 4. Vehicles Table Card */}
       <Card
-        title="Commercial Fleet Registry"
-        subtitle={`Showing ${vehicles.length} of ${totalCount} fleet vehicles retrieved from central PostgreSQL database`}
+        title="Vehicles"
         noPadding
       >
         {loading && vehicles.length === 0 ? (
@@ -663,7 +637,7 @@ export const VehiclesOverview: React.FC = () => {
               </Button>
             ) : (
               <Button variant="primary" onClick={() => setIsAddModalOpen(true)} icon={<Plus size={15} />}>
-                Register Vehicle
+                Add Vehicle
               </Button>
             )}
           </div>
@@ -672,11 +646,11 @@ export const VehiclesOverview: React.FC = () => {
             <table className="business-table">
               <thead>
                 <tr>
-                  <th style={{ width: '240px', minWidth: '220px' }}>Vehicle Asset</th>
-                  <th style={{ width: '200px', minWidth: '180px' }}>Type & Specifications</th>
-                  <th style={{ width: '190px', minWidth: '170px' }}>Depot / Location</th>
-                  <th style={{ width: '130px', minWidth: '120px' }}>Capacity</th>
-                  <th style={{ width: '150px', minWidth: '140px' }}>Operational Status</th>
+                  <th style={{ width: '240px', minWidth: '220px' }}>Vehicle</th>
+                  <th style={{ width: '200px', minWidth: '180px' }}>Type</th>
+                  <th style={{ width: '190px', minWidth: '170px' }}>Location</th>
+                  <th style={{ width: '130px', minWidth: '120px' }}>Payload</th>
+                  <th style={{ width: '150px', minWidth: '140px' }}>Status</th>
                   <th style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -1075,8 +1049,7 @@ export const VehiclesOverview: React.FC = () => {
         <Modal
           isOpen={Boolean(statusConfirmVehicle)}
           onClose={() => setStatusConfirmVehicle(null)}
-          title={statusConfirmVehicle.is_active ? 'Deactivate Vehicle Asset?' : 'Activate Vehicle Asset?'}
-          subtitle={`Operational status confirmation for ${statusConfirmVehicle.registration_number} (${statusConfirmVehicle.vehicle_code})`}
+          title={statusConfirmVehicle.is_active ? 'Deactivate Vehicle?' : 'Activate Vehicle?'}
           icon={<Power size={20} />}
           size="sm"
           footer={
@@ -1095,21 +1068,15 @@ export const VehiclesOverview: React.FC = () => {
                 onClick={handleConfirmStatusChange}
                 loading={statusUpdating}
               >
-                {statusConfirmVehicle.is_active ? 'Confirm Deactivation' : 'Confirm Activation'}
+                {statusConfirmVehicle.is_active ? 'Deactivate' : 'Activate'}
               </Button>
             </div>
           }
         >
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            {statusConfirmVehicle.is_active ? (
-              <p style={{ margin: 0 }}>
-                Deactivating <strong style={{ color: 'var(--text-primary)' }}>{statusConfirmVehicle.registration_number}</strong> will mark it as unavailable and immediately prevent new delivery runs from being dispatched with it.
-              </p>
-            ) : (
-              <p style={{ margin: 0 }}>
-                Activating <strong style={{ color: 'var(--text-primary)' }}>{statusConfirmVehicle.registration_number}</strong> will restore its active fleet standing, making it eligible for route allocation.
-              </p>
-            )}
+            <p style={{ margin: 0 }}>
+              {statusConfirmVehicle.is_active ? 'Deactivate this vehicle?' : 'Activate this vehicle?'}
+            </p>
           </div>
         </Modal>
       )}
@@ -1119,7 +1086,7 @@ export const VehiclesOverview: React.FC = () => {
         <DeleteConfirmModal
           isOpen={Boolean(deleteVehicle)}
           onClose={() => setDeleteVehicle(null)}
-          title="Delete Vehicle Asset"
+          title="Delete Vehicle"
           entityType="Vehicle"
           entityName={deleteVehicle.registration_number}
           entityIdentifier={deleteVehicle.vehicle_code}

@@ -117,8 +117,7 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Vehicle Asset"
-      subtitle={`Update fleet asset specifications for ${vehicle.registration_number} (${vehicle.vehicle_code})`}
+      title="Edit Vehicle"
       icon={<Truck size={20} />}
       size="lg"
       footer={
@@ -140,7 +139,7 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
             loading={loading}
             icon={<Save size={16} />}
           >
-            Save Vehicle Specifications
+            Save
           </Button>
         </div>
       }
@@ -153,18 +152,18 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
       )}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Section 1: Basic Information */}
+        {/* Section 1: Vehicle Information */}
         <div className="form-section">
           <div className="form-section-header">
             <span className="form-section-icon">
               <Truck size={13} />
             </span>
-            <span>Asset Identification & Classification</span>
+            <span>Vehicle Information</span>
           </div>
 
           <div className="form-grid-3">
             <div className="form-group">
-              <label className="form-label required">Registration Number</label>
+              <label className="form-label required">Registration</label>
               <input
                 type="text"
                 className="input-field"
@@ -173,7 +172,6 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value.toUpperCase() })}
                 required
               />
-              <span className="form-text-hint">RTO registration code (auto-uppercased)</span>
             </div>
 
             <div className="form-group">
@@ -181,12 +179,11 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
               <input
                 type="text"
                 className="input-field"
-                placeholder="e.g. Tata Ace Gold EV or Bolero Maxi"
+                placeholder="e.g. Tata Ace Gold"
                 value={formData.makeModel}
                 onChange={(e) => setFormData({ ...formData, makeModel: e.target.value })}
                 required
               />
-              <span className="form-text-hint">Manufacturer & chassis variant</span>
             </div>
 
             <div className="form-group">
@@ -202,23 +199,22 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                 <option value="Refrigerated Milk Tanker">Refrigerated Milk Tanker</option>
                 <option value="Heavy Commercial Chiller (3 Ton)">Heavy Commercial Chiller (3 Ton)</option>
               </select>
-              <span className="form-text-hint">Fleet route categorization</span>
             </div>
           </div>
         </div>
 
-        {/* Section 2: Capacity & Cold-Chain Controls */}
+        {/* Section 2: Capacity & Specifications */}
         <div className="form-section">
           <div className="form-section-header">
             <span className="form-section-icon">
               <Thermometer size={13} />
             </span>
-            <span>Capacity & Cold-Chain Controls</span>
+            <span>Capacity & Specifications</span>
           </div>
 
           <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label required">Payload Limit (KG)</label>
+              <label className="form-label required">Payload (KG)</label>
               <input
                 type="number"
                 className="input-field"
@@ -229,11 +225,10 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, capacityKg: Number(e.target.value) })}
                 required
               />
-              <span className="form-text-hint">Maximum gross cargo weight</span>
             </div>
 
             <div className="form-group">
-              <label className="form-label required">Fuel / Propulsion Type</label>
+              <label className="form-label required">Fuel Type</label>
               <select
                 className="input-field"
                 value={formData.fuelType}
@@ -244,7 +239,6 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                 <option value="CNG">Compressed Natural Gas (CNG)</option>
                 <option value="PETROL">Petrol</option>
               </select>
-              <span className="form-text-hint">Propulsion powertrain</span>
             </div>
           </div>
 
@@ -259,11 +253,8 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
               />
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>
-                  Cold-Chain Chiller Unit Installed
+                  Refrigerated Chiller Installed
                 </span>
-                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                  Enables dispatch eligibility for temperature-sensitive dairy deliveries (milk pouches, curd, paneer, and butter)
-                </p>
               </div>
             </label>
 
@@ -280,7 +271,7 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
               >
                 <div className="form-group">
                   <label className="form-label" style={{ color: 'var(--color-primary)' }}>
-                    Min Target Temp (°C)
+                    Min Temp (°C)
                   </label>
                   <input
                     type="number"
@@ -289,11 +280,10 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                     value={formData.temperatureMinC}
                     onChange={(e) => setFormData({ ...formData, temperatureMinC: Number(e.target.value) })}
                   />
-                  <span className="form-text-hint">Freezer floor limit (e.g. -18°C)</span>
                 </div>
                 <div className="form-group">
                   <label className="form-label" style={{ color: 'var(--color-primary)' }}>
-                    Max Target Temp (°C)
+                    Max Temp (°C)
                   </label>
                   <input
                     type="number"
@@ -302,20 +292,19 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                     value={formData.temperatureMaxC}
                     onChange={(e) => setFormData({ ...formData, temperatureMaxC: Number(e.target.value) })}
                   />
-                  <span className="form-text-hint">Chiller ceiling limit (e.g. 4°C)</span>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Section 3: Depot, Odometer & Status */}
+        {/* Section 3: Location & Operations */}
         <div className="form-section">
           <div className="form-section-header">
             <span className="form-section-icon">
               <ShieldCheck size={13} />
             </span>
-            <span>Deployment & Operational Status</span>
+            <span>Location & Operations</span>
           </div>
 
           <div className="form-grid-3">
@@ -324,15 +313,14 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
               <input
                 type="text"
                 className="input-field"
-                placeholder="Enter depot name, town, or address"
+                placeholder="Enter location"
                 value={formData.depot}
                 onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
               />
-              <span className="form-text-hint">Depot, facility, or operating area</span>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Current Odometer (KM)</label>
+              <label className="form-label">Odometer (KM)</label>
               <input
                 type="number"
                 className="input-field"
@@ -343,26 +331,26 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label required">Fleet Status</label>
+              <label className="form-label required">Status</label>
               <select
                 className="input-field"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
               >
-                <option value="AVAILABLE">Available for Run</option>
-                <option value="ASSIGNED">Assigned to Run</option>
-                <option value="UNDER_MAINTENANCE">Under Workshop Inspection</option>
-                <option value="INACTIVE">Decommissioned / Inactive</option>
+                <option value="AVAILABLE">Available</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="UNDER_MAINTENANCE">Maintenance</option>
+                <option value="INACTIVE">Inactive</option>
               </select>
             </div>
           </div>
 
           <div className="form-group" style={{ marginTop: '4px' }}>
-            <label className="form-label">Operational Notes & Remarks</label>
+            <label className="form-label">Notes</label>
             <textarea
               className="input-field"
               rows={2}
-              placeholder="Optional vehicle remarks, maintenance instructions, telemetry device IDs..."
+              placeholder="Enter notes..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />

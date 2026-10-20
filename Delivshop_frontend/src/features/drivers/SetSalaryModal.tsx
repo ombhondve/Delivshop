@@ -123,11 +123,8 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
             </div>
             <div>
               <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                {isRevision ? 'Revise Monthly Salary' : 'Set Monthly Salary'}
+                {isRevision ? 'Revise Salary' : 'Set Salary'}
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-                Configure base agreed compensation with effective date
-              </p>
             </div>
           </div>
           <button
@@ -270,12 +267,9 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
                   onBlur={(e) => (e.target.style.borderColor = '#CBD5E1')}
                 />
               </div>
-              <p style={{ fontSize: '11.5px', color: '#64748B', margin: '4px 0 0 0' }}>
-                Agreed base monthly compensation in Indian Rupees.
-              </p>
             </div>
 
-            {/* Field 3: Effective From Date */}
+            {/* Field 3: Effective Date */}
             <div>
               <label
                 htmlFor="effectiveFrom"
@@ -287,7 +281,7 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
                   marginBottom: '6px',
                 }}
               >
-                Effective From Date <span style={{ color: '#DC2626' }}>*</span>
+                Effective Date <span style={{ color: '#DC2626' }}>*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -311,9 +305,6 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
                   onBlur={(e) => (e.target.style.borderColor = '#CBD5E1')}
                 />
               </div>
-              <p style={{ fontSize: '11.5px', color: '#64748B', margin: '4px 0 0 0' }}>
-                The date this salary rate becomes applicable. Historical salary rates and dates are preserved.
-              </p>
             </div>
 
             {/* Field 4: Salary Type (Read-only) */}
@@ -347,7 +338,7 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
               />
             </div>
 
-            {/* Field 5: Notes (Optional) */}
+            {/* Field 5: Notes */}
             <div>
               <label
                 htmlFor="salaryNotes"
@@ -359,12 +350,12 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
                   marginBottom: '6px',
                 }}
               >
-                Notes <span style={{ color: '#94A3B8', fontWeight: 400 }}>(Optional)</span>
+                Notes
               </label>
               <textarea
                 id="salaryNotes"
                 rows={2}
-                placeholder="e.g. Annual appraisal adjustment, revised contract terms..."
+                placeholder="Enter notes..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 style={{
@@ -399,7 +390,7 @@ export const SetSalaryModal: React.FC<SetSalaryModalProps> = ({
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={submitting}>
-              {submitting ? 'Saving Configuration...' : isRevision ? 'Apply Salary Revision' : 'Save Monthly Salary'}
+              {submitting ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </form>

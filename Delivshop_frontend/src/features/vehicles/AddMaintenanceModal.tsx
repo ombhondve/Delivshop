@@ -103,8 +103,7 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Record Fleet Maintenance"
-      subtitle={`Service log entry for ${registrationNumber} (Current Odo: ${Number(currentOdometerKm || 0).toLocaleString('en-IN')} KM)`}
+      title="Add Maintenance"
       icon={<Wrench size={20} />}
       size="md"
       footer={
@@ -126,7 +125,7 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
             loading={loading}
             icon={<PlusCircle size={16} />}
           >
-            Record Maintenance Log
+            Save
           </Button>
         </div>
       }
@@ -141,7 +140,7 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="form-grid-2">
           <div className="form-group">
-            <label className="form-label required">Service Date</label>
+            <label className="form-label required">Date</label>
             <input
               type="date"
               className="input-field"
@@ -152,7 +151,7 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label required">Odometer at Service (KM)</label>
+            <label className="form-label required">Odometer (KM)</label>
             <input
               type="number"
               min="0"
@@ -161,12 +160,11 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
               value={formData.odometerKm}
               onChange={(e) => setFormData({ ...formData, odometerKm: Number(e.target.value) })}
             />
-            <span className="form-text-hint">Vehicle mileage reading</span>
           </div>
         </div>
 
         <div className="form-group">
-          <label className="form-label required">Service Category & Work Nature</label>
+          <label className="form-label required">Service Type</label>
           <select
             className="input-field"
             value={formData.serviceType}
@@ -182,11 +180,11 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
 
         {formData.serviceType === 'Other Preventive Maintenance' && (
           <div className="form-group">
-            <label className="form-label required">Specify Custom Service Description</label>
+            <label className="form-label required">Description</label>
             <input
               type="text"
               className="input-field"
-              placeholder="e.g. Tailgate latch repair, AC blower motor servicing"
+              placeholder="Enter service description"
               required
               value={formData.customServiceType}
               onChange={(e) => setFormData({ ...formData, customServiceType: e.target.value })}
@@ -196,7 +194,7 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
 
         <div className="form-grid-2">
           <div className="form-group">
-            <label className="form-label required">Service Cost (₹ INR)</label>
+            <label className="form-label required">Cost (₹)</label>
             <input
               type="number"
               min="0"
@@ -206,12 +204,11 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: Number(e.target.value) })}
             />
-            <span className="form-text-hint">Invoice amount inclusive of tax</span>
           </div>
 
           <div className="form-group">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label className="form-label">Next Service Due Date</label>
+              <label className="form-label">Next Service Date</label>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button
                   type="button"
@@ -273,22 +270,22 @@ export const AddMaintenanceModal: React.FC<AddMaintenanceModalProps> = ({
         </div>
 
         <div className="form-group">
-          <label className="form-label">Authorized Service Center / Workshop</label>
+          <label className="form-label">Service Center</label>
           <input
             type="text"
             className="input-field"
-            placeholder="e.g. Tata Motors Commercial Workshop, Swargate or Pune Cold-Tech Garage"
+            placeholder="Enter service center"
             value={formData.serviceCenter}
             onChange={(e) => setFormData({ ...formData, serviceCenter: e.target.value })}
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">Replaced Parts, Fluid Grades & Technical Remarks</label>
+          <label className="form-label">Notes</label>
           <textarea
             className="input-field"
             rows={2}
-            placeholder="e.g. Replaced 15W-40 synthetic engine oil, oil filter cartridge, checked refrigerant pressure (R134a at 32 PSI)..."
+            placeholder="Enter notes..."
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />

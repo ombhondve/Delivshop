@@ -239,32 +239,7 @@ export const DriversRoster: React.FC = () => {
       {/* 1. Page Header */}
       <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 className="page-title">Drivers Roster</h1>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '2px 8px',
-                backgroundColor: 'var(--color-success-bg)',
-                border: '1px solid #BBF7D0',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--color-success)',
-              }}
-            >
-              <Radio size={11} className="spin-icon" />
-              <span>Live Database</span>
-            </div>
-          </div>
-          <p className="page-desc">
-            Manage driver accounts, availability, assignments, and delivery performance.
-            <span style={{ marginLeft: '10px', color: '#94A3B8', fontSize: '11.5px' }}>
-              Last synchronized: {lastSyncTime}
-            </span>
-          </p>
+          <h1 className="page-title">Drivers</h1>
         </div>
 
         <div className="page-header-actions">
@@ -316,9 +291,9 @@ export const DriversRoster: React.FC = () => {
             <Users size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Total Drivers</span>
+            <span className="metric-title">Total</span>
             <span className="metric-value">{summary.totalDrivers}</span>
-            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>100% verified</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>Registered</span>
           </div>
         </div>
 
@@ -337,9 +312,9 @@ export const DriversRoster: React.FC = () => {
             <ShieldCheck size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Active Drivers</span>
+            <span className="metric-title">Active</span>
             <span className="metric-value">{summary.activeDrivers}</span>
-            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>Authorized fleet</span>
+            <span className="metric-trend" style={{ color: 'var(--color-success)' }}>Authorized</span>
           </div>
         </div>
 
@@ -358,9 +333,9 @@ export const DriversRoster: React.FC = () => {
             <UserCheck size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Available Drivers</span>
+            <span className="metric-title">Available</span>
             <span className="metric-value">{summary.availableDrivers}</span>
-            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>Ready for dispatch</span>
+            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>Ready</span>
           </div>
         </div>
 
@@ -381,7 +356,7 @@ export const DriversRoster: React.FC = () => {
           <div className="metric-info">
             <span className="metric-title">On Delivery</span>
             <span className="metric-value">{summary.onDeliveryDrivers}</span>
-            <span className="metric-trend" style={{ color: '#6D28D9' }}>Active drop-offs</span>
+            <span className="metric-trend" style={{ color: '#6D28D9' }}>On route</span>
           </div>
         </div>
 
@@ -400,9 +375,9 @@ export const DriversRoster: React.FC = () => {
             <Power size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Inactive Drivers</span>
+            <span className="metric-title">Inactive</span>
             <span className="metric-value">{summary.inactiveDrivers}</span>
-            <span className="metric-trend" style={{ color: '#64748B' }}>Deactivated accounts</span>
+            <span className="metric-trend" style={{ color: '#64748B' }}>Off duty</span>
           </div>
         </div>
 
@@ -420,9 +395,9 @@ export const DriversRoster: React.FC = () => {
             <AlertTriangle size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">Attention Req.</span>
+            <span className="metric-title">Attention</span>
             <span className="metric-value">{summary.attentionRequired}</span>
-            <span className="metric-trend" style={{ color: '#B45309' }}>License/KYC review</span>
+            <span className="metric-trend" style={{ color: '#B45309' }}>Review</span>
           </div>
         </div>
       </div>
@@ -488,8 +463,7 @@ export const DriversRoster: React.FC = () => {
 
       {/* 4. Drivers Table Card */}
       <Card
-        title="Fleet Personnel Roster"
-        subtitle={`Showing ${totalCount > 0 ? (page - 1) * pageSize + 1 : 0}–${totalCount > 0 ? Math.min(page * pageSize, totalCount) : 0} of ${totalCount} fleet personnel records`}
+        title="Drivers"
         noPadding
       >
         {loading && drivers.length === 0 ? (
@@ -514,7 +488,7 @@ export const DriversRoster: React.FC = () => {
               No driver records match your current filters. Clear the search or onboard a new fleet personnel.
             </p>
             <Button variant="primary" onClick={() => setIsAddModalOpen(true)} icon={<Plus size={15} />}>
-              Onboard Driver
+              Add Driver
             </Button>
           </div>
         ) : (
@@ -541,11 +515,11 @@ export const DriversRoster: React.FC = () => {
               >
                 <tr>
                   <th style={{ width: '240px', minWidth: '220px' }}>Driver</th>
-                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Employee ID</th>
+                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>ID</th>
                   <th style={{ width: '160px', minWidth: '145px' }}>Phone</th>
-                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Current Status</th>
-                  <th style={{ width: '210px', minWidth: '180px' }}>Current Assignment</th>
-                  <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>Today's Drops</th>
+                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Status</th>
+                  <th style={{ width: '210px', minWidth: '180px' }}>Assignment</th>
+                  <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>Drops Today</th>
                   <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px' }}>Account</th>
                   <th style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -887,10 +861,9 @@ export const DriversRoster: React.FC = () => {
           }}
           title={
             statusModalDriver.is_active
-              ? 'Deactivate Driver Account'
-              : 'Activate Driver Account'
+              ? 'Deactivate Driver?'
+              : 'Activate Driver?'
           }
-          subtitle={`Employment status update for ${statusModalDriver.name} (${statusModalDriver.employee_id || 'ID N/A'})`}
           icon={
             statusModalDriver.is_active ? (
               <Power size={20} color="#DC2626" />
@@ -914,52 +887,15 @@ export const DriversRoster: React.FC = () => {
                 onClick={handleConfirmStatusChange}
                 loading={statusModalLoading}
               >
-                {statusModalDriver.is_active ? 'Confirm Deactivation' : 'Confirm Activation'}
+                {statusModalDriver.is_active ? 'Deactivate' : 'Activate'}
               </Button>
             </div>
           }
         >
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            {statusModalDriver.is_active ? (
-              <>
-                <p style={{ margin: '0 0 10px 0' }}>
-                  Are you sure you want to deactivate <strong style={{ color: 'var(--text-primary)' }}>{statusModalDriver.name}</strong>?
-                </p>
-                <div
-                  style={{
-                    backgroundColor: '#FEF2F2',
-                    border: '1px solid #FECACA',
-                    borderRadius: '6px',
-                    padding: '10px 12px',
-                    color: '#991B1B',
-                    fontSize: '12.5px',
-                  }}
-                >
-                  <strong>Impact on operations:</strong> Deactivating marks this driver as off-duty and prevents future delivery dispatches or route assignments.
-                </div>
-                <p style={{ margin: '10px 0 0 0', fontSize: '12px', color: '#64748B' }}>
-                  Statutory audit safety: All historical dispatches, completed delivery records, salary configurations, payment records, and employee profiles remain strictly preserved.
-                </p>
-              </>
-            ) : (
-              <>
-                <p style={{ margin: '0 0 10px 0' }}>
-                  Are you sure you want to activate <strong style={{ color: 'var(--text-primary)' }}>{statusModalDriver.name}</strong>?
-                </p>
-                <div
-                  style={{
-                    backgroundColor: '#F0FDF4',
-                    border: '1px solid #BBF7D0',
-                    borderRadius: '6px',
-                    padding: '10px 12px',
-                    color: '#166534',
-                    fontSize: '12.5px',
-                  }}
-                >
-                  <strong>Impact on operations:</strong> Activating restores this driver's active fleet standing, making them immediately eligible for route assignments and order fulfillment dispatches.
-                </div>
-              </>
-            )}
+            <p style={{ margin: 0 }}>
+              {statusModalDriver.is_active ? 'Deactivate this driver?' : 'Activate this driver?'}
+            </p>
           </div>
         </Modal>
       )}
@@ -969,7 +905,7 @@ export const DriversRoster: React.FC = () => {
         <DeleteConfirmModal
           isOpen={Boolean(deleteDriver)}
           onClose={() => setDeleteDriver(null)}
-          title="Delete Driver Record"
+          title="Delete Driver"
           entityType="Driver"
           entityName={deleteDriver.name}
           entityIdentifier={deleteDriver.employee_id}

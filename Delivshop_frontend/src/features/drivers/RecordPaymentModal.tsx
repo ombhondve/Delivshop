@@ -183,11 +183,8 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             </div>
             <div>
               <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                Record Salary Payment
+                Record Payment
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-                Log disbursement transaction against monthly salary obligation
-              </p>
             </div>
           </div>
           <button
@@ -236,7 +233,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           {!showConfirmation ? (
             <form id="record-payment-form" onSubmit={handleValidateAndConfirm}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Field 1: Employee (Read-only) */}
+                {/* Field 1: Employee */}
                 <div>
                   <label
                     style={{
@@ -247,7 +244,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                       marginBottom: '6px',
                     }}
                   >
-                    Employee (Current Profile)
+                    Employee
                   </label>
                   <div
                     style={{
@@ -366,7 +363,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   </div>
                 )}
 
-                {/* Field 3: Payment Date & Field 4: Salary Amount Paid */}
+                {/* Field 3: Date & Field 4: Amount Paid */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label
@@ -379,7 +376,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                         marginBottom: '6px',
                       }}
                     >
-                      Payment Date <span style={{ color: '#DC2626' }}>*</span>
+                      Date <span style={{ color: '#DC2626' }}>*</span>
                     </label>
                     <input
                       id="paymentDate"
@@ -410,7 +407,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                           color: '#0F172A',
                         }}
                       >
-                        Amount Paid (₹) <span style={{ color: '#DC2626' }}>*</span>
+                        Amount (₹) <span style={{ color: '#DC2626' }}>*</span>
                       </label>
                       {monthSummary && monthSummary.remainingBalance > 0 && (
                         <button
@@ -500,9 +497,9 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                       outline: 'none',
                     }}
                   >
-                    <option value="BANK_TRANSFER">Bank Transfer (NEFT / RTGS / IMPS)</option>
-                    <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
-                    <option value="CASH">Cash in Hand</option>
+                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CASH">Cash</option>
                   </select>
                 </div>
 
@@ -518,12 +515,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                       marginBottom: '6px',
                     }}
                   >
-                    Transaction Reference <span style={{ color: '#94A3B8', fontWeight: 400 }}>(Optional)</span>
+                    Transaction Ref
                   </label>
                   <input
                     id="transactionReference"
                     type="text"
-                    placeholder="e.g. UTR1984729103, UPI-202610-091"
+                    placeholder="e.g. UTR1984729103"
                     value={transactionReference}
                     onChange={(e) => setTransactionReference(e.target.value)}
                     style={{
@@ -537,9 +534,6 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                       outline: 'none',
                     }}
                   />
-                  <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0 0' }}>
-                    Duplicate transaction references are prevented to avoid accidental double entries.
-                  </p>
                 </div>
 
                 {/* Field 7: Notes */}
@@ -554,12 +548,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                       marginBottom: '6px',
                     }}
                   >
-                    Notes <span style={{ color: '#94A3B8', fontWeight: 400 }}>(Optional)</span>
+                    Notes
                   </label>
                   <textarea
                     id="paymentNotes"
                     rows={2}
-                    placeholder="e.g. Salary advance part 1, Diwali bonus adjustment..."
+                    placeholder="Enter notes..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     style={{
@@ -585,21 +579,16 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   backgroundColor: '#FFFBEB',
                   border: '1px solid #FCD34D',
                   borderRadius: '10px',
-                  padding: '16px',
+                  padding: '14px 16px',
                   display: 'flex',
                   gap: '12px',
-                  alignItems: 'flex-start',
+                  alignItems: 'center',
                 }}
               >
-                <ShieldAlert size={22} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#92400E' }}>
-                    Confirm Salary Disbursement
-                  </h4>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#B45309' }}>
-                    Please verify the financial details before recording this transaction. An immutable audit record will be logged.
-                  </p>
-                </div>
+                <ShieldAlert size={20} color="#D97706" style={{ flexShrink: 0 }} />
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#92400E' }}>
+                  Confirm Payment
+                </h4>
               </div>
 
               <div
@@ -628,7 +617,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
-                  <span style={{ fontSize: '13px', color: '#64748B' }}>Payment Date:</span>
+                  <span style={{ fontSize: '13px', color: '#64748B' }}>Date:</span>
                   <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0F172A' }}>
                     {formatDate(paymentDate)}
                   </span>
@@ -651,7 +640,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>Salary Amount to Record:</span>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>Amount:</span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-primary, #16805D)' }}>
                     {formatCurrency(parseFloat(amount) || 0)}
                   </span>
@@ -678,16 +667,16 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 Cancel
               </Button>
               <Button type="submit" form="record-payment-form" variant="primary">
-                Review & Confirm <ArrowRight size={14} style={{ marginLeft: '4px' }} />
+                Continue
               </Button>
             </>
           ) : (
             <>
               <Button type="button" variant="secondary" onClick={() => setShowConfirmation(false)} disabled={submitting}>
-                Back to Edit
+                Back
               </Button>
               <Button type="button" variant="primary" onClick={handleFinalSubmit} disabled={submitting}>
-                {submitting ? 'Recording Payment...' : 'Confirm & Submit Payment'}
+                {submitting ? 'Saving...' : 'Confirm'}
               </Button>
             </>
           )}

@@ -251,7 +251,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                  Edit Driver Profile: {driver.name}
+                  Edit Driver
                 </h3>
                 <span
                   style={{
@@ -268,9 +268,6 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   {driver.employee_id || 'N/A'}
                 </span>
               </div>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
-                Update driver contact, residential location, and KYC credentials.
-              </p>
             </div>
           </div>
           <button
@@ -311,19 +308,20 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             </div>
           )}
 
-          {/* Section 1: Contact Details */}
+          {/* Section 1: Personal Details */}
           <div style={{ marginBottom: '18px' }}>
             <h4 style={{ fontSize: '12.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-primary, #16805D)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <User size={14} /> 1. Personal & Contact Details
+              <User size={14} /> Personal Details
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Driver Full Name <span style={{ color: '#EF4444' }}>*</span>
+                  Full Name <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Ramesh Kumar"
                   value={formData.name || ''}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -332,11 +330,12 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Mobile Phone Number <span style={{ color: '#EF4444' }}>*</span>
+                  Phone <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   type="tel"
                   required
+                  placeholder="e.g. 9823411223"
                   value={formData.phone || ''}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -345,10 +344,11 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Alternate Phone
+                  Alt Phone
                 </label>
                 <input
                   type="tel"
+                  placeholder="e.g. 9823455667"
                   value={formData.alternatePhone || ''}
                   onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -357,10 +357,11 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Email Address
+                  Email
                 </label>
                 <input
                   type="email"
+                  placeholder="e.g. ramesh@delivshop.com"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -384,18 +385,19 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Residential Address & Dependent City/Village */}
+          {/* Section 2: Address */}
           <div style={{ marginBottom: '18px' }}>
             <h4 style={{ fontSize: '12.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-primary, #16805D)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MapPin size={14} /> 2. Residential Address & Location
+              <MapPin size={14} /> Address
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Street Address
+                  Address
                 </label>
                 <input
                   type="text"
+                  placeholder="Enter street address"
                   value={formData.address || ''}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -407,26 +409,25 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                 <AutocompleteInput
                   id="edit-driver-state"
                   label="State"
-                  placeholder="Select or type state..."
+                  placeholder="Select state..."
                   value={formData.state || ''}
                   onChange={handleStateChange}
                   onSelect={(opt) => handleStateSelect(opt.value)}
                   options={stateOptions}
                   error={locationErrors.state}
-                  hint="Select state first"
                 />
               </div>
 
-              {/* City / Village Autocomplete */}
+              {/* City Autocomplete */}
               <div>
                 <AutocompleteInput
                   id="edit-driver-city"
-                  label="City / Village"
+                  label="City"
                   disabled={!formData.state || !formData.state.trim()}
                   placeholder={
                     !formData.state || !formData.state.trim()
                       ? 'Select state first...'
-                      : 'Search or type city/village...'
+                      : 'Search or type city...'
                   }
                   value={formData.city || ''}
                   onChange={(val) => {
@@ -439,20 +440,16 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                   }}
                   options={cityOptions}
                   error={locationErrors.city}
-                  hint={
-                    !formData.state || !formData.state.trim()
-                      ? 'Requires state selection'
-                      : `${cityOptions.length} suggested locations`
-                  }
                 />
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Pincode
+                  PIN Code
                 </label>
                 <input
                   type="text"
+                  placeholder="e.g. 411048"
                   value={formData.pincode || ''}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -461,10 +458,10 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Driving License & Employment */}
+          {/* Section 3: License & Employment */}
           <div style={{ marginBottom: '14px' }}>
             <h4 style={{ fontSize: '12.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-primary, #16805D)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Shield size={14} /> 3. Driving License & Employment Status
+              <Shield size={14} /> License & Employment
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               <div>
@@ -473,6 +470,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
                 </label>
                 <input
                   type="text"
+                  placeholder="e.g. MH-12-2022-004512"
                   value={formData.licenseNumber || ''}
                   onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', outline: 'none' }}
@@ -481,7 +479,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  License Expiry Date
+                  License Expiry
                 </label>
                 <input
                   type="date"
@@ -493,15 +491,15 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Employment Status
+                  Status
                 </label>
                 <select
                   value={formData.employmentStatus || 'ACTIVE'}
                   onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
                   style={{ width: '100%', height: '36px', padding: '0 8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #A7AE9F', backgroundColor: '#FFFFFF', outline: 'none' }}
                 >
-                  <option value="ACTIVE">Active (Full-Time)</option>
-                  <option value="PROBATION">Probationary</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="PROBATION">Probation</option>
                   <option value="ON_LEAVE">On Leave</option>
                   <option value="SUSPENDED">Suspended</option>
                   <option value="TERMINATED">Terminated</option>
@@ -526,7 +524,7 @@ export const EditDriverModal: React.FC<EditDriverModalProps> = ({
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={loading} icon={<CheckCircle2 size={16} />}>
-            {loading ? 'Saving Changes...' : 'Save Changes'}
+            {loading ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </div>
