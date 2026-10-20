@@ -54,8 +54,8 @@ export const DriversRoster: React.FC = () => {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
 
-  // Configurable Pagination States (Default: 8 per page)
-  const [pageSize, setPageSize] = useState<number>(8);
+  // Configurable Pagination States (Default: 7 per page)
+  const [pageSize, setPageSize] = useState<number>(7);
   const [page, setPage] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -524,8 +524,8 @@ export const DriversRoster: React.FC = () => {
             role="region"
             aria-label="Fleet personnel table"
             style={{
-              maxHeight: pageSize > 8 ? '520px' : 'none',
-              overflowY: pageSize > 8 ? 'auto' : 'visible',
+              maxHeight: pageSize > 7 ? '540px' : 'none',
+              overflowY: pageSize > 7 ? 'auto' : 'visible',
               overflowX: 'auto',
               position: 'relative',
             }}
@@ -533,7 +533,7 @@ export const DriversRoster: React.FC = () => {
             <table className="business-table">
               <thead
                 style={{
-                  position: pageSize > 8 ? 'sticky' : 'static',
+                  position: pageSize > 7 ? 'sticky' : 'static',
                   top: 0,
                   zIndex: 10,
                   backgroundColor: '#F8FAFC',
@@ -827,7 +827,7 @@ export const DriversRoster: React.FC = () => {
                 value={pageSize}
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               >
-                <option value={8}>8</option>
+                <option value={7}>7</option>
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
