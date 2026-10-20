@@ -10,8 +10,10 @@ import {
   updateDeliveryStatusSchema,
   createDriverSchema,
   updateDriverSchema,
-  assignVehicleSchema,
   resetDriverPasswordSchema,
+  setMonthlySalarySchema,
+  recordSalaryPaymentSchema,
+  reverseSalaryPaymentSchema,
   attendanceCheckInSchema,
   attendanceCheckOutSchema,
   correctAttendanceSchema,
@@ -89,7 +91,31 @@ router.put(
   '/drivers/:id/salary',
   authenticate,
   authorizeRoles('ADMIN'),
+  validateRequest(setMonthlySalarySchema),
   deliveryController.upsertSalaryConfig
+);
+
+router.get(
+  '/drivers/:id/salary/payments',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  deliveryController.getSalaryPayments
+);
+
+router.post(
+  '/drivers/:id/salary/payments',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(recordSalaryPaymentSchema),
+  deliveryController.recordSalaryPayment
+);
+
+router.post(
+  '/drivers/:id/salary/payments/:paymentId/reverse',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  validateRequest(reverseSalaryPaymentSchema),
+  deliveryController.reverseSalaryPayment
 );
 
 router.get(
@@ -104,27 +130,6 @@ router.post(
   authenticate,
   authorizeRoles('ADMIN'),
   deliveryController.addPayrollRecord
-);
-
-router.get(
-  '/drivers/:id/documents',
-  authenticate,
-  authorizeRoles('SUPPLIER', 'ADMIN'),
-  deliveryController.getDriverDocuments
-);
-
-router.post(
-  '/drivers/:id/documents',
-  authenticate,
-  authorizeRoles('ADMIN'),
-  deliveryController.upsertDriverDocument
-);
-
-router.get(
-  '/drivers/:id/documents/:docId/download',
-  authenticate,
-  authorizeRoles('SUPPLIER', 'ADMIN', 'DRIVER'),
-  deliveryController.downloadDriverDocument
 );
 
 // Attendance routes
@@ -196,13 +201,6 @@ router.patch(
   deliveryController.updateDriverStatus
 );
 
-router.patch(
-  '/drivers/:id/vehicle',
-  authenticate,
-  authorizeRoles('ADMIN'),
-  validateRequest(assignVehicleSchema),
-  deliveryController.assignVehicle
-);
 
 router.post(
   '/drivers/:id/reset-password',

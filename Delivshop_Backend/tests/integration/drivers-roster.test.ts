@@ -69,24 +69,6 @@ describe('Drivers Roster & Fleet Personnel API, Security & Operations Suite', ()
     expect(typeof json.data.totalDrivers).toBe('number');
   });
 
-  it('should list all fleet drivers with operational status and metrics', async () => {
-    const res = await fetch(`${baseUrl}/api/deliveries/drivers/all`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    });
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.success).toBe(true);
-    expect(Array.isArray(json.data)).toBe(true);
-    expect(json.data.length).toBeGreaterThan(0);
-
-    const first = json.data[0];
-    expect(first).toHaveProperty('id');
-    expect(first).toHaveProperty('name');
-    expect(first).toHaveProperty('employee_id');
-    expect(first).toHaveProperty('status');
-    expect(first).not.toHaveProperty('password_hash'); // Critical security check: password hash must NEVER be exposed
-  });
-
   it('should allow ADMIN to onboard a new driver with vehicle and license details', async () => {
     const res = await fetch(`${baseUrl}/api/deliveries/drivers`, {
       method: 'POST',
@@ -113,12 +95,31 @@ describe('Drivers Roster & Fleet Personnel API, Security & Operations Suite', ()
     expect(res.status).toBe(201);
     const json = await res.json();
     expect(json.success).toBe(true);
+    expect(json.data).toHaveProperty('id');
     expect(json.data.name).toBe('Gajanan Kadam');
     expect(json.data.employee_id).toBe(testEmployeeId);
     expect(json.data.vehicle_number).toBe('MH-12-TK-9988');
     expect(json.data).not.toHaveProperty('password_hash');
 
     testDriverId = json.data.id;
+  });
+
+  it('should list all fleet drivers with operational status and metrics', async () => {
+    const res = await fetch(`${baseUrl}/api/deliveries/drivers/all`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+    expect(json.data.length).toBeGreaterThan(0);
+
+    const first = json.data[0];
+    expect(first).toHaveProperty('id');
+    expect(first).toHaveProperty('name');
+    expect(first).toHaveProperty('employee_id');
+    expect(first).toHaveProperty('status');
+    expect(first).not.toHaveProperty('password_hash'); // Critical security check: password hash must NEVER be exposed
   });
 
   it('should reject creating duplicate driver with same employee ID with 409 Conflict', async () => {
@@ -178,26 +179,6 @@ describe('Drivers Roster & Fleet Personnel API, Security & Operations Suite', ()
     expect(json.data.assigned_route).toBe('Route 6B • Magarpatta & Hadapsar Run');
   });
 
-  it('should allow ADMIN to assign/reassign vehicle specifically', async () => {
-    const res = await fetch(`${baseUrl}/api/deliveries/drivers/${testDriverId}/vehicle`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminToken}`,
-      },
-      body: JSON.stringify({
-        vehicleNumber: 'MH-12-DV-7744',
-        vehicleType: 'Electric Insulated Cargo Van',
-        assignedRoute: 'Route 7 • Hinjewadi Tech Park Run',
-      }),
-    });
-
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.success).toBe(true);
-    expect(json.data.vehicle_number).toBe('MH-12-DV-7744');
-    expect(json.data.vehicle_type).toBe('Electric Insulated Cargo Van');
-  });
 
   it('should allow driver to authenticate via Mobile Login using Employee ID', async () => {
     const res = await fetch(`${baseUrl}/api/auth/login`, {

@@ -338,43 +338,6 @@ export const deliveryService = {
     return updated;
   },
 
-  async assignVehicle(
-    driverId: string,
-    data: {
-      vehicleNumber: string;
-      vehicleType?: string;
-      assignedRoute?: string;
-    },
-    actorId?: string,
-    ipAddress?: string
-  ) {
-    const driver = await deliveryRepository.findDriverById(driverId);
-    if (!driver) {
-      throw new AppError('Driver not found', 404);
-    }
-
-    const updated = await deliveryRepository.updateDriver(driverId, {
-      vehicle_number: data.vehicleNumber.trim().toUpperCase(),
-      vehicle_type: data.vehicleType?.trim() || null,
-      assigned_route: data.assignedRoute?.trim() || null,
-    });
-
-    await auditService.log({
-      actorId,
-      action: 'DRIVER_VEHICLE_ASSIGNED',
-      entityType: 'user',
-      entityId: driverId,
-      details: {
-        driverName: driver.name,
-        vehicleNumber: data.vehicleNumber,
-        assignedRoute: data.assignedRoute,
-      },
-      ipAddress,
-    });
-
-    return updated;
-  },
-
   async resetDriverPassword(
     driverId: string,
     newPassword: string,
@@ -496,28 +459,358 @@ export const deliveryService = {
     };
   },
 
-  async getSalaryConfig(driverId: string) {
-    const driver = await deliveryRepository.findDriverById(driverId);
-    if (!driver) throw new AppError('Driver not found', 404);
-    return deliveryRepository.getSalaryConfig(driverId);
+  /**
+   * Calculates monthly salary obligation based on effective-dated rates.
+   * If a salary rate is revised mid-month, prorates using the applicable rates for each day.
+   */
+  calculateSalaryObligation(
+    configs: Array<{ base_monthly_salary: string | number; effective_from: string | Date; effective_to?: string | Date | null }>,
+    year: number,
+    month: number // 1-12
+  ): number {
+    if (!configs || configs.length === 0) return 0;
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const sortedConfigs = [...configs].sort((a, b) => {
+      const da = new Date(a.effective_from).getTime();
+      const db = new Date(b.effective_from).getTime();
+      return db - da; // newest first
+    });
+
+    let totalObligation = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayDate = new Date(`${dayDateStr}T12:00:00Z`);
+
+      const activeConfig = sortedConfigs.find((c) => {
+        const fromStr = typeof c.effective_from === 'string' ? c.effective_from.slice(0, 10) : new Date(c.effective_from).toISOString().slice(0, 10);
+        const fromDate = new Date(`${fromStr}T00:00:00Z`);
+        let toDate: Date | null = null;
+        if (c.effective_to) {
+          const toStr = typeof c.effective_to === 'string' ? c.effective_to.slice(0, 10) : new Date(c.effective_to).toISOString().slice(0, 10);
+          toDate = new Date(`${toStr}T23:59:59Z`);
+        }
+        return fromDate <= dayDate && (!toDate || toDate >= dayDate);
+      });
+
+      if (activeConfig) {
+        const rate = parseFloat(String(activeConfig.base_monthly_salary)) || 0;
+        totalObligation += rate / daysInMonth;
+      }
+    }
+
+    return Math.round(totalObligation * 100) / 100;
   },
 
-  async upsertSalaryConfig(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+  async getSalarySummary(driverId: string, monthStr?: string) {
     const driver = await deliveryRepository.findDriverById(driverId);
     if (!driver) throw new AppError('Driver not found', 404);
 
-    const config = await deliveryRepository.upsertSalaryConfig(driverId, data);
+    const now = new Date();
+    const activeMonth = monthStr && /^\d{4}-(0[1-9]|1[0-2])$/.test(monthStr)
+      ? monthStr
+      : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const [yearStr, mStr] = activeMonth.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(mStr, 10);
+
+    const [currentConfig, allConfigs, payments] = await Promise.all([
+      deliveryRepository.getSalaryConfig(driverId),
+      deliveryRepository.getAllSalaryConfigs(driverId),
+      deliveryRepository.getSalaryPayments(driverId, activeMonth),
+    ]);
+
+    const completedPayments = payments.filter((p: any) => p.status === 'COMPLETED');
+    const totalPaid = Math.round(completedPayments.reduce((sum: number, p: any) => sum + parseFloat(p.amount || 0), 0) * 100) / 100;
+    const salaryAmountDue = this.calculateSalaryObligation(allConfigs, year, month);
+    const remainingBalance = Math.max(0, Math.round((salaryAmountDue - totalPaid) * 100) / 100);
+
+    let paymentStatus: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'NOT_SET' = 'NOT_SET';
+    if (allConfigs.length === 0) {
+      paymentStatus = 'NOT_SET';
+    } else if (salaryAmountDue === 0 && totalPaid === 0) {
+      paymentStatus = 'NOT_SET';
+    } else if (totalPaid === 0 && salaryAmountDue > 0) {
+      paymentStatus = 'UNPAID';
+    } else if (totalPaid > 0 && totalPaid < salaryAmountDue) {
+      paymentStatus = 'PARTIALLY_PAID';
+    } else if (totalPaid >= salaryAmountDue && salaryAmountDue > 0) {
+      paymentStatus = 'PAID';
+    } else if (salaryAmountDue === 0 && totalPaid > 0) {
+      paymentStatus = 'PAID';
+    }
+
+    return {
+      currentMonthlySalary: currentConfig ? parseFloat(currentConfig.base_monthly_salary) : null,
+      salaryEffectiveDate: currentConfig?.effective_from ? (typeof currentConfig.effective_from === 'string' ? currentConfig.effective_from.slice(0, 10) : new Date(currentConfig.effective_from).toISOString().slice(0, 10)) : null,
+      selectedSalaryMonth: activeMonth,
+      salaryAmountDue,
+      totalPaid,
+      remainingBalance,
+      paymentStatus,
+      isConfigured: allConfigs.length > 0,
+      currentConfig,
+      allConfigs,
+      monthPayments: payments,
+    };
+  },
+
+  async getSalaryConfig(driverId: string, monthStr?: string) {
+    const summary = await this.getSalarySummary(driverId, monthStr);
+    return {
+      ...summary.currentConfig,
+      summary,
+      history: summary.allConfigs,
+    };
+  },
+
+  async setMonthlySalary(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    const monthlySalary = parseFloat(data.monthlySalary ?? data.baseMonthlySalary ?? data.baseSalary);
+    if (isNaN(monthlySalary) || monthlySalary <= 0) {
+      throw new AppError('Monthly salary must be a positive numeric amount', 400);
+    }
+
+    const effectiveFrom = data.effectiveFrom || new Date().toISOString().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom)) {
+      throw new AppError('Valid effective date (YYYY-MM-DD) is required', 400);
+    }
+
+    const config = await deliveryRepository.setMonthlySalary(driverId, {
+      monthlySalary,
+      effectiveFrom,
+      salaryType: data.salaryType || 'Fixed Monthly Salary',
+      notes: data.notes,
+    });
 
     await auditService.log({
       actorId,
       action: 'DRIVER_SALARY_CONFIG_UPDATED',
       entityType: 'user',
       entityId: driverId,
-      details: { baseMonthlySalary: data.baseMonthlySalary, effectiveFrom: data.effectiveFrom },
+      details: {
+        monthlySalary,
+        effectiveFrom,
+        salaryType: config.salary_type,
+        notes: config.notes,
+      },
       ipAddress,
     });
 
-    return config;
+    const summary = await this.getSalarySummary(driverId);
+    return {
+      ...config,
+      summary,
+    };
+  },
+
+  async upsertSalaryConfig(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+    return this.setMonthlySalary(driverId, data, actorId, ipAddress);
+  },
+
+  async getSalaryPayments(driverId: string, monthStr?: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    const [allConfigs, allPayments] = await Promise.all([
+      deliveryRepository.getAllSalaryConfigs(driverId),
+      deliveryRepository.getSalaryPayments(driverId),
+    ]);
+
+    // Gather unique months across payments and salary revisions
+    const monthsSet = new Set<string>();
+    allPayments.forEach((p: any) => {
+      if (p.salary_month) monthsSet.add(p.salary_month);
+    });
+
+    // Also include current month and prior 2 months
+    const now = new Date();
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthsSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const monthsSummary = Array.from(monthsSet)
+      .sort((a, b) => b.localeCompare(a))
+      .map((month) => {
+        const [yStr, mStr] = month.split('-');
+        const y = parseInt(yStr, 10);
+        const m = parseInt(mStr, 10);
+        const monthTx = allPayments.filter((p: any) => p.salary_month === month);
+        const completedTx = monthTx.filter((p: any) => p.status === 'COMPLETED');
+        const totalPaid = Math.round(completedTx.reduce((sum: number, p: any) => sum + parseFloat(p.amount || 0), 0) * 100) / 100;
+        const due = this.calculateSalaryObligation(allConfigs, y, m);
+        const balance = Math.max(0, Math.round((due - totalPaid) * 100) / 100);
+
+        const latestPaymentDate = completedTx.length > 0
+          ? completedTx[0].payment_date
+          : null;
+
+        let status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'NOT_SET' = 'NOT_SET';
+        if (allConfigs.length === 0 || (due === 0 && totalPaid === 0)) {
+          status = 'NOT_SET';
+        } else if (totalPaid === 0 && due > 0) {
+          status = 'UNPAID';
+        } else if (totalPaid > 0 && totalPaid < due) {
+          status = 'PARTIALLY_PAID';
+        } else if (totalPaid >= due && due > 0) {
+          status = 'PAID';
+        } else if (due === 0 && totalPaid > 0) {
+          status = 'PAID';
+        }
+
+        return {
+          salaryMonth: month,
+          salaryAmountDue: due,
+          totalPaid,
+          remainingBalance: balance,
+          latestPaymentDate,
+          paymentStatus: status,
+          paymentsCount: monthTx.length,
+          transactions: monthTx,
+        };
+      });
+
+    const filteredPayments = monthStr
+      ? allPayments.filter((p: any) => p.salary_month === monthStr)
+      : allPayments;
+
+    return {
+      monthsSummary,
+      payments: filteredPayments,
+    };
+  },
+
+  async recordSalaryPayment(driverId: string, data: any, actorId?: string, ipAddress?: string) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    const amount = parseFloat(data.amount);
+    if (isNaN(amount) || amount <= 0) {
+      throw new AppError('Payment amount must be a positive number', 400);
+    }
+
+    if (!data.salaryMonth || !/^\d{4}-(0[1-9]|1[0-2])$/.test(data.salaryMonth)) {
+      throw new AppError('Valid salary month (YYYY-MM) is required', 400);
+    }
+
+    if (!data.paymentDate || !/^\d{4}-\d{2}-\d{2}$/.test(data.paymentDate)) {
+      throw new AppError('Valid payment date (YYYY-MM-DD) is required', 400);
+    }
+
+    const allowedMethods = new Set(['BANK_TRANSFER', 'UPI', 'CASH']);
+    const method = String(data.paymentMethod || '').toUpperCase().trim();
+    if (!allowedMethods.has(method)) {
+      throw new AppError('Payment method must be Bank Transfer, UPI, or Cash', 400);
+    }
+
+    let record: any;
+    try {
+      record = await deliveryRepository.recordSalaryPayment(
+        driverId,
+        {
+          salaryMonth: data.salaryMonth,
+          paymentDate: data.paymentDate,
+          amount,
+          paymentMethod: method,
+          transactionReference: data.transactionReference,
+          notes: data.notes,
+        },
+        actorId
+      );
+    } catch (err: any) {
+      if (err.message && err.message.includes('already exists')) {
+        throw new AppError(err.message, 409);
+      }
+      throw err;
+    }
+
+    // Keep legacy payroll records synchronized for backward compatibility
+    try {
+      await deliveryRepository.addPayrollRecord(driverId, {
+        paymentPeriod: data.salaryMonth,
+        baseSalary: amount,
+        netAmount: amount,
+        status: 'PAID',
+        paymentDate: data.paymentDate,
+        paymentReference: data.transactionReference,
+        notes: data.notes,
+      }, actorId);
+    } catch {
+      // Non-blocking sync
+    }
+
+    await auditService.log({
+      actorId,
+      action: 'DRIVER_SALARY_PAYMENT_RECORDED',
+      entityType: 'user',
+      entityId: driverId,
+      details: {
+        paymentId: record.id,
+        salaryMonth: data.salaryMonth,
+        amount,
+        paymentMethod: method,
+        paymentDate: data.paymentDate,
+        transactionReference: data.transactionReference,
+      },
+      ipAddress,
+    });
+
+    const summary = await this.getSalarySummary(driverId, data.salaryMonth);
+    return {
+      payment: record,
+      summary,
+    };
+  },
+
+  async reverseSalaryPayment(
+    driverId: string,
+    paymentId: string,
+    reason: string,
+    actorId?: string,
+    ipAddress?: string
+  ) {
+    const driver = await deliveryRepository.findDriverById(driverId);
+    if (!driver) throw new AppError('Driver not found', 404);
+
+    if (!reason || reason.trim().length < 3) {
+      throw new AppError('Reversal reason must be at least 3 characters long', 400);
+    }
+
+    const reversed = await deliveryRepository.reverseSalaryPayment(
+      driverId,
+      paymentId,
+      reason.trim(),
+      actorId
+    );
+
+    if (!reversed) {
+      throw new AppError('Payment record not found or already reversed', 404);
+    }
+
+    await auditService.log({
+      actorId,
+      action: 'DRIVER_SALARY_PAYMENT_REVERSED',
+      entityType: 'user',
+      entityId: driverId,
+      details: {
+        paymentId,
+        salaryMonth: reversed.salary_month,
+        amount: reversed.amount,
+        reversalReason: reason.trim(),
+      },
+      ipAddress,
+    });
+
+    const summary = await this.getSalarySummary(driverId, reversed.salary_month);
+    return {
+      payment: reversed,
+      summary,
+    };
   },
 
   async getPayrollRecords(driverId: string) {
@@ -548,108 +841,6 @@ export const deliveryService = {
     return record;
   },
 
-  async getDriverDocuments(driverId: string) {
-    const driver = await deliveryRepository.findDriverById(driverId);
-    if (!driver) throw new AppError('Driver not found', 404);
-    return deliveryRepository.getDriverDocuments(driverId);
-  },
-
-  async upsertDriverDocument(driverId: string, data: any, actorId?: string, ipAddress?: string) {
-    const driver = await deliveryRepository.findDriverById(driverId);
-    if (!driver) throw new AppError('Driver not found', 404);
-
-    let storagePath: string | undefined = undefined;
-    let fileSizeBytes: number | undefined = undefined;
-    let mimeType = data.mimeType || 'application/pdf';
-    let fileName = data.fileName || data.originalFilename || undefined;
-
-    if (data.fileData) {
-      // Decode base64 file data
-      let base64Content = data.fileData;
-      if (base64Content.includes(',')) {
-        base64Content = base64Content.split(',')[1];
-      }
-
-      const buffer = Buffer.from(base64Content, 'base64');
-      fileSizeBytes = buffer.length;
-
-      if (buffer.length > 5 * 1024 * 1024) {
-        throw new AppError('File size exceeds the 5MB maximum limit.', 400);
-      }
-
-      const allowedMimes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
-      if (!allowedMimes.has(mimeType)) {
-        throw new AppError(`Disallowed file MIME type "${mimeType}". Allowed: PDF, JPEG, PNG, WebP.`, 400);
-      }
-
-      if (!fileService.validateFileSignature(buffer, mimeType)) {
-        throw new AppError('File signature does not match declared type. Corrupted or disallowed file rejected.', 400);
-      }
-
-      const ext = mimeType === 'application/pdf' ? '.pdf' : mimeType === 'image/jpeg' ? '.jpg' : mimeType === 'image/png' ? '.png' : '.webp';
-      const storageFilename = `driver_${driverId.slice(0, 8)}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
-      const storageDir = getStorageDir();
-      storagePath = path.join(storageDir, storageFilename);
-
-      await fs.promises.writeFile(storagePath, buffer);
-      fileName = fileName ? path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_') : storageFilename;
-    }
-
-    const payload = {
-      ...data,
-      fileName,
-      storagePath,
-      mimeType,
-      fileSizeBytes,
-    };
-
-    const doc = await deliveryRepository.upsertDriverDocument(driverId, payload, actorId);
-
-    // If document has storagePath, assign authenticated download URL
-    if (doc.id && storagePath) {
-      const fileUrl = `/api/deliveries/drivers/${driverId}/documents/${doc.id}/download`;
-      await deliveryRepository.upsertDriverDocument(driverId, { ...payload, fileUrl }, actorId);
-      doc.file_url = fileUrl;
-    }
-
-    await auditService.log({
-      actorId,
-      action: 'DRIVER_DOCUMENT_VERIFIED',
-      entityType: 'user',
-      entityId: driverId,
-      details: {
-        documentType: data.documentType,
-        documentNumber: data.documentNumber,
-        verificationStatus: data.verificationStatus,
-        fileName,
-      },
-      ipAddress,
-    });
-
-    return doc;
-  },
-
-  async downloadDriverDocument(driverId: string, docId: string, requestingUser: any) {
-    if (requestingUser.role !== 'ADMIN' && requestingUser.role !== 'MANAGER' && requestingUser.id !== driverId) {
-      throw new AppError('Forbidden: You do not have permission to view this document.', 403);
-    }
-
-    const doc = await deliveryRepository.getDriverDocumentById(driverId, docId);
-    if (!doc) {
-      throw new AppError('Document not found', 404);
-    }
-
-    if (!doc.storage_path || !fs.existsSync(doc.storage_path)) {
-      throw new AppError('Document file not found on storage server', 404);
-    }
-
-    return {
-      filePath: doc.storage_path,
-      filename: doc.file_name || `${doc.document_type.toLowerCase()}.pdf`,
-      mimeType: doc.mime_type || 'application/pdf',
-    };
-  },
-
   async getFullProfile(driverId: string) {
     const driver = await deliveryRepository.findDriverById(driverId);
     if (!driver) {
@@ -657,13 +848,11 @@ export const deliveryService = {
     }
 
     const now = new Date();
-    const [deliveries, auditHistory, salaryConfig, payrollRecords, documents, runs, attendanceSummary, recentAttendance] =
+    const [deliveries, auditHistory, salarySummary, runs, attendanceSummary, recentAttendance] =
       await Promise.all([
         deliveryRepository.getDriverDeliveries(driverId),
         deliveryRepository.getDriverAuditHistory(driverId),
-        deliveryRepository.getSalaryConfig(driverId),
-        deliveryRepository.getPayrollRecords(driverId),
-        deliveryRepository.getDriverDocuments(driverId),
+        this.getSalarySummary(driverId),
         deliveryRepository.getDriverRunsHistory(driverId),
         attendanceService.getMonthlySummary(driverId, now.getFullYear(), now.getMonth() + 1),
         attendanceService.getHistory(driverId, 15),
@@ -673,9 +862,8 @@ export const deliveryService = {
       driver,
       deliveries,
       runs,
-      salaryConfig,
-      payrollRecords,
-      documents,
+      salaryConfig: salarySummary.currentConfig,
+      salarySummary,
       auditHistory,
       attendanceSummary,
       recentAttendance,

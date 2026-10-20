@@ -142,20 +142,6 @@ export const deliveryController = {
     }
   },
 
-  async assignVehicle(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const updated = await deliveryService.assignVehicle(
-        req.params.id,
-        req.body,
-        req.user?.id,
-        req.ip
-      );
-      sendSuccess(res, updated, 'Vehicle allocated to driver successfully');
-    } catch (err) {
-      next(err);
-    }
-  },
-
   async resetDriverPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await deliveryService.resetDriverPassword(
@@ -202,7 +188,8 @@ export const deliveryController = {
 
   async getSalaryConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const config = await deliveryService.getSalaryConfig(req.params.id);
+      const month = (req.query.month as string) || undefined;
+      const config = await deliveryService.getSalaryConfig(req.params.id, month);
       sendSuccess(res, config);
     } catch (err) {
       next(err);
@@ -218,6 +205,46 @@ export const deliveryController = {
         req.ip
       );
       sendSuccess(res, config, 'Driver salary configuration updated successfully');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getSalaryPayments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const month = (req.query.month as string) || undefined;
+      const result = await deliveryService.getSalaryPayments(req.params.id, month);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async recordSalaryPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await deliveryService.recordSalaryPayment(
+        req.params.id,
+        req.body,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, result, 'Employee salary payment recorded successfully', 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async reverseSalaryPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id: driverId, paymentId } = req.params;
+      const result = await deliveryService.reverseSalaryPayment(
+        driverId,
+        paymentId,
+        req.body.reason,
+        req.user?.id,
+        req.ip
+      );
+      sendSuccess(res, result, 'Salary payment transaction reversed successfully');
     } catch (err) {
       next(err);
     }
@@ -241,49 +268,6 @@ export const deliveryController = {
         req.ip
       );
       sendSuccess(res, record, 'Driver payroll disbursement recorded', 201);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async getDriverDocuments(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const docs = await deliveryService.getDriverDocuments(req.params.id);
-      sendSuccess(res, docs);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async upsertDriverDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const doc = await deliveryService.upsertDriverDocument(
-        req.params.id,
-        req.body,
-        req.user?.id,
-        req.ip
-      );
-      sendSuccess(res, doc, 'Driver document verified and saved');
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async downloadDriverDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { id: driverId, docId } = req.params;
-      const { filePath, filename, mimeType } = await deliveryService.downloadDriverDocument(
-        driverId,
-        docId,
-        req.user!
-      );
-
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-
-      res.sendFile(filePath);
     } catch (err) {
       next(err);
     }

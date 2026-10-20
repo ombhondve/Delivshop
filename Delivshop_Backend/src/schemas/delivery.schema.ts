@@ -145,22 +145,47 @@ export const reconcileCollectionSchema = z.object({
   }),
 });
 
-export const assignVehicleSchema = z.object({
-  params: z.object({
-    id: z.string().uuid('Invalid driver ID'),
-  }),
-  body: z.object({
-    vehicleNumber: z.string().min(2, 'Vehicle registration number is required').max(50),
-    vehicleType: z.string().max(100).optional().nullable(),
-    assignedRoute: z.string().max(255).optional().nullable(),
-  }),
-});
-
 export const resetDriverPasswordSchema = z.object({
   params: z.object({
     id: z.string().uuid('Invalid driver ID'),
   }),
   body: z.object({
     password: z.string().min(8, 'Password must be at least 8 characters long'),
+  }),
+});
+
+export const setMonthlySalarySchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Invalid employee ID'),
+  }),
+  body: z.object({
+    monthlySalary: z.coerce.number().positive('Monthly salary must be a positive numeric amount (₹)'),
+    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Valid effective date (YYYY-MM-DD) is required'),
+    salaryType: z.string().default('Fixed Monthly Salary'),
+    notes: z.string().max(1000).optional().nullable(),
+  }),
+});
+
+export const recordSalaryPaymentSchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Invalid employee ID'),
+  }),
+  body: z.object({
+    salaryMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Valid salary month (YYYY-MM) is required'),
+    paymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Valid payment date (YYYY-MM-DD) is required'),
+    amount: z.coerce.number().positive('Salary amount paid must be a positive numeric amount (₹)'),
+    paymentMethod: z.enum(['BANK_TRANSFER', 'UPI', 'CASH']),
+    transactionReference: z.string().max(100).optional().nullable(),
+    notes: z.string().max(1000).optional().nullable(),
+  }),
+});
+
+export const reverseSalaryPaymentSchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Invalid employee ID'),
+    paymentId: z.string().uuid('Invalid payment ID'),
+  }),
+  body: z.object({
+    reason: z.string().min(3, 'Reversal reason is required (at least 3 characters)'),
   }),
 });

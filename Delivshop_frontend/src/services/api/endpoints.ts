@@ -511,17 +511,6 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
-
-    async assignVehicle(
-      driverId: string,
-      payload: { vehicleNumber: string; vehicleType?: string; assignedRoute?: string }
-    ): Promise<DriverUser> {
-      return apiClient<DriverUser>(`deliveries/drivers/${driverId}/vehicle`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-    },
-
     async resetDriverPassword(driverId: string, password: string): Promise<{ message: string }> {
       return apiClient<{ message: string }>(`deliveries/drivers/${driverId}/reset-password`, {
         method: 'POST',
@@ -551,14 +540,50 @@ export const api = {
       return apiClient<any>(`deliveries/drivers/${driverId}/profile`);
     },
 
-    async getSalaryConfig(driverId: string): Promise<any> {
-      return apiClient<any>(`deliveries/drivers/${driverId}/salary`);
+    async getSalaryConfig(driverId: string, month?: string): Promise<any> {
+      const q = month ? `?month=${encodeURIComponent(month)}` : '';
+      return apiClient<any>(`deliveries/drivers/${driverId}/salary${q}`);
     },
 
-    async upsertSalaryConfig(driverId: string, payload: any): Promise<any> {
+    async setMonthlySalary(driverId: string, payload: {
+      monthlySalary: number;
+      effectiveFrom: string;
+      salaryType?: string;
+      notes?: string;
+    }): Promise<any> {
       return apiClient<any>(`deliveries/drivers/${driverId}/salary`, {
         method: 'PUT',
         body: JSON.stringify(payload),
+      });
+    },
+
+    async upsertSalaryConfig(driverId: string, payload: any): Promise<any> {
+      return this.setMonthlySalary(driverId, payload);
+    },
+
+    async getSalaryPayments(driverId: string, month?: string): Promise<{ monthsSummary: any[]; payments: any[] }> {
+      const q = month ? `?month=${encodeURIComponent(month)}` : '';
+      return apiClient<{ monthsSummary: any[]; payments: any[] }>(`deliveries/drivers/${driverId}/salary/payments${q}`);
+    },
+
+    async recordSalaryPayment(driverId: string, payload: {
+      salaryMonth: string;
+      paymentDate: string;
+      amount: number;
+      paymentMethod: string;
+      transactionReference?: string;
+      notes?: string;
+    }): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/salary/payments`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    async reverseSalaryPayment(driverId: string, paymentId: string, reason: string): Promise<any> {
+      return apiClient<any>(`deliveries/drivers/${driverId}/salary/payments/${paymentId}/reverse`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
       });
     },
 
@@ -568,17 +593,6 @@ export const api = {
 
     async addPayrollRecord(driverId: string, payload: any): Promise<any> {
       return apiClient<any>(`deliveries/drivers/${driverId}/payroll`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-    },
-
-    async getDocuments(driverId: string): Promise<any[]> {
-      return apiClient<any[]>(`deliveries/drivers/${driverId}/documents`);
-    },
-
-    async upsertDocument(driverId: string, payload: any): Promise<any> {
-      return apiClient<any>(`deliveries/drivers/${driverId}/documents`, {
         method: 'POST',
         body: JSON.stringify(payload),
       });

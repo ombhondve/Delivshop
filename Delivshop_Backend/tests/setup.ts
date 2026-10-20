@@ -38,6 +38,7 @@ afterAll(async () => {
     await dbPool.query('DELETE FROM driver_attendance;');
     await dbPool.query('DELETE FROM driver_documents;');
     await dbPool.query('DELETE FROM driver_incidents;');
+    await dbPool.query('DELETE FROM driver_salary_payments;');
     await dbPool.query('DELETE FROM driver_payroll_records;');
     await dbPool.query('DELETE FROM driver_salary_configs;');
 

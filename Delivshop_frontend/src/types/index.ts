@@ -348,6 +348,64 @@ export interface DriverAuditRecord {
   actor_role?: string | null;
 }
 
+export type PaymentStatusType = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'NOT_SET';
+
+export interface SalaryConfigRecord {
+  id: string;
+  driver_id: string;
+  base_monthly_salary: number | string;
+  effective_from: string;
+  effective_to?: string | null;
+  is_current: boolean;
+  notes?: string | null;
+  salary_type: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface SalaryPaymentTransaction {
+  id: string;
+  driver_id: string;
+  salary_month: string;
+  payment_date: string;
+  amount: number | string;
+  payment_method: 'BANK_TRANSFER' | 'UPI' | 'CASH';
+  transaction_reference?: string | null;
+  notes?: string | null;
+  status: 'COMPLETED' | 'REVERSED';
+  reversal_reason?: string | null;
+  reversed_at?: string | null;
+  reversed_by_name?: string | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface SalaryMonthSummary {
+  salaryMonth: string;
+  salaryAmountDue: number;
+  totalPaid: number;
+  remainingBalance: number;
+  latestPaymentDate?: string | null;
+  paymentStatus: PaymentStatusType;
+  paymentsCount: number;
+  transactions: SalaryPaymentTransaction[];
+}
+
+export interface SalarySummaryData {
+  currentMonthlySalary: number | null;
+  salaryEffectiveDate: string | null;
+  selectedSalaryMonth: string;
+  salaryAmountDue: number;
+  totalPaid: number;
+  remainingBalance: number;
+  paymentStatus: PaymentStatusType;
+  isConfigured: boolean;
+  currentConfig?: SalaryConfigRecord | null;
+  allConfigs?: SalaryConfigRecord[];
+  monthPayments?: SalaryPaymentTransaction[];
+}
+
 export interface CreateDriverPayload {
   name: string;
   phone: string;

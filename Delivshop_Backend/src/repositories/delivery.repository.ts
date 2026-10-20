@@ -452,63 +452,200 @@ export const deliveryRepository = {
 
   async getSalaryConfig(driverId: string): Promise<any | null> {
     const res = await query(
-      `SELECT * FROM driver_salary_configs WHERE driver_id = $1 AND is_current = TRUE ORDER BY created_at DESC LIMIT 1`,
+      `SELECT * FROM driver_salary_configs
+       WHERE driver_id = $1 AND effective_from <= CURRENT_DATE
+       ORDER BY effective_from DESC, created_at DESC
+       LIMIT 1`,
       [driverId]
     );
-    return res.rows[0] || null;
+    if (res.rows[0]) return res.rows[0];
+
+    // If no config active today yet (e.g. configured with future date), return the earliest or latest configured
+    const fallbackRes = await query(
+      `SELECT * FROM driver_salary_configs
+       WHERE driver_id = $1
+       ORDER BY effective_from ASC, created_at DESC
+       LIMIT 1`,
+      [driverId]
+    );
+    return fallbackRes.rows[0] || null;
+  },
+
+  async getAllSalaryConfigs(driverId: string): Promise<any[]> {
+    const res = await query(
+      `SELECT * FROM driver_salary_configs
+       WHERE driver_id = $1
+       ORDER BY effective_from DESC, created_at DESC`,
+      [driverId]
+    );
+    return res.rows;
+  },
+
+  async setMonthlySalary(driverId: string, data: {
+    monthlySalary: number;
+    effectiveFrom: string;
+    salaryType?: string;
+    notes?: string | null;
+  }): Promise<any> {
+    const base = Number(data.monthlySalary);
+    const salaryType = data.salaryType?.trim() || 'Fixed Monthly Salary';
+    const effectiveFrom = data.effectiveFrom.trim();
+    const notes = data.notes?.trim() || null;
+
+    // Preserve historical rates: close any active record that started before this effective date
+    // by setting its effective_to = (effectiveFrom - 1 day) if not already bounded
+    await query(
+      `UPDATE driver_salary_configs
+       SET effective_to = ($2::date - INTERVAL '1 day')::date,
+           updated_at = NOW()
+       WHERE driver_id = $1
+         AND effective_from < $2::date
+         AND (effective_to IS NULL OR effective_to >= $2::date)`,
+      [driverId, effectiveFrom]
+    );
+
+    // Insert new rate revision
+    const res = await query(
+      `INSERT INTO driver_salary_configs (
+        driver_id, base_monthly_salary, daily_allowance, per_delivery_incentive,
+        effective_from, effective_to, is_current, notes, salary_type
+       )
+       VALUES ($1, $2, 0.00, 0.00, $3::date, NULL, TRUE, $4, $5)
+       RETURNING *`,
+      [driverId, base, effectiveFrom, notes, salaryType]
+    );
+
+    // Refresh is_current flag across all rates for this driver:
+    // The single rate where effective_from <= CURRENT_DATE and (effective_to IS NULL or effective_to >= CURRENT_DATE) is current.
+    await query(
+      `UPDATE driver_salary_configs
+       SET is_current = FALSE
+       WHERE driver_id = $1`,
+      [driverId]
+    );
+
+    await query(
+      `UPDATE driver_salary_configs
+       SET is_current = TRUE
+       WHERE id = (
+         SELECT id FROM driver_salary_configs
+         WHERE driver_id = $1 AND effective_from <= CURRENT_DATE
+         ORDER BY effective_from DESC, created_at DESC
+         LIMIT 1
+       )`,
+      [driverId]
+    );
+
+    return res.rows[0];
   },
 
   async upsertSalaryConfig(driverId: string, data: {
     baseMonthlySalary?: number;
+    monthlySalary?: number;
     baseSalary?: number;
     salaryType?: string;
-    hraAllowance?: number;
-    fuelAllowance?: number;
-    pfDeduction?: number;
-    dailyAllowance?: number;
-    perDeliveryIncentive?: number;
     effectiveFrom?: string;
     effectiveTo?: string;
     notes?: string;
-    status?: string;
   }): Promise<any> {
-    // Mark previous configs as not current
-    await query(`UPDATE driver_salary_configs SET is_current = FALSE WHERE driver_id = $1`, [driverId]);
+    const base = Number(data.monthlySalary ?? data.baseMonthlySalary ?? data.baseSalary ?? 18000.0);
+    const effectiveFrom = data.effectiveFrom || new Date().toISOString().slice(0, 10);
+    return this.setMonthlySalary(driverId, {
+      monthlySalary: base,
+      effectiveFrom,
+      salaryType: data.salaryType || 'Fixed Monthly Salary',
+      notes: data.notes,
+    });
+  },
 
-    const base = Number(data.baseMonthlySalary ?? data.baseSalary ?? 18000.0);
-    const salaryType = data.salaryType || (data as any).paymentCycle || 'MONTHLY';
-    const hra = Number(data.hraAllowance ?? (data as any).allowances?.hra ?? 0);
-    const fuel = Number(data.fuelAllowance ?? (data as any).allowances?.fuel ?? 0);
-    const pf = Number(data.pfDeduction ?? (data as any).deductions?.pf ?? 0);
-    const daily = Number(data.dailyAllowance ?? 150.0);
-    const perDelivery = Number(data.perDeliveryIncentive ?? 25.0);
-    const status = data.status || 'ACTIVE';
-    const effectiveFromDate = data.effectiveFrom || (data as any).effectiveFromDate || null;
+  async recordSalaryPayment(driverId: string, data: {
+    salaryMonth: string;
+    paymentDate: string;
+    amount: number;
+    paymentMethod: string;
+    transactionReference?: string | null;
+    notes?: string | null;
+  }, createdBy?: string): Promise<any> {
+    const txRef = data.transactionReference?.trim() || null;
+
+    // Prevent accidental duplicate transaction references
+    if (txRef) {
+      const dupCheck = await query(
+        `SELECT id FROM driver_salary_payments
+         WHERE driver_id = $1 AND transaction_reference = $2 AND status = 'COMPLETED'
+         LIMIT 1`,
+        [driverId, txRef]
+      );
+      if (dupCheck.rows.length > 0) {
+        throw new Error(`A completed payment with reference "${txRef}" already exists for this employee.`);
+      }
+    }
 
     const res = await query(
-      `INSERT INTO driver_salary_configs (
-        driver_id, base_monthly_salary, daily_allowance, per_delivery_incentive,
-        effective_from, effective_to, is_current, notes, salary_type,
-        hra_allowance, fuel_allowance, pf_deduction, status
+      `INSERT INTO driver_salary_payments (
+        driver_id, salary_month, payment_date, amount,
+        payment_method, transaction_reference, notes,
+        status, created_by
        )
-       VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), $6::date, TRUE, $7, $8, $9, $10, $11, $12)
+       VALUES ($1, $2, $3::date, $4, $5, $6, $7, 'COMPLETED', $8)
        RETURNING *`,
       [
         driverId,
-        base,
-        daily,
-        perDelivery,
-        effectiveFromDate,
-        data.effectiveTo || null,
-        data.notes || null,
-        salaryType,
-        hra,
-        fuel,
-        pf,
-        status,
+        data.salaryMonth.trim(),
+        data.paymentDate.trim(),
+        Number(data.amount),
+        data.paymentMethod.trim().toUpperCase(),
+        txRef,
+        data.notes?.trim() || null,
+        createdBy || null,
       ]
     );
+
     return res.rows[0];
+  },
+
+  async getSalaryPayments(driverId: string, salaryMonth?: string): Promise<any[]> {
+    let sql = `
+      SELECT sp.*,
+             u1.name as created_by_name,
+             u2.name as reversed_by_name
+      FROM driver_salary_payments sp
+      LEFT JOIN users u1 ON sp.created_by = u1.id
+      LEFT JOIN users u2 ON sp.reversed_by = u2.id
+      WHERE sp.driver_id = $1
+    `;
+    const params: any[] = [driverId];
+
+    if (salaryMonth) {
+      sql += ` AND sp.salary_month = $2`;
+      params.push(salaryMonth.trim());
+    }
+
+    sql += ` ORDER BY sp.payment_date DESC, sp.created_at DESC`;
+
+    const res = await query(sql, params);
+    return res.rows;
+  },
+
+  async reverseSalaryPayment(
+    driverId: string,
+    paymentId: string,
+    reason: string,
+    reversedBy?: string
+  ): Promise<any> {
+    const res = await query(
+      `UPDATE driver_salary_payments
+       SET status = 'REVERSED',
+           reversal_reason = $1,
+           reversed_at = NOW(),
+           reversed_by = $2,
+           updated_at = NOW()
+       WHERE id = $3 AND driver_id = $4 AND status = 'COMPLETED'
+       RETURNING *`,
+      [reason.trim(), reversedBy || null, paymentId, driverId]
+    );
+
+    return res.rows[0] || null;
   },
 
   async getPayrollRecords(driverId: string): Promise<any[]> {
@@ -569,84 +706,6 @@ export const deliveryRepository = {
         data.paymentDate || null,
         data.paymentReference || null,
         processedBy || null,
-        data.notes || null,
-      ]
-    );
-    return res.rows[0];
-  },
-
-  async getDriverDocuments(driverId: string): Promise<any[]> {
-    const res = await query(
-      `SELECT dd.*, u.name as verifier_name
-       FROM driver_documents dd
-       LEFT JOIN users u ON dd.verified_by = u.id
-       WHERE dd.driver_id = $1
-       ORDER BY dd.created_at ASC`,
-      [driverId]
-    );
-    return res.rows;
-  },
-
-  async getDriverDocumentById(driverId: string, docId: string): Promise<any | null> {
-    const res = await query(
-      `SELECT dd.*, u.name as verifier_name
-       FROM driver_documents dd
-       LEFT JOIN users u ON dd.verified_by = u.id
-       WHERE dd.driver_id = $1 AND dd.id = $2
-       LIMIT 1`,
-      [driverId, docId]
-    );
-    return res.rows[0] || null;
-  },
-
-  async upsertDriverDocument(driverId: string, data: {
-    documentType: string;
-    documentNumber: string;
-    issueDate?: string;
-    expiryDate?: string;
-    verificationStatus?: string;
-    fileUrl?: string;
-    fileName?: string;
-    storagePath?: string;
-    mimeType?: string;
-    fileSizeBytes?: number;
-    notes?: string;
-  }, verifiedBy?: string): Promise<any> {
-    const res = await query(
-      `INSERT INTO driver_documents (
-        driver_id, document_type, document_number, issue_date, expiry_date,
-        verification_status, file_url, file_name, storage_path, mime_type, file_size_bytes,
-        verified_by, verified_at, notes
-       )
-       VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8, $9, $10, $11, $12::uuid, CASE WHEN $12::uuid IS NOT NULL THEN NOW() ELSE NULL END, $13)
-       ON CONFLICT (driver_id, document_type) DO UPDATE
-       SET document_number = EXCLUDED.document_number,
-           issue_date = EXCLUDED.issue_date,
-           expiry_date = EXCLUDED.expiry_date,
-           verification_status = EXCLUDED.verification_status,
-           file_url = COALESCE(EXCLUDED.file_url, driver_documents.file_url),
-           file_name = COALESCE(EXCLUDED.file_name, driver_documents.file_name),
-           storage_path = COALESCE(EXCLUDED.storage_path, driver_documents.storage_path),
-           mime_type = COALESCE(EXCLUDED.mime_type, driver_documents.mime_type),
-           file_size_bytes = COALESCE(EXCLUDED.file_size_bytes, driver_documents.file_size_bytes),
-           verified_by = COALESCE(EXCLUDED.verified_by, driver_documents.verified_by),
-           verified_at = CASE WHEN EXCLUDED.verified_by IS NOT NULL THEN NOW() ELSE driver_documents.verified_at END,
-           notes = EXCLUDED.notes,
-           updated_at = NOW()
-       RETURNING *`,
-      [
-        driverId,
-        data.documentType,
-        data.documentNumber.trim(),
-        data.issueDate || null,
-        data.expiryDate || null,
-        data.verificationStatus || 'VALID',
-        data.fileUrl || null,
-        data.fileName || null,
-        data.storagePath || null,
-        data.mimeType || null,
-        data.fileSizeBytes || null,
-        verifiedBy || null,
         data.notes || null,
       ]
     );
@@ -1050,6 +1109,7 @@ export const deliveryRepository = {
     inspectionsCount: number;
     collectionsCount: number;
     payrollCount: number;
+    paymentsCount: number;
     reconciliationsCount: number;
     hasHistoricalRecords: boolean;
     canPhysicalDelete: boolean;
@@ -1087,6 +1147,11 @@ export const deliveryRepository = {
       [driverId]
     );
 
+    const paymentsRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM driver_salary_payments WHERE driver_id = $1`,
+      [driverId]
+    );
+
     const activeDeliveriesCount = parseInt(activeDelRes.rows[0]?.count || '0', 10);
     const activeRunsCount = parseInt(activeRunsRes.rows[0]?.count || '0', 10);
     const historicalDeliveriesCount = parseInt(histDelRes.rows[0]?.count || '0', 10);
@@ -1094,6 +1159,7 @@ export const deliveryRepository = {
     const inspectionsCount = parseInt(inspectRes.rows[0]?.count || '0', 10);
     const collectionsCount = parseInt(collRes.rows[0]?.count || '0', 10);
     const payrollCount = parseInt(payrollRes.rows[0]?.count || '0', 10);
+    const paymentsCount = parseInt(paymentsRes.rows[0]?.count || '0', 10);
     const reconciliationsCount = parseInt(recRes.rows[0]?.count || '0', 10);
 
     const hasHistoricalRecords =
@@ -1102,6 +1168,7 @@ export const deliveryRepository = {
       inspectionsCount > 0 ||
       collectionsCount > 0 ||
       payrollCount > 0 ||
+      paymentsCount > 0 ||
       reconciliationsCount > 0;
 
     const canPhysicalDelete =
@@ -1115,6 +1182,7 @@ export const deliveryRepository = {
       inspectionsCount,
       collectionsCount,
       payrollCount,
+      paymentsCount,
       reconciliationsCount,
       hasHistoricalRecords,
       canPhysicalDelete,
@@ -1132,7 +1200,7 @@ export const deliveryRepository = {
       const client = await dbPool.connect();
       try {
         await client.query('BEGIN');
-        await client.query('DELETE FROM driver_documents WHERE driver_id = $1', [driverId]);
+        await client.query('DELETE FROM driver_salary_payments WHERE driver_id = $1', [driverId]);
         await client.query('DELETE FROM driver_attendance WHERE driver_id = $1', [driverId]);
         await client.query('DELETE FROM driver_salary_configs WHERE driver_id = $1', [driverId]);
         await client.query('DELETE FROM users WHERE id = $1', [driverId]);
