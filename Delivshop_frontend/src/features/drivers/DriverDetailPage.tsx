@@ -53,13 +53,13 @@ interface DriverDetailPageProps {
   driverId: string;
 }
 
-type TabType = 'salary' | 'profile' | 'deliveries' | 'audit';
+type TabType = 'profile' | 'deliveries' | 'salary' | 'audit';
 
 export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) => {
   const { user } = useAuth();
   const { navigate } = useNavigation();
 
-  const [activeTab, setActiveTab] = useState<TabType>('salary');
+  const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -637,9 +637,9 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         }}
       >
         {[
-          { key: 'salary', label: 'Salary Management', icon: DollarSign },
           { key: 'profile', label: 'Employee Information', icon: User },
           { key: 'deliveries', label: 'Delivery History & Runs', icon: Package, count: deliveries.length },
+          { key: 'salary', label: 'Salary Management', icon: DollarSign },
           { key: 'audit', label: 'Activity History', icon: History, count: auditHistory.length },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -686,7 +686,255 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
         })}
       </div>
 
-      {/* TAB 1: SALARY MANAGEMENT */}
+      {/* TAB 1: EMPLOYEE INFORMATION */}
+      {activeTab === 'profile' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Section 1: Personal and Contact Information */}
+          <Card style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <User size={18} color="var(--color-primary, #16805D)" />
+                1. Personal and Contact Information
+              </h3>
+              <Button variant="secondary" onClick={() => setIsEditModalOpen(true)} icon={<Pencil size={13} />}>
+                Edit Information
+              </Button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Full Legal Name
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.name}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Primary Phone
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.phone || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Alternate Phone
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.alternate_phone || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Email Address
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.email || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Gender
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.gender || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Emergency Contact
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.emergency_contact_name ? (
+                    <span>
+                      {driver.emergency_contact_name} {driver.emergency_contact_phone ? `(${driver.emergency_contact_phone})` : ''}
+                      {driver.emergency_contact_relation ? ` • ${driver.emergency_contact_relation}` : ''}
+                    </span>
+                  ) : driver.emergency_contact ? (
+                    driver.emergency_contact
+                  ) : (
+                    '—'
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Section 2: Address and Location */}
+          <Card style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MapPin size={18} color="var(--color-primary, #16805D)" />
+                2. Address and Base Location
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
+              <div style={{ gridColumn: 'span 2' }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Street Address
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.address || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  City or Village
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.city || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  State
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.state || '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Postal / PIN Code
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.pincode || '—'}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Section 3: Employment Details */}
+          <Card style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield size={18} color="var(--color-primary, #16805D)" />
+                3. Employment Details
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Employee ID
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-primary, #16805D)', marginTop: '2px' }}>
+                  {driver.employee_id || 'N/A'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Joining Date
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.joining_date ? formatDate(driver.joining_date) : '—'}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Employment Status
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.employment_status || (driver.is_active ? 'Active' : 'Inactive')}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  System Role
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                  {driver.role || 'DRIVER'}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* TAB 2: DELIVERIES & RUNS */}
+      {activeTab === 'deliveries' && (
+        <Card style={{ padding: '24px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Package size={18} color="var(--color-primary, #16805D)" />
+            Assigned Delivery History & Fulfillment
+          </h3>
+
+          {deliveries.length === 0 ? (
+            <div style={{ padding: '36px 16px', textAlign: 'center', color: '#64748B' }}>
+              <Package size={30} color="#CBD5E1" style={{ margin: '0 auto 8px auto' }} />
+              <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#475569' }}>
+                No delivery history recorded yet for this employee
+              </div>
+              <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
+                Completed and en-route deliveries will appear here as orders are fulfilled.
+              </div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #CBD5E1', textAlign: 'left', color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '10px 12px' }}>Order Number</th>
+                    <th style={{ padding: '10px 12px' }}>Shop / Merchant</th>
+                    <th style={{ padding: '10px 12px' }}>Delivery Status</th>
+                    <th style={{ padding: '10px 12px' }}>Assigned Date</th>
+                    <th style={{ padding: '10px 12px' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deliveries.slice(0, 15).map((d: any, idx: number) => (
+                    <tr key={d.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 600, color: '#0F172A' }}>
+                        #{d.orderNumber || d.order_number || d.id?.slice(0, 8)}
+                      </td>
+                      <td style={{ padding: '12px', color: '#334155' }}>
+                        {d.shopName || d.shop_name || 'Merchant Shop'}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <Badge
+                          variant={
+                            d.status === 'DELIVERED'
+                              ? 'success'
+                              : d.status === 'OUT_FOR_DELIVERY' || d.status === 'PICKED_UP'
+                              ? 'info'
+                              : d.status === 'FAILED'
+                              ? 'danger'
+                              : 'neutral'
+                          }
+                        >
+                          {d.status || 'PENDING'}
+                        </Badge>
+                      </td>
+                      <td style={{ padding: '12px', color: '#64748B', fontSize: '12px' }}>
+                        {d.createdAt || d.created_at ? formatDate(d.createdAt || d.created_at) : '—'}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: 600, color: '#0F172A' }}>
+                        {d.amount ? formatCurrency(d.amount) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* TAB 3: SALARY MANAGEMENT */}
       {activeTab === 'salary' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
           {/* Header Action Section */}
@@ -1202,254 +1450,6 @@ export const DriverDetailPage: React.FC<DriverDetailPageProps> = ({ driverId }) 
             )}
           </Card>
         </div>
-      )}
-
-      {/* TAB 2: EMPLOYEE INFORMATION */}
-      {activeTab === 'profile' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Section 1: Personal and Contact Information */}
-          <Card style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <User size={18} color="var(--color-primary, #16805D)" />
-                1. Personal and Contact Information
-              </h3>
-              <Button variant="secondary" onClick={() => setIsEditModalOpen(true)} icon={<Pencil size={13} />}>
-                Edit Information
-              </Button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Full Legal Name
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.name}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Primary Phone
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.phone || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Alternate Phone
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.alternate_phone || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Email Address
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.email || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Gender
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.gender || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Emergency Contact
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.emergency_contact_name ? (
-                    <span>
-                      {driver.emergency_contact_name} {driver.emergency_contact_phone ? `(${driver.emergency_contact_phone})` : ''}
-                      {driver.emergency_contact_relation ? ` • ${driver.emergency_contact_relation}` : ''}
-                    </span>
-                  ) : driver.emergency_contact ? (
-                    driver.emergency_contact
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Section 2: Address and Location */}
-          <Card style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MapPin size={18} color="var(--color-primary, #16805D)" />
-                2. Address and Base Location
-              </h3>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
-              <div style={{ gridColumn: 'span 2' }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Street Address
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.address || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  City or Village
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.city || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  State
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.state || '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Postal / PIN Code
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.pincode || '—'}
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Section 3: Employment Details */}
-          <Card style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Shield size={18} color="var(--color-primary, #16805D)" />
-                3. Employment Details
-              </h3>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Employee ID
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-primary, #16805D)', marginTop: '2px' }}>
-                  {driver.employee_id || 'N/A'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Joining Date
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.joining_date ? formatDate(driver.joining_date) : '—'}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Employment Status
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.employment_status || (driver.is_active ? 'Active' : 'Inactive')}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  System Role
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
-                  {driver.role || 'DRIVER'}
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* TAB 3: DELIVERIES & RUNS */}
-      {activeTab === 'deliveries' && (
-        <Card style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Package size={18} color="var(--color-primary, #16805D)" />
-            Assigned Delivery History & Fulfillment
-          </h3>
-
-          {deliveries.length === 0 ? (
-            <div style={{ padding: '36px 16px', textAlign: 'center', color: '#64748B' }}>
-              <Package size={30} color="#CBD5E1" style={{ margin: '0 auto 8px auto' }} />
-              <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#475569' }}>
-                No delivery history recorded yet for this employee
-              </div>
-              <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
-                Completed and en-route deliveries will appear here as orders are fulfilled.
-              </div>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #CBD5E1', textAlign: 'left', color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>
-                    <th style={{ padding: '10px 12px' }}>Order Number</th>
-                    <th style={{ padding: '10px 12px' }}>Shop / Merchant</th>
-                    <th style={{ padding: '10px 12px' }}>Delivery Status</th>
-                    <th style={{ padding: '10px 12px' }}>Assigned Date</th>
-                    <th style={{ padding: '10px 12px' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deliveries.slice(0, 15).map((d: any, idx: number) => (
-                    <tr key={d.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 600, color: '#0F172A' }}>
-                        #{d.orderNumber || d.order_number || d.id?.slice(0, 8)}
-                      </td>
-                      <td style={{ padding: '12px', color: '#334155' }}>
-                        {d.shopName || d.shop_name || 'Merchant Shop'}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <Badge
-                          variant={
-                            d.status === 'DELIVERED'
-                              ? 'success'
-                              : d.status === 'OUT_FOR_DELIVERY' || d.status === 'PICKED_UP'
-                              ? 'info'
-                              : d.status === 'FAILED'
-                              ? 'danger'
-                              : 'neutral'
-                          }
-                        >
-                          {d.status || 'PENDING'}
-                        </Badge>
-                      </td>
-                      <td style={{ padding: '12px', color: '#64748B', fontSize: '12px' }}>
-                        {d.createdAt || d.created_at ? formatDate(d.createdAt || d.created_at) : '—'}
-                      </td>
-                      <td style={{ padding: '12px', fontWeight: 600, color: '#0F172A' }}>
-                        {d.amount ? formatCurrency(d.amount) : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
       )}
 
       {/* TAB 4: ACTIVITY AUDIT TRAIL */}

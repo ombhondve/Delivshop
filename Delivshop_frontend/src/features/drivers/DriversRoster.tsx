@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { Modal } from '../../components/common/Modal';
 import {
   Search,
   Phone,
@@ -24,6 +25,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Radio,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { DriverUser, DriverRosterSummary } from '../../types';
@@ -51,6 +54,17 @@ export const DriversRoster: React.FC = () => {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
 
+  // Configurable Pagination States (Default: 8 per page)
+  const [pageSize, setPageSize] = useState<number>(8);
+  const [page, setPage] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
+  // Status Modal States
+  const [statusModalDriver, setStatusModalDriver] = useState<DriverUser | null>(null);
+  const [statusModalLoading, setStatusModalLoading] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+
   // Modals state
   const { navigate } = useNavigation();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -62,22 +76,49 @@ export const DriversRoster: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  // Reset page to 1 whenever filters, search, or sorting changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, sortBy, sortOrder]);
+
   const fetchRoster = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [driverList, summaryData] = await Promise.all([
+      const [driverRes, summaryData] = await Promise.all([
         api.deliveries.listAllDrivers({
           search: search.trim() || undefined,
           status: statusFilter,
           sortBy,
           sortOrder,
+          page,
+          limit: pageSize,
         }),
         api.deliveries.getRosterSummary(),
       ]);
 
-      setDrivers(driverList || []);
+      if (driverRes && Array.isArray(driverRes.drivers)) {
+        setDrivers(driverRes.drivers);
+        const total = typeof driverRes.total === 'number' ? driverRes.total : driverRes.drivers.length;
+        setTotalCount(total);
+        setTotalPages(typeof driverRes.totalPages === 'number' ? driverRes.totalPages : Math.max(1, Math.ceil(total / pageSize)));
+      } else if (driverRes && Array.isArray(driverRes.items)) {
+        setDrivers(driverRes.items);
+        const total = typeof driverRes.total === 'number' ? driverRes.total : driverRes.items.length;
+        setTotalCount(total);
+        setTotalPages(typeof driverRes.totalPages === 'number' ? driverRes.totalPages : Math.max(1, Math.ceil(total / pageSize)));
+      } else if (Array.isArray(driverRes)) {
+        const start = (page - 1) * pageSize;
+        setDrivers(driverRes.slice(start, start + pageSize));
+        setTotalCount(driverRes.length);
+        setTotalPages(Math.max(1, Math.ceil(driverRes.length / pageSize)));
+      } else {
+        setDrivers([]);
+        setTotalCount(0);
+        setTotalPages(1);
+      }
+
       setSummary(summaryData);
       setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch (err: any) {
@@ -85,11 +126,47 @@ export const DriversRoster: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, sortBy, sortOrder]);
+  }, [search, statusFilter, sortBy, sortOrder, page, pageSize]);
 
   useEffect(() => {
     fetchRoster();
   }, [fetchRoster]);
+
+  // Handle page size change with reset to page 1
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(1);
+  };
+
+  // Handle driver status update confirmation
+  const handleConfirmStatusChange = async () => {
+    if (!statusModalDriver) return;
+    const targetDriver = statusModalDriver;
+    const nextStatus = !targetDriver.is_active;
+    const actionLabel = nextStatus ? 'activate' : 'deactivate';
+
+    try {
+      setStatusModalLoading(true);
+      setStatusUpdatingId(targetDriver.id);
+
+      const reason = nextStatus
+        ? 'Employee reactivated by admin'
+        : 'Employee deactivated by admin';
+
+      await api.deliveries.updateDriverStatus(targetDriver.id, nextStatus, reason);
+
+      showToast(
+        `Driver ${targetDriver.name} successfully ${nextStatus ? 'activated' : 'deactivated'}`
+      );
+      setStatusModalDriver(null);
+      await fetchRoster();
+    } catch (err: any) {
+      showToast(err?.message || `Failed to ${actionLabel} driver`, 'error');
+    } finally {
+      setStatusModalLoading(false);
+      setStatusUpdatingId(null);
+    }
+  };
 
 
 
@@ -412,7 +489,7 @@ export const DriversRoster: React.FC = () => {
       {/* 4. Drivers Table Card */}
       <Card
         title="Fleet Personnel Roster"
-        subtitle={`Showing ${drivers.length} drivers retrieved from central PostgreSQL database`}
+        subtitle={`Showing ${totalCount > 0 ? (page - 1) * pageSize + 1 : 0}–${totalCount > 0 ? Math.min(page * pageSize, totalCount) : 0} of ${totalCount} fleet personnel records`}
         noPadding
       >
         {loading && drivers.length === 0 ? (
@@ -441,9 +518,27 @@ export const DriversRoster: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <div className="business-table-container">
+          <div
+            className="business-table-container"
+            tabIndex={0}
+            role="region"
+            aria-label="Fleet personnel table"
+            style={{
+              maxHeight: pageSize > 8 ? '520px' : 'none',
+              overflowY: pageSize > 8 ? 'auto' : 'visible',
+              overflowX: 'auto',
+              position: 'relative',
+            }}
+          >
             <table className="business-table">
-              <thead>
+              <thead
+                style={{
+                  position: pageSize > 8 ? 'sticky' : 'static',
+                  top: 0,
+                  zIndex: 10,
+                  backgroundColor: '#F8FAFC',
+                }}
+              >
                 <tr>
                   <th style={{ width: '240px', minWidth: '220px' }}>Driver</th>
                   <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Employee ID</th>
@@ -452,7 +547,7 @@ export const DriversRoster: React.FC = () => {
                   <th style={{ width: '210px', minWidth: '180px' }}>Current Assignment</th>
                   <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>Today's Drops</th>
                   <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px' }}>Account</th>
-                  <th style={{ width: '120px', minWidth: '110px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -617,9 +712,10 @@ export const DriversRoster: React.FC = () => {
                         </Badge>
                       </td>
 
-                      {/* 8. Actions - Details & Contextual Delete */}
-                      <td style={{ width: '130px', minWidth: '120px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                      {/* 8. Actions: [Details] [Power Icon] [Trash Icon] in exact required order */}
+                      <td style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px' }}>
+                          {/* A. Details Button */}
                           <button
                             type="button"
                             onClick={() => {
@@ -628,17 +724,18 @@ export const DriversRoster: React.FC = () => {
                             className="btn btn-secondary btn-table-action"
                             style={{
                               height: '28px',
-                              padding: '0 12px',
+                              padding: '0 10px',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '5px',
                               fontSize: '12px',
                               fontWeight: 600,
-                              color: 'var(--color-primary)',
-                              backgroundColor: 'var(--color-primary-subtle)',
+                              color: 'var(--color-primary, #16805D)',
+                              backgroundColor: 'var(--color-primary-subtle, #E6F4EA)',
                               border: '1px solid #6EE7B7',
                               borderRadius: '6px',
                               cursor: 'pointer',
+                              whiteSpace: 'nowrap',
                             }}
                             title={`View full details for ${drv.name}`}
                             aria-label={`View full details for ${drv.name}`}
@@ -646,26 +743,60 @@ export const DriversRoster: React.FC = () => {
                             <Eye size={13} />
                             <span>Details</span>
                           </button>
+
+                          {/* B. Activate / Deactivate Power Icon Button */}
+                          <button
+                            type="button"
+                            onClick={() => setStatusModalDriver(drv)}
+                            disabled={statusUpdatingId === drv.id}
+                            style={{
+                              height: '28px',
+                              width: '28px',
+                              minWidth: '28px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: 0,
+                              backgroundColor: '#FFFFFF',
+                              border: `1px solid ${drv.is_active ? '#FECACA' : '#BBF7D0'}`,
+                              borderRadius: '6px',
+                              cursor: statusUpdatingId === drv.id ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.15s ease',
+                              color: drv.is_active ? '#DC2626' : '#16A34A',
+                            }}
+                            className={drv.is_active ? 'hover:bg-red-50 hover:border-red-400' : 'hover:bg-green-50 hover:border-green-400'}
+                            title={drv.is_active ? 'Deactivate driver' : 'Activate driver'}
+                            aria-label={drv.is_active ? `Deactivate driver ${drv.name}` : `Activate driver ${drv.name}`}
+                          >
+                            {statusUpdatingId === drv.id ? (
+                              <RefreshCw size={13} className="spin-icon" />
+                            ) : (
+                              <Power size={13} strokeWidth={2.2} />
+                            )}
+                          </button>
+
+                          {/* D. Delete Trash Icon Button */}
                           <button
                             type="button"
                             onClick={() => setDeleteDriver(drv)}
                             style={{
                               height: '28px',
                               width: '28px',
+                              minWidth: '28px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               padding: 0,
-                              fontSize: '12px',
                               color: '#94A3B8',
                               backgroundColor: '#FFFFFF',
                               border: '1px solid #E2E8F0',
                               borderRadius: '6px',
                               cursor: 'pointer',
+                              transition: 'all 0.15s ease',
                             }}
                             className="hover:text-red-600 hover:border-red-300 hover:bg-red-50"
-                            title={`Delete ${drv.name}...`}
-                            aria-label={`Delete ${drv.name}`}
+                            title="Delete driver"
+                            aria-label={`Delete driver ${drv.name}`}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -681,16 +812,58 @@ export const DriversRoster: React.FC = () => {
 
         {/* Table Pagination Footer */}
         <div className="table-pagination-footer">
-          <span className="text-secondary text-xs">
-            Showing {drivers.length} of {summary.totalDrivers} fleet drivers on file
-          </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <Button variant="secondary" size="sm" disabled>
-              Previous
-            </Button>
-            <Button variant="secondary" size="sm" disabled>
-              Next
-            </Button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <span className="pagination-info">
+              Showing <strong>{totalCount > 0 ? (page - 1) * pageSize + 1 : 0}</strong>–<strong>{totalCount > 0 ? Math.min(page * pageSize, totalCount) : 0}</strong> of <strong>{totalCount}</strong> drivers
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label htmlFor="rows-per-page-select" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Rows per page:
+              </label>
+              <select
+                id="rows-per-page-select"
+                className="toolbar-select-field"
+                style={{ height: '28px', padding: '0 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #CBD5E1' }}
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                <option value={8}>8</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+            </span>
+            <div className="pagination-buttons" style={{ display: 'flex', gap: '6px' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                title="Previous page"
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={14} />
+                <span>Previous</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || loading}
+                title="Next page"
+                aria-label="Next page"
+              >
+                <span>Next</span>
+                <ChevronRight size={14} />
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
@@ -704,6 +877,92 @@ export const DriversRoster: React.FC = () => {
           fetchRoster();
         }}
       />
+
+      {/* Driver Status Activation / Deactivation Confirmation Modal */}
+      {statusModalDriver && (
+        <Modal
+          isOpen={Boolean(statusModalDriver)}
+          onClose={() => {
+            if (!statusModalLoading) setStatusModalDriver(null);
+          }}
+          title={
+            statusModalDriver.is_active
+              ? 'Deactivate Driver Account'
+              : 'Activate Driver Account'
+          }
+          subtitle={`Employment status update for ${statusModalDriver.name} (${statusModalDriver.employee_id || 'ID N/A'})`}
+          icon={
+            statusModalDriver.is_active ? (
+              <Power size={20} color="#DC2626" />
+            ) : (
+              <Power size={20} color="#16A34A" />
+            )
+          }
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setStatusModalDriver(null)}
+                disabled={statusModalLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={statusModalDriver.is_active ? 'danger' : 'primary'}
+                size="md"
+                onClick={handleConfirmStatusChange}
+                loading={statusModalLoading}
+              >
+                {statusModalDriver.is_active ? 'Confirm Deactivation' : 'Confirm Activation'}
+              </Button>
+            </div>
+          }
+        >
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            {statusModalDriver.is_active ? (
+              <>
+                <p style={{ margin: '0 0 10px 0' }}>
+                  Are you sure you want to deactivate <strong style={{ color: 'var(--text-primary)' }}>{statusModalDriver.name}</strong>?
+                </p>
+                <div
+                  style={{
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FECACA',
+                    borderRadius: '6px',
+                    padding: '10px 12px',
+                    color: '#991B1B',
+                    fontSize: '12.5px',
+                  }}
+                >
+                  <strong>Impact on operations:</strong> Deactivating marks this driver as off-duty and prevents future delivery dispatches or route assignments.
+                </div>
+                <p style={{ margin: '10px 0 0 0', fontSize: '12px', color: '#64748B' }}>
+                  Statutory audit safety: All historical dispatches, completed delivery records, salary configurations, payment records, and employee profiles remain strictly preserved.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: '0 0 10px 0' }}>
+                  Are you sure you want to activate <strong style={{ color: 'var(--text-primary)' }}>{statusModalDriver.name}</strong>?
+                </p>
+                <div
+                  style={{
+                    backgroundColor: '#F0FDF4',
+                    border: '1px solid #BBF7D0',
+                    borderRadius: '6px',
+                    padding: '10px 12px',
+                    color: '#166534',
+                    fontSize: '12.5px',
+                  }}
+                >
+                  <strong>Impact on operations:</strong> Activating restores this driver's active fleet standing, making them immediately eligible for route assignments and order fulfillment dispatches.
+                </div>
+              </>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {/* Delete Driver Confirmation Modal */}
       {deleteDriver && (

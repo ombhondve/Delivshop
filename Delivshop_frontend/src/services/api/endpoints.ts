@@ -466,16 +466,20 @@ export const api = {
       vehicle?: string;
       sortBy?: string;
       sortOrder?: string;
-    }): Promise<DriverUser[]> {
+      page?: number;
+      limit?: number;
+    }): Promise<any> {
       const query = new URLSearchParams();
       if (params?.search) query.set('search', params.search);
       if (params?.status) query.set('status', params.status);
       if (params?.vehicle) query.set('vehicle', params.vehicle);
       if (params?.sortBy) query.set('sortBy', params.sortBy);
       if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+      if (typeof params?.page === 'number') query.set('page', String(params.page));
+      if (typeof params?.limit === 'number') query.set('limit', String(params.limit));
 
       const qs = query.toString();
-      return apiClient<DriverUser[]>(`deliveries/drivers/all${qs ? `?${qs}` : ''}`);
+      return apiClient<any>(`deliveries/drivers/all${qs ? `?${qs}` : ''}`);
     },
 
     async getRosterSummary(): Promise<DriverRosterSummary> {

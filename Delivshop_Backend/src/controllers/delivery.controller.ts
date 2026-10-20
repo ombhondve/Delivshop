@@ -65,15 +65,20 @@ export const deliveryController = {
 
   async listAllDrivers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { search, status, vehicle, sortBy, sortOrder } = req.query;
-      const drivers = await deliveryService.listAllDrivers({
+      const { search, status, vehicle, sortBy, sortOrder, page, limit } = req.query;
+      const parsedPage = page ? parseInt(page as string, 10) : undefined;
+      const parsedLimit = limit ? parseInt(limit as string, 10) : undefined;
+
+      const result = await deliveryService.listAllDrivers({
         search: typeof search === 'string' ? search : undefined,
         status: typeof status === 'string' ? status : undefined,
         vehicle: typeof vehicle === 'string' ? vehicle : undefined,
         sortBy: typeof sortBy === 'string' ? sortBy : undefined,
         sortOrder: sortOrder === 'DESC' ? 'DESC' : 'ASC',
+        page: parsedPage && !isNaN(parsedPage) ? parsedPage : undefined,
+        limit: parsedLimit && !isNaN(parsedLimit) ? parsedLimit : undefined,
       });
-      sendSuccess(res, drivers);
+      sendSuccess(res, result);
     } catch (err) {
       next(err);
     }

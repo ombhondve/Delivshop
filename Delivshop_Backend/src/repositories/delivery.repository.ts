@@ -119,7 +119,9 @@ export const deliveryRepository = {
     vehicle?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
-  }): Promise<any[]> {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
     let whereClauses = [`u.role = 'DRIVER'`, `u.deleted_at IS NULL`];
     const values: any[] = [];
 
@@ -153,12 +155,36 @@ export const deliveryRepository = {
       whereClauses.push(`LOWER(COALESCE(u.vehicle_number, '')) LIKE $${idx}`);
     }
 
+    let total = 0;
+    const isPaginated = typeof params?.page === 'number' && typeof params?.limit === 'number';
+
+    if (isPaginated) {
+      const countRes = await query(
+        `SELECT COUNT(*)::int as total FROM users u WHERE ${whereClauses.join(' AND ')}`,
+        values
+      );
+      total = countRes.rows[0]?.total || 0;
+    }
+
     let sortCol = 'u.name';
     if (params?.sortBy === 'employee_id') sortCol = 'u.employee_id';
     else if (params?.sortBy === 'created_at') sortCol = 'u.created_at';
     else if (params?.sortBy === 'rating') sortCol = 'u.name';
 
     const orderDir = params?.sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    let paginationClause = '';
+    const queryValues = [...values];
+    if (isPaginated) {
+      const page = Math.max(1, params!.page!);
+      const limit = Math.max(1, params!.limit!);
+      const offset = (page - 1) * limit;
+      queryValues.push(limit);
+      const limitIdx = queryValues.length;
+      queryValues.push(offset);
+      const offsetIdx = queryValues.length;
+      paginationClause = ` LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+    }
 
     const res = await query(
       `SELECT u.id, u.name, u.email, u.phone, u.role, u.is_active, 
@@ -176,11 +202,11 @@ export const deliveryRepository = {
               (SELECT s.name FROM deliveries d JOIN orders o ON d.order_id = o.id JOIN shops s ON o.shop_id = s.id WHERE d.driver_id = u.id AND d.status NOT IN ('DELIVERED', 'FAILED', 'CANCELLED') ORDER BY d.created_at DESC LIMIT 1) as current_shop_name
        FROM users u 
        WHERE ${whereClauses.join(' AND ')}
-       ORDER BY ${sortCol} ${orderDir}`,
-      values
+       ORDER BY ${sortCol} ${orderDir}, u.id ASC${paginationClause}`,
+      queryValues
     );
 
-    return res.rows.map((row) => ({
+    const items = res.rows.map((row) => ({
       ...row,
       status: !row.is_active
         ? 'OFF_DUTY'
@@ -189,6 +215,22 @@ export const deliveryRepository = {
         : 'AVAILABLE',
       rating: 4.8, // standard benchmark for certified fleet personnel
     }));
+
+    if (isPaginated) {
+      const page = Math.max(1, params!.page!);
+      const limit = Math.max(1, params!.limit!);
+      const totalPages = Math.ceil(total / limit) || 1;
+      return {
+        items,
+        drivers: items,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    }
+
+    return items;
   },
 
   async getRosterSummary(): Promise<{
