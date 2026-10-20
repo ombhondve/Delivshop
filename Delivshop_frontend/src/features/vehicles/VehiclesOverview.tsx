@@ -836,10 +836,10 @@ export const VehiclesOverview: React.FC = () => {
                     <td style={{ width: '120px', minWidth: '110px' }}>
                       <div>
                         <span style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)', display: 'block' }}>
-                          {v.capacity_crates} crates
+                          {Number(v.capacity_kg).toLocaleString('en-IN')} KG
                         </span>
                         <span style={{ fontSize: '11px', color: '#64748B' }}>
-                          {Number(v.capacity_kg).toLocaleString('en-IN')} KG
+                          Payload limit
                         </span>
                       </div>
                     </td>

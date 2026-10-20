@@ -368,21 +368,6 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                   {vehicle?.registration_number}
                 </h1>
                 {vehicle && getStatusBadge(vehicle.status, vehicle.is_active)}
-                {vehicle?.nickname && (
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: '#0369A1',
-                      backgroundColor: '#F0F9FF',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #BAE6FD',
-                    }}
-                  >
-                    "{vehicle.nickname}"
-                  </span>
-                )}
               </div>
 
               <div
@@ -412,11 +397,14 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 </code>
                 <span>•</span>
                 <span style={{ fontWeight: 600, color: '#1E293B' }}>{vehicle?.make_model}</span>
-                {vehicle?.manufacturing_year && <span>({vehicle.manufacturing_year})</span>}
                 <span>•</span>
                 <span>{vehicle?.vehicle_type}</span>
-                <span>•</span>
-                <span>{vehicle?.depot}</span>
+                {vehicle?.depot && (
+                  <>
+                    <span>•</span>
+                    <span>{vehicle.depot}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -623,10 +611,10 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                Payload & Crates
+                Payload Capacity
               </span>
               <div style={{ fontSize: '20px', fontWeight: 800, color: '#1F2937', marginTop: '4px' }}>
-                {vehicle?.capacity_crates} crates
+                {Number(vehicle?.capacity_kg || 0).toLocaleString('en-IN')} KG
               </div>
             </div>
             <div style={{ background: '#F0FDF4', color: '#1F2937', padding: '8px', borderRadius: '6px' }}>
@@ -634,7 +622,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             </div>
           </div>
           <div style={{ fontSize: '12px', color: '#64748B', marginTop: '6px' }}>
-            {Number(vehicle?.capacity_kg).toLocaleString('en-IN')} KG payload limit
+            Maximum gross payload capacity
           </div>
         </Card>
 
@@ -821,20 +809,6 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Callsign / Nickname:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: vehicle?.nickname ? '#1F2937' : '#94A3B8' }}>
-                    {vehicle?.nickname || 'None assigned'}
-                  </span>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Manufacturing Year:</span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
-                    {vehicle?.manufacturing_year || 'Not specified'}
-                  </span>
-                </div>
-
-                <div>
                   <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Vehicle Classification:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                     {vehicle?.vehicle_type}
@@ -858,9 +832,9 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Payload & Crate Capacity:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Payload Capacity:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
-                    {vehicle?.capacity_kg} KG ({vehicle?.capacity_crates} crates)
+                    {Number(vehicle?.capacity_kg || 0).toLocaleString('en-IN')} KG
                   </span>
                 </div>
 

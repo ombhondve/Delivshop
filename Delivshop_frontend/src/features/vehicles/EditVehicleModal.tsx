@@ -30,11 +30,8 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
   const [formData, setFormData] = useState({
     registrationNumber: '',
     makeModel: '',
-    nickname: '',
-    manufacturingYear: new Date().getFullYear(),
     vehicleType: 'Refrigerated Van (1.5 Ton)',
     capacityKg: 1000,
-    capacityCrates: 60,
     fuelType: 'DIESEL' as 'DIESEL' | 'ELECTRIC' | 'CNG' | 'PETROL',
     isRefrigerated: false,
     temperatureMinC: -18.0,
@@ -50,11 +47,8 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
       setFormData({
         registrationNumber: vehicle.registration_number || '',
         makeModel: vehicle.make_model || '',
-        nickname: vehicle.nickname || '',
-        manufacturingYear: vehicle.manufacturing_year || new Date().getFullYear(),
         vehicleType: vehicle.vehicle_type || 'Refrigerated Van (1.5 Ton)',
         capacityKg: vehicle.capacity_kg || 1000,
-        capacityCrates: vehicle.capacity_crates || 60,
         fuelType: (vehicle.fuel_type as any) || 'DIESEL',
         isRefrigerated: Boolean(vehicle.is_refrigerated),
         temperatureMinC:
@@ -97,11 +91,8 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
       const res = await api.vehicles.update(vehicle.id, {
         registrationNumber: formData.registrationNumber.trim().toUpperCase(),
         makeModel: formData.makeModel.trim(),
-        nickname: formData.nickname.trim() || undefined,
-        manufacturingYear: formData.manufacturingYear ? Number(formData.manufacturingYear) : undefined,
         vehicleType: formData.vehicleType,
         capacityKg: Number(formData.capacityKg),
-        capacityCrates: Number(formData.capacityCrates),
         fuelType: formData.fuelType,
         isRefrigerated: formData.isRefrigerated,
         temperatureMinC: formData.isRefrigerated ? Number(formData.temperatureMinC) : undefined,
@@ -171,7 +162,7 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
             <span>Asset Identification & Classification</span>
           </div>
 
-          <div className="form-grid-2">
+          <div className="form-grid-3">
             <div className="form-group">
               <label className="form-label required">Registration Number</label>
               <input
@@ -199,31 +190,6 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Vehicle Callsign / Nickname</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="e.g. Cold Runner 1 or Chilled Alpha"
-                value={formData.nickname}
-                onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-              />
-              <span className="form-text-hint">Radio handle or depot callsign (optional)</span>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Manufacturing Year</label>
-              <input
-                type="number"
-                className="input-field"
-                min={1995}
-                max={2030}
-                value={formData.manufacturingYear}
-                onChange={(e) => setFormData({ ...formData, manufacturingYear: Number(e.target.value) })}
-              />
-              <span className="form-text-hint">Year of commercial production</span>
-            </div>
-
-            <div className="form-group">
               <label className="form-label required">Classification</label>
               <select
                 className="input-field"
@@ -237,21 +203,6 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
                 <option value="Heavy Commercial Chiller (3 Ton)">Heavy Commercial Chiller (3 Ton)</option>
               </select>
               <span className="form-text-hint">Fleet route categorization</span>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label required">Fuel / Propulsion Type</label>
-              <select
-                className="input-field"
-                value={formData.fuelType}
-                onChange={(e) => setFormData({ ...formData, fuelType: e.target.value as any })}
-              >
-                <option value="DIESEL">Diesel</option>
-                <option value="ELECTRIC">Electric (EV)</option>
-                <option value="CNG">Compressed Natural Gas (CNG)</option>
-                <option value="PETROL">Petrol</option>
-              </select>
-              <span className="form-text-hint">Propulsion powertrain</span>
             </div>
           </div>
         </div>
@@ -282,17 +233,18 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label required">Standard Milk Crate Capacity</label>
-              <input
-                type="number"
+              <label className="form-label required">Fuel / Propulsion Type</label>
+              <select
                 className="input-field"
-                min={1}
-                max={600}
-                value={formData.capacityCrates}
-                onChange={(e) => setFormData({ ...formData, capacityCrates: Number(e.target.value) })}
-                required
-              />
-              <span className="form-text-hint">Standard 12-pouch dairy crate slots</span>
+                value={formData.fuelType}
+                onChange={(e) => setFormData({ ...formData, fuelType: e.target.value as any })}
+              >
+                <option value="DIESEL">Diesel</option>
+                <option value="ELECTRIC">Electric (EV)</option>
+                <option value="CNG">Compressed Natural Gas (CNG)</option>
+                <option value="PETROL">Petrol</option>
+              </select>
+              <span className="form-text-hint">Propulsion powertrain</span>
             </div>
           </div>
 
