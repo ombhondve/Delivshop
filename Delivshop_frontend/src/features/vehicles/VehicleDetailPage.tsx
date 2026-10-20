@@ -45,7 +45,7 @@ interface VehicleDetailPageProps {
   vehicleId: string;
 }
 
-type TabType = 'overview' | 'assignments' | 'documents' | 'maintenance' | 'activity';
+type TabType = 'overview' | 'documents' | 'maintenance' | 'assignments' | 'activity';
 
 export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId }) => {
   const { navigate } = useNavigation();
@@ -731,24 +731,6 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
 
         <button
           type="button"
-          onClick={() => setActiveTab('assignments')}
-          style={{
-            padding: '12px 18px',
-            fontSize: '13.5px',
-            fontWeight: 600,
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            borderBottom: activeTab === 'assignments' ? '2px solid #047857' : '2px solid transparent',
-            color: activeTab === 'assignments' ? '#047857' : '#64748B',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Assignments & Runs ({vehicle?.assignments?.length || 0})
-        </button>
-
-        <button
-          type="button"
           onClick={() => setActiveTab('documents')}
           style={{
             padding: '12px 18px',
@@ -762,7 +744,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             whiteSpace: 'nowrap',
           }}
         >
-          Compliance & Documents ({vehicle?.documents?.length || 0})
+          Documents ({vehicle?.documents?.length || 0})
         </button>
 
         <button
@@ -780,7 +762,25 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
             whiteSpace: 'nowrap',
           }}
         >
-          Maintenance & Service ({vehicle?.maintenance?.length || 0})
+          Maintenance ({vehicle?.maintenance?.length || 0})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('assignments')}
+          style={{
+            padding: '12px 18px',
+            fontSize: '13.5px',
+            fontWeight: 600,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'assignments' ? '2px solid #047857' : '2px solid transparent',
+            color: activeTab === 'assignments' ? '#047857' : '#64748B',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Runs History ({vehicle?.assignments?.length || 0})
         </button>
 
         <button
@@ -802,7 +802,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         </button>
       </div>
 
-      {/* Tab 1: Overview */}
+      {/* Tab 1: Overview & Specs */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
           <Card title="Vehicle Specifications & Technical Profile" noPadding>
@@ -970,97 +970,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         </div>
       )}
 
-      {/* Tab 2: Assignments & Runs */}
-      {activeTab === 'assignments' && (
-        <Card
-          title="Delivery Run Dispatches & Assignment History"
-          subtitle="Complete chronological record of delivery runs dispatched with this vehicle"
-          noPadding
-        >
-          {!vehicle?.assignments || vehicle.assignments.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
-              <Clock size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>
-                No historical delivery runs logged
-              </h4>
-              <p style={{ fontSize: '13px', margin: '0 0 16px 0' }}>
-                This vehicle has not yet executed delivery runs in the dispatch system.
-              </p>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => navigate('/admin/assignments')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                <ExternalLink size={14} /> Open Assignments Module
-              </button>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table" style={{ width: '100%', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #D6D3C8', textAlign: 'left' }}>
-                    <th style={{ padding: '12px 18px', color: '#475569' }}>Run Code</th>
-                    <th style={{ padding: '12px 18px', color: '#475569' }}>Route & Hub</th>
-                    <th style={{ padding: '12px 18px', color: '#475569' }}>Assigned Driver</th>
-                    <th style={{ padding: '12px 18px', color: '#475569' }}>Delivery Date</th>
-                    <th style={{ padding: '12px 18px', color: '#475569' }}>Stops</th>
-                    <th style={{ padding: '12px 18px', color: '#475569' }}>Run Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vehicle.assignments.map((run: any) => (
-                    <tr key={run.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontWeight: 700, color: '#047857' }}>
-                        {run.run_code}
-                      </td>
-                      <td style={{ padding: '12px 18px' }}>
-                        <div style={{ fontWeight: 600, color: '#1F2937' }}>
-                          {run.route_name || run.route_code}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748B' }}>
-                          {run.route_city || 'Pune'} • {run.route_depot || 'Central Depot'}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 18px' }}>
-                        <div style={{ fontWeight: 600, color: '#1F2937' }}>{run.driver_name}</div>
-                        <div style={{ fontSize: '11px', color: '#64748B' }}>
-                          Emp ID: {run.driver_employee_id || 'N/A'} • {run.driver_phone || ''}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 18px', color: '#64748B' }}>
-                        {formatDate(run.delivery_date)}
-                      </td>
-                      <td style={{ padding: '12px 18px' }}>
-                        <span style={{ fontWeight: 600, color: '#1F2937' }}>
-                          {run.completed_stops_count || 0} / {run.planned_stops_count || 0}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 18px' }}>
-                        <Badge
-                          variant={
-                            run.status === 'COMPLETED'
-                              ? 'success'
-                              : run.status === 'IN_PROGRESS'
-                              ? 'navy'
-                              : run.status === 'CANCELLED'
-                              ? 'danger'
-                              : 'neutral'
-                          }
-                        >
-                          {run.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* Tab 3: Documents & Compliance */}
+      {/* Tab 2: Documents */}
       {activeTab === 'documents' && (
         <Card
           title="Vehicle Compliance Documents & Certifications"
@@ -1231,7 +1141,7 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         </Card>
       )}
 
-      {/* Tab 4: Maintenance & Service */}
+      {/* Tab 3: Maintenance */}
       {activeTab === 'maintenance' && (
         <Card
           title="Maintenance & Fleet Service Logbook"
@@ -1339,7 +1249,97 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
         </Card>
       )}
 
-      {/* Tab 5: Activity History (Audit Log) */}
+      {/* Tab 4: Runs History */}
+      {activeTab === 'assignments' && (
+        <Card
+          title="Delivery Run Dispatches & Assignment History"
+          subtitle="Complete chronological record of delivery runs dispatched with this vehicle"
+          noPadding
+        >
+          {!vehicle?.assignments || vehicle.assignments.length === 0 ? (
+            <div style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
+              <Clock size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>
+                No historical delivery runs logged
+              </h4>
+              <p style={{ fontSize: '13px', margin: '0 0 16px 0' }}>
+                This vehicle has not yet executed delivery runs in the dispatch system.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => navigate('/admin/assignments')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <ExternalLink size={14} /> Open Assignments Module
+              </button>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table" style={{ width: '100%', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #D6D3C8', textAlign: 'left' }}>
+                    <th style={{ padding: '12px 18px', color: '#475569' }}>Run Code</th>
+                    <th style={{ padding: '12px 18px', color: '#475569' }}>Route & Hub</th>
+                    <th style={{ padding: '12px 18px', color: '#475569' }}>Assigned Driver</th>
+                    <th style={{ padding: '12px 18px', color: '#475569' }}>Delivery Date</th>
+                    <th style={{ padding: '12px 18px', color: '#475569' }}>Stops</th>
+                    <th style={{ padding: '12px 18px', color: '#475569' }}>Run Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vehicle.assignments.map((run: any) => (
+                    <tr key={run.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontWeight: 700, color: '#047857' }}>
+                        {run.run_code}
+                      </td>
+                      <td style={{ padding: '12px 18px' }}>
+                        <div style={{ fontWeight: 600, color: '#1F2937' }}>
+                          {run.route_name || run.route_code}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>
+                          {run.route_city || 'Pune'} • {run.route_depot || 'Central Depot'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 18px' }}>
+                        <div style={{ fontWeight: 600, color: '#1F2937' }}>{run.driver_name}</div>
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>
+                          Emp ID: {run.driver_employee_id || 'N/A'} • {run.driver_phone || ''}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 18px', color: '#64748B' }}>
+                        {formatDate(run.delivery_date)}
+                      </td>
+                      <td style={{ padding: '12px 18px' }}>
+                        <span style={{ fontWeight: 600, color: '#1F2937' }}>
+                          {run.completed_stops_count || 0} / {run.planned_stops_count || 0}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 18px' }}>
+                        <Badge
+                          variant={
+                            run.status === 'COMPLETED'
+                              ? 'success'
+                              : run.status === 'IN_PROGRESS'
+                              ? 'navy'
+                              : run.status === 'CANCELLED'
+                              ? 'danger'
+                              : 'neutral'
+                          }
+                        >
+                          {run.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Tab 5: Activity History */}
       {activeTab === 'activity' && (
         <Card
           title="Vehicle Operational Audit Trail"

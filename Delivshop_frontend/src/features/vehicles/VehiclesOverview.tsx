@@ -39,7 +39,6 @@ import { AddVehicleModal } from './AddVehicleModal';
 import { EditVehicleModal } from './EditVehicleModal';
 import { AddVehicleDocumentModal } from './AddVehicleDocumentModal';
 import { AddMaintenanceModal } from './AddMaintenanceModal';
-import { VehicleDetailsDrawer } from './VehicleDetailsDrawer';
 import { useNavigation } from '../../context/NavigationContext';
 
 export const VehiclesOverview: React.FC = () => {
@@ -82,7 +81,6 @@ export const VehiclesOverview: React.FC = () => {
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [docVehicle, setDocVehicle] = useState<Vehicle | null>(null);
   const [maintVehicle, setMaintVehicle] = useState<Vehicle | null>(null);
-  const [previewVehicleId, setPreviewVehicleId] = useState<string | null>(null);
   const [statusConfirmVehicle, setStatusConfirmVehicle] = useState<Vehicle | null>(null);
   const [deleteVehicle, setDeleteVehicle] = useState<Vehicle | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
@@ -986,7 +984,7 @@ export const VehiclesOverview: React.FC = () => {
                       <div className="vehicle-action-menu-container" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
                         <button
                           type="button"
-                          onClick={() => setPreviewVehicleId(v.id)}
+                          onClick={() => navigate(`/admin/vehicles/${v.id}`)}
                           className="btn btn-secondary btn-table-action"
                           style={{
                             height: '28px',
@@ -1002,11 +1000,11 @@ export const VehiclesOverview: React.FC = () => {
                             borderRadius: '6px',
                             cursor: 'pointer',
                           }}
-                          title={`Quick view drawer for ${v.registration_number}`}
-                          aria-label={`Quick view drawer for ${v.registration_number}`}
+                          title={`View full details for ${v.registration_number}`}
+                          aria-label={`View full details for ${v.registration_number}`}
                         >
                           <Eye size={13} />
-                          <span>Preview</span>
+                          <span>Details</span>
                         </button>
 
                         {/* Overflow contextual menu toggle */}
@@ -1042,29 +1040,6 @@ export const VehiclesOverview: React.FC = () => {
                               type="button"
                               onClick={() => {
                                 setActionMenuOpenId(null);
-                                setPreviewVehicleId(v.id);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                width: '100%',
-                                padding: '8px 14px',
-                                fontSize: '12px',
-                                color: 'var(--text-primary)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-slate-50"
-                            >
-                              <Eye size={13} style={{ color: 'var(--color-primary)' }} /> Quick Preview (Drawer)
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionMenuOpenId(null);
                                 navigate(`/admin/vehicles/${v.id}`);
                               }}
                               style={{
@@ -1081,7 +1056,7 @@ export const VehiclesOverview: React.FC = () => {
                               }}
                               className="hover:bg-slate-50"
                             >
-                              <ExternalLink size={13} style={{ color: 'var(--color-primary)' }} /> Open Full Record
+                              <Eye size={13} style={{ color: 'var(--color-primary)' }} /> View Vehicle Details
                             </button>
 
                             <button
@@ -1324,13 +1299,6 @@ export const VehiclesOverview: React.FC = () => {
           }}
         />
       )}
-
-      {/* Quick Details Drawer */}
-      <VehicleDetailsDrawer
-        vehicleId={previewVehicleId}
-        onClose={() => setPreviewVehicleId(null)}
-        onVehicleUpdated={fetchVehicles}
-      />
 
       {/* Deactivate / Activate Confirmation Modal */}
       {statusConfirmVehicle && (
