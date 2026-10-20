@@ -872,9 +872,9 @@ export const VehicleDetailPage: React.FC<VehicleDetailPageProps> = ({ vehicleId 
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Home Base Depot:</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', display: 'block' }}>Home Location:</span>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
-                    {vehicle?.depot}
+                    {vehicle?.depot || 'Not specified'}
                   </span>
                 </div>
 

@@ -9,6 +9,7 @@ import {
   PlusCircle,
   FileText,
   RotateCcw,
+  Info,
 } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
@@ -22,19 +23,73 @@ interface AddVehicleModalProps {
   onVehicleCreated: (vehicle: Vehicle) => void;
 }
 
+interface InfoTooltipProps {
+  text: string;
+}
+
+export const InfoTooltip: React.FC<InfoTooltipProps> = ({ text }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      className="info-tooltip-container"
+      style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '5px', position: 'relative' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      onFocus={() => setShow(true)}
+      onBlur={() => setShow(false)}
+      tabIndex={0}
+      role="button"
+      aria-label={text}
+    >
+      <Info
+        size={13}
+        style={{
+          color: show ? 'var(--color-primary, #047857)' : '#94A3B8',
+          cursor: 'help',
+          transition: 'color 0.15s ease',
+        }}
+      />
+      {show && (
+        <span
+          className="info-tooltip-bubble"
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 6px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#1E293B',
+            color: '#FFFFFF',
+            fontSize: '11.5px',
+            lineHeight: 1.35,
+            padding: '5px 9px',
+            borderRadius: '6px',
+            whiteSpace: 'normal',
+            width: 'max-content',
+            maxWidth: '240px',
+            zIndex: 9999,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+            pointerEvents: 'none',
+            fontWeight: 400,
+            textAlign: 'center',
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+};
+
 const INITIAL_FORM_DATA = {
   registrationNumber: '',
   makeModel: '',
-  nickname: '',
-  manufacturingYear: new Date().getFullYear(),
   vehicleType: 'Refrigerated Van (1.5 Ton)',
   capacityKg: 1500,
-  capacityCrates: 75,
   fuelType: 'DIESEL' as 'DIESEL' | 'ELECTRIC' | 'CNG' | 'PETROL',
   isRefrigerated: true,
   temperatureMinC: -18.0,
   temperatureMaxC: 4.0,
-  depot: 'Pune Central Cold Depot',
+  depot: '',
   status: 'AVAILABLE' as 'AVAILABLE' | 'UNDER_MAINTENANCE' | 'INACTIVE',
   currentOdometerKm: 0,
   notes: '',
@@ -80,16 +135,13 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
       const res = await api.vehicles.create({
         registrationNumber: formData.registrationNumber.trim().toUpperCase(),
         makeModel: formData.makeModel.trim(),
-        nickname: formData.nickname.trim() || undefined,
-        manufacturingYear: formData.manufacturingYear ? Number(formData.manufacturingYear) : undefined,
         vehicleType: formData.vehicleType,
         capacityKg: Number(formData.capacityKg),
-        capacityCrates: Number(formData.capacityCrates),
         fuelType: formData.fuelType,
         isRefrigerated: formData.isRefrigerated,
         temperatureMinC: formData.isRefrigerated ? Number(formData.temperatureMinC) : undefined,
         temperatureMaxC: formData.isRefrigerated ? Number(formData.temperatureMaxC) : undefined,
-        depot: formData.depot,
+        depot: formData.depot.trim() || undefined,
         status: formData.status,
         currentOdometerKm: Number(formData.currentOdometerKm) || 0,
         notes: formData.notes.trim() || undefined,
@@ -225,18 +277,21 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
         </div>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Section 1: Basic Information */}
+          {/* Section 1: Vehicle Information */}
           <div className="form-section">
             <div className="form-section-header">
               <span className="form-section-icon">
                 <Truck size={13} />
               </span>
-              <span>Basic Asset Information</span>
+              <span>Vehicle Information</span>
             </div>
 
-            <div className="form-grid-2">
+            <div className="form-grid-3">
               <div className="form-group">
-                <label className="form-label required">Registration Number</label>
+                <label className="form-label required" style={{ display: 'flex', alignItems: 'center' }}>
+                  <span>Registration Number</span>
+                  <InfoTooltip text="Enter the vehicle's official registration number." />
+                </label>
                 <input
                   type="text"
                   className="input-field"
@@ -262,32 +317,10 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Vehicle Callsign / Nickname</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="e.g. Cold Runner 1 or Chilled Alpha"
-                  value={formData.nickname}
-                  onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                />
-                <span className="form-text-hint">Radio handle or depot callsign (optional)</span>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Manufacturing Year</label>
-                <input
-                  type="number"
-                  className="input-field"
-                  min={1995}
-                  max={2030}
-                  value={formData.manufacturingYear}
-                  onChange={(e) => setFormData({ ...formData, manufacturingYear: Number(e.target.value) })}
-                />
-                <span className="form-text-hint">Year of commercial production</span>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label required">Classification</label>
+                <label className="form-label required" style={{ display: 'flex', alignItems: 'center' }}>
+                  <span>Vehicle Type</span>
+                  <InfoTooltip text="Select the type of vehicle you are registering." />
+                </label>
                 <select
                   className="input-field"
                   value={formData.vehicleType}
@@ -301,36 +334,24 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
                 </select>
                 <span className="form-text-hint">Fleet route categorization</span>
               </div>
-
-              <div className="form-group">
-                <label className="form-label required">Fuel / Propulsion Type</label>
-                <select
-                  className="input-field"
-                  value={formData.fuelType}
-                  onChange={(e) => setFormData({ ...formData, fuelType: e.target.value as any })}
-                >
-                  <option value="DIESEL">Diesel</option>
-                  <option value="ELECTRIC">Electric (EV)</option>
-                  <option value="CNG">Compressed Natural Gas (CNG)</option>
-                  <option value="PETROL">Petrol</option>
-                </select>
-                <span className="form-text-hint">Propulsion powertrain</span>
-              </div>
             </div>
           </div>
 
-          {/* Section 2: Capacity & Cold-Chain Controls */}
+          {/* Section 2: Capacity and Specifications */}
           <div className="form-section">
             <div className="form-section-header">
               <span className="form-section-icon">
                 <Thermometer size={13} />
               </span>
-              <span>Capacity & Cold-Chain Controls</span>
+              <span>Capacity & Specifications</span>
             </div>
 
             <div className="form-grid-2">
               <div className="form-group">
-                <label className="form-label required">Payload Limit (KG)</label>
+                <label className="form-label required" style={{ display: 'flex', alignItems: 'center' }}>
+                  <span>Payload Capacity (KG)</span>
+                  <InfoTooltip text="Enter the maximum load the vehicle can safely carry, using the displayed unit." />
+                </label>
                 <input
                   type="number"
                   className="input-field"
@@ -345,22 +366,26 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label required">Standard Milk Crate Capacity</label>
-                <input
-                  type="number"
+                <label className="form-label required" style={{ display: 'flex', alignItems: 'center' }}>
+                  <span>Fuel / Propulsion Type</span>
+                  <InfoTooltip text="Select the fuel or propulsion type used by the vehicle." />
+                </label>
+                <select
                   className="input-field"
-                  min={1}
-                  max={600}
-                  value={formData.capacityCrates}
-                  onChange={(e) => setFormData({ ...formData, capacityCrates: Number(e.target.value) })}
-                  required
-                />
-                <span className="form-text-hint">Standard 12-pouch dairy crate slots</span>
+                  value={formData.fuelType}
+                  onChange={(e) => setFormData({ ...formData, fuelType: e.target.value as any })}
+                >
+                  <option value="DIESEL">Diesel</option>
+                  <option value="ELECTRIC">Electric (EV)</option>
+                  <option value="CNG">Compressed Natural Gas (CNG)</option>
+                  <option value="PETROL">Petrol</option>
+                </select>
+                <span className="form-text-hint">Powertrain fuel or energy type</span>
               </div>
             </div>
 
             {/* Refrigeration Toggle & Temperature Range */}
-            <div className={`form-toggle-card ${formData.isRefrigerated ? 'is-active' : ''}`} style={{ marginTop: '4px' }}>
+            <div className={`form-toggle-card ${formData.isRefrigerated ? 'is-active' : ''}`} style={{ marginTop: '12px' }}>
               <label className="form-toggle-label">
                 <input
                   type="checkbox"
@@ -420,29 +445,29 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Depot, Odometer & Status */}
+          {/* Section 3: Location and Operations */}
           <div className="form-section">
             <div className="form-section-header">
               <span className="form-section-icon">
                 <ShieldCheck size={13} />
               </span>
-              <span>Deployment & Operations</span>
+              <span>Location & Operations</span>
             </div>
 
             <div className="form-grid-3">
               <div className="form-group">
-                <label className="form-label required">Home Base Depot</label>
-                <select
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center' }}>
+                  <span>Home Location</span>
+                  <InfoTooltip text="Enter the depot name, town, area, or address where the vehicle is normally based." />
+                </label>
+                <input
+                  type="text"
                   className="input-field"
+                  placeholder="Enter depot name or location"
                   value={formData.depot}
                   onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
-                >
-                  <option value="Pune Central Cold Depot">Pune Central Cold Depot</option>
-                  <option value="Shivajinagar Hub">Shivajinagar Hub</option>
-                  <option value="Hadapsar Distribution Center">Hadapsar Distribution Center</option>
-                  <option value="Kothrud Quick-Hub">Kothrud Quick-Hub</option>
-                  <option value="Pimpri Industrial Hub">Pimpri Industrial Hub</option>
-                </select>
+                />
+                <span className="form-text-hint">Depot, facility, or operating area</span>
               </div>
 
               <div className="form-group">
@@ -470,7 +495,7 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
               </div>
             </div>
 
-            <div className="form-group" style={{ marginTop: '4px' }}>
+            <div className="form-group" style={{ marginTop: '8px' }}>
               <label className="form-label">Operational Notes & Remarks</label>
               <textarea
                 className="input-field"

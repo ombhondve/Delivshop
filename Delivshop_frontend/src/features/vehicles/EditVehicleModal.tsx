@@ -368,18 +368,14 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
 
           <div className="form-grid-3">
             <div className="form-group">
-              <label className="form-label required">Home Base Depot</label>
-              <select
+              <label className="form-label">Home Location</label>
+              <input
+                type="text"
                 className="input-field"
+                placeholder="Enter depot name or location"
                 value={formData.depot}
                 onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
-              >
-                <option value="Pune Central Cold Depot">Pune Central Cold Depot</option>
-                <option value="Shivajinagar Hub">Shivajinagar Hub</option>
-                <option value="Hadapsar Distribution Center">Hadapsar Distribution Center</option>
-                <option value="Kothrud Quick-Hub">Kothrud Quick-Hub</option>
-                <option value="Pimpri Industrial Hub">Pimpri Industrial Hub</option>
-              </select>
+              />
             </div>
 
             <div className="form-group">

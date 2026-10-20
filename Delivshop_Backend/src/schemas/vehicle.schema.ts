@@ -12,7 +12,7 @@ export const createVehicleSchema = z.object({
     makeModel: z.string().trim().min(2, 'Make and model are required').max(100),
     vehicleType: z.string().trim().min(2, 'Vehicle type is required').max(100),
     capacityKg: z.number().positive('Capacity must be greater than 0').default(1000),
-    capacityCrates: z.number().int().min(0, 'Capacity crates cannot be negative').default(60),
+    capacityCrates: z.number().int().min(0, 'Capacity crates cannot be negative').optional().nullable().default(60),
     fuelType: z.enum(['DIESEL', 'ELECTRIC', 'CNG', 'PETROL']).default('DIESEL'),
     isRefrigerated: z.boolean().default(false),
     nickname: z.string().trim().max(100).optional().nullable(),

@@ -677,7 +677,7 @@ export const VehiclesOverview: React.FC = () => {
                   <th style={{ width: '190px', minWidth: '170px' }}>Depot / Location</th>
                   <th style={{ width: '130px', minWidth: '120px' }}>Capacity</th>
                   <th style={{ width: '150px', minWidth: '140px' }}>Operational Status</th>
-                  <th style={{ width: '100px', minWidth: '90px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -880,32 +880,93 @@ export const VehiclesOverview: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* 6. Actions */}
-                    <td style={{ width: '100px', minWidth: '90px', textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/admin/vehicles/${v.id}`)}
-                        className="btn btn-secondary btn-table-action"
-                        style={{
-                          height: '28px',
-                          padding: '0 10px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          color: 'var(--color-primary)',
-                          backgroundColor: 'var(--color-primary-subtle)',
-                          border: '1px solid #6EE7B7',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                        }}
-                        title={`View full details for ${v.registration_number}`}
-                        aria-label={`View full details for ${v.registration_number}`}
-                      >
-                        <Eye size={13} />
-                        <span>Details</span>
-                      </button>
+                    {/* 6. Actions: [Details] [Power Icon] [Trash Icon] in exact required order */}
+                    <td style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px' }}>
+                        {/* A. Details Button */}
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/vehicles/${v.id}`)}
+                          className="btn btn-secondary btn-table-action"
+                          style={{
+                            height: '28px',
+                            padding: '0 10px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: 'var(--color-primary)',
+                            backgroundColor: 'var(--color-primary-subtle)',
+                            border: '1px solid #6EE7B7',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={`View full details for ${v.registration_number}`}
+                          aria-label={`View full details for ${v.registration_number}`}
+                        >
+                          <Eye size={13} />
+                          <span>Details</span>
+                        </button>
+
+                        {/* B. Activate / Deactivate Power Icon Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(v)}
+                          disabled={statusUpdating && statusConfirmVehicle?.id === v.id}
+                          style={{
+                            height: '28px',
+                            width: '28px',
+                            minWidth: '28px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            backgroundColor: '#FFFFFF',
+                            border: `1px solid ${v.is_active ? '#FECACA' : '#BBF7D0'}`,
+                            borderRadius: '6px',
+                            cursor: statusUpdating && statusConfirmVehicle?.id === v.id ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.15s ease',
+                            color: v.is_active ? '#DC2626' : '#16A34A',
+                          }}
+                          className={v.is_active ? 'hover:bg-red-50 hover:border-red-400' : 'hover:bg-green-50 hover:border-green-400'}
+                          title={v.is_active ? 'Deactivate vehicle' : 'Activate vehicle'}
+                          aria-label={v.is_active ? `Deactivate vehicle ${v.registration_number}` : `Activate vehicle ${v.registration_number}`}
+                        >
+                          {statusUpdating && statusConfirmVehicle?.id === v.id ? (
+                            <RefreshCw size={13} className="spin-icon" />
+                          ) : (
+                            <Power size={13} strokeWidth={2.2} />
+                          )}
+                        </button>
+
+                        {/* C. Delete Trash Icon Button */}
+                        <button
+                          type="button"
+                          onClick={() => setDeleteVehicle(v)}
+                          style={{
+                            height: '28px',
+                            width: '28px',
+                            minWidth: '28px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            color: '#94A3B8',
+                            backgroundColor: '#FFFFFF',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          className="hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+                          title="Delete vehicle"
+                          aria-label={`Delete vehicle ${v.registration_number}`}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
