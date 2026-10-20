@@ -463,7 +463,7 @@ export const AddVehicleModal: React.FC<AddVehicleModalProps> = ({
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Enter depot name or location"
+                  placeholder="Enter depot name, town, or address"
                   value={formData.depot}
                   onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
                 />

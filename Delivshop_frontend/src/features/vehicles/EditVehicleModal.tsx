@@ -324,10 +324,11 @@ export const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
               <input
                 type="text"
                 className="input-field"
-                placeholder="Enter depot name or location"
+                placeholder="Enter depot name, town, or address"
                 value={formData.depot}
                 onChange={(e) => setFormData({ ...formData, depot: e.target.value })}
               />
+              <span className="form-text-hint">Depot, facility, or operating area</span>
             </div>
 
             <div className="form-group">
