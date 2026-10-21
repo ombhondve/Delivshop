@@ -27,6 +27,13 @@ router.get(
   routeController.listRoutes
 );
 
+router.get(
+  '/routing/metrics',
+  authenticate,
+  authorizeRoles('ADMIN'),
+  routeController.getRoutingMetrics
+);
+
 router.post(
   '/',
   authenticate,
@@ -81,6 +88,14 @@ router.put(
   authorizeRoles('ADMIN'),
   validateRequest(updateRouteStopsSchema),
   routeController.updateStops
+);
+
+router.post(
+  '/:id/recalculate-distance',
+  authenticate,
+  authorizeRoles('ADMIN', 'SUPPLIER'),
+  validateRequest(routeIdParamSchema),
+  routeController.recalculateDistance
 );
 
 router.delete(

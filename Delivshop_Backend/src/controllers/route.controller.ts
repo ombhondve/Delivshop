@@ -116,4 +116,32 @@ export const routeController = {
       next(err);
     }
   },
+
+  async recalculateDistance(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const updated = await routeService.recalculateRouteDistance(id, req.user?.id, req.ip);
+      res.json({
+        success: true,
+        message: `Road distance recalculated: ${updated.total_distance_km} km (~${updated.estimated_duration_minutes} mins)`,
+        data: updated,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getRoutingMetrics(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const { googleRoutesService } = await import('../services/google-routes.service.js');
+      const metrics = googleRoutesService.getMetrics();
+      res.json({
+        success: true,
+        data: metrics,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
+

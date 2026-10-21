@@ -769,6 +769,16 @@ export const api = {
       const qs = date ? `?date=${encodeURIComponent(date)}` : '';
       return apiClient<PickupRequirementsResponse>(`routes/${id}/pickup-requirements${qs}`);
     },
+
+    async recalculateDistance(id: string): Promise<any> {
+      return apiClient<any>(`routes/${id}/recalculate-distance`, {
+        method: 'POST',
+      });
+    },
+
+    async getRoutingMetrics(): Promise<any> {
+      return apiClient<any>(`routes/routing/metrics`);
+    },
   },
 
   assignments: {

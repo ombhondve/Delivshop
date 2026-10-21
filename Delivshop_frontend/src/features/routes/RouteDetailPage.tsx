@@ -44,6 +44,7 @@ export const RouteDetailPage: React.FC<RouteDetailPageProps> = ({ routeId }) => 
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [savingStops, setSavingStops] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
 
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -109,6 +110,31 @@ export const RouteDetailPage: React.FC<RouteDetailPageProps> = ({ routeId }) => 
       showToast(err?.message || 'Failed to publish route', 'error');
     } finally {
       setPublishing(false);
+    }
+  };
+
+  // Explicit Road Distance Recalculation via Google Routes API
+  const handleRecalculateDistance = async () => {
+    if (!route || recalculating) return;
+    const stopsCount = route.stops?.length ?? (route as any).stops_count ?? 0;
+    if (stopsCount === 0) {
+      showToast('Cannot calculate distance: Route has no assigned delivery stops.', 'error');
+      return;
+    }
+
+    setRecalculating(true);
+    try {
+      const res: any = await api.routes.recalculateDistance(route.id);
+      const updated = res?.data || res;
+      setRoute((prev: any) => ({
+        ...prev,
+        ...updated,
+      }));
+      showToast(`Road distance updated: ${updated.total_distance_km} km (~${updated.estimated_duration_minutes} mins)`);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to recalculate distance. Check waypoint addresses/coordinates.', 'error');
+    } finally {
+      setRecalculating(false);
     }
   };
 
@@ -344,6 +370,16 @@ export const RouteDetailPage: React.FC<RouteDetailPageProps> = ({ routeId }) => 
 
           <Button
             variant="secondary"
+            onClick={handleRecalculateDistance}
+            disabled={recalculating}
+            icon={<RefreshCw size={14} style={{ animation: recalculating ? 'spin 1s linear infinite' : 'none' }} />}
+            title="Recalculate road distance using Google Routes API"
+          >
+            {recalculating ? 'Calculating...' : 'Recalculate'}
+          </Button>
+
+          <Button
+            variant="secondary"
             onClick={() => setIsEditModalOpen(true)}
             icon={<Pencil size={14} />}
           >
@@ -386,8 +422,8 @@ export const RouteDetailPage: React.FC<RouteDetailPageProps> = ({ routeId }) => 
             <div style={{ fontSize: '11.5px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
               Total Distance
             </div>
-            <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#1E293B', marginTop: '4px' }}>
-              {route.total_distance_km ? `${Number(route.total_distance_km).toFixed(1)} km` : '—'}
+            <div style={{ fontSize: '13.5px', fontWeight: 600, color: Number(route.total_distance_km) > 0 ? '#1E293B' : '#64748B', marginTop: '4px' }}>
+              {Number(route.total_distance_km) > 0 ? `${Number(route.total_distance_km).toFixed(1)} km` : 'Not calculated'}
             </div>
           </div>
 
@@ -396,7 +432,9 @@ export const RouteDetailPage: React.FC<RouteDetailPageProps> = ({ routeId }) => 
               Est. Time
             </div>
             <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#1E293B', marginTop: '4px' }}>
-              {route.estimated_duration_minutes ? `${Math.round(Number(route.estimated_duration_minutes))} mins` : '—'}
+              {Number(route.total_distance_km) > 0 && route.estimated_duration_minutes
+                ? `${Math.round(Number(route.estimated_duration_minutes))} mins`
+                : '—'}
             </div>
           </div>
 

@@ -331,15 +331,15 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                 <div className="drawer-metric-value">
                   {Number(route.total_distance_km || route.estimatedDistanceKm || 0) > 0
                     ? `${Number(route.total_distance_km || route.estimatedDistanceKm).toFixed(1)} km`
-                    : 'Pending'}
+                    : 'Not calculated'}
                 </div>
               </div>
               <div className="drawer-metric-card">
                 <div className="drawer-metric-label">Est. Time</div>
                 <div className="drawer-metric-value">
-                  {Number(route.estimated_duration_minutes || route.estimatedDurationMinutes || 0) > 0
+                  {Number(route.total_distance_km || 0) > 0 && Number(route.estimated_duration_minutes || route.estimatedDurationMinutes || 0) > 0
                     ? `${Math.round(Number(route.estimated_duration_minutes || route.estimatedDurationMinutes))} mins`
-                    : 'Pending'}
+                    : '—'}
                 </div>
               </div>
               <div className="drawer-metric-card">

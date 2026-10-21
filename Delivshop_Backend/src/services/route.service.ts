@@ -265,4 +265,39 @@ export const routeService = {
       ipAddress,
     });
   },
+
+  async recalculateRouteDistance(routeId: string, actorId?: string, ipAddress?: string): Promise<RouteRecord> {
+    const existing = await routeRepository.findById(routeId);
+    if (!existing) {
+      throw new AppError('Route not found', 404);
+    }
+
+    if (!existing.stops || existing.stops.length === 0) {
+      throw new AppError('Cannot calculate road distance: Route has no assigned delivery stops.', 400);
+    }
+
+    try {
+      const updated = await routeRepository.recalculateRouteDistance(routeId, actorId);
+
+      await auditService.log({
+        actorId: actorId || undefined,
+        action: 'ROUTE_DISTANCE_RECALCULATED',
+        entityType: 'ROUTE',
+        entityId: routeId,
+        details: {
+          routeCode: updated.route_code,
+          previousDistanceKm: existing.total_distance_km,
+          newDistanceKm: updated.total_distance_km,
+          previousDurationMinutes: existing.estimated_duration_minutes,
+          newDurationMinutes: updated.estimated_duration_minutes,
+        },
+        ipAddress,
+      });
+
+      return updated;
+    } catch (err: any) {
+      throw new AppError(err.message || 'Failed to recalculate road distance via Google Routes API', 502);
+    }
+  },
 };
+

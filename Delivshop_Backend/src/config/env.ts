@@ -111,6 +111,10 @@ const envSchema = z.object({
   BCRYPT_ROUNDS: z.preprocess((v) => sanitizeString(v), z.coerce.number().default(12)),
   RATE_LIMIT_WINDOW_MS: z.preprocess((v) => sanitizeString(v), z.coerce.number().default(900000)),
   RATE_LIMIT_MAX_REQUESTS: z.preprocess((v) => sanitizeString(v), z.coerce.number().default(100)),
+  GOOGLE_ROUTES_API_KEY: z.preprocess(
+    (v) => sanitizeString(v) || sanitizeString(process.env.GOOGLE_MAPS_API_KEY) || sanitizeString(process.env.VITE_GOOGLE_MAPS_API_KEY),
+    z.string().optional()
+  ),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

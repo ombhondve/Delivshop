@@ -306,8 +306,6 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
         description: description.trim() ? `[${category}] ${description.trim()}` : `[${category}]`,
         status: publishImmediately ? 'PUBLISHED' : 'DRAFT',
         stops: stopsPayload,
-        totalDistanceKm: parseFloat((selectedStops.length * 4.2).toFixed(2)),
-        estimatedDurationMinutes: selectedStops.length * 15,
       });
 
       const savedRoute = (res as any)?.data || res;
@@ -1227,13 +1225,10 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
                           <Clock size={14} color="#0369A1" />
-                          <span>Est. Total Distance: <strong>{(selectedStops.length * 4.2).toFixed(1)} km</strong></span>
-                        </div>
-                        <div style={{ color: '#475569' }}>
-                          Est. Duration: <strong>{selectedStops.length * 15} mins</strong>
+                          <span>Road Distance: <strong>Calculated upon save</strong></span>
                         </div>
                         <div style={{ color: '#059669', fontWeight: 600 }}>
-                          {selectedStops.length} stops ready
+                          {selectedStops.length} stops sequenced
                         </div>
                       </div>
                     </div>

@@ -556,13 +556,13 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
 
                       {/* 4. Distance & Est. Time */}
                       <td style={{ width: '130px', textAlign: 'center' }}>
-                        <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
-                          {distanceKm ? `${Number(distanceKm).toFixed(1)} km` : '—'}
+                        <div style={{ fontWeight: 600, fontSize: '12.5px', color: Number(distanceKm) > 0 ? 'var(--text-primary)' : '#64748B' }}>
+                          {Number(distanceKm) > 0 ? `${Number(distanceKm).toFixed(1)} km` : 'Not calculated'}
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#64748B' }}>
-                          {(route.estimated_duration_minutes || route.estimatedDurationMinutes)
+                          {Number(distanceKm) > 0 && (route.estimated_duration_minutes || route.estimatedDurationMinutes)
                             ? `${Math.round(Number(route.estimated_duration_minutes || route.estimatedDurationMinutes))} mins`
-                            : 'Pending'}
+                            : '—'}
                         </div>
                       </td>
 

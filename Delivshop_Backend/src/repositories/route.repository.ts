@@ -1,5 +1,6 @@
 import { query, dbPool } from '../config/database.js';
 import { generateRouteCode } from '../services/route-code.service.js';
+import { googleRoutesService } from '../services/google-routes.service.js';
 
 export interface RouteStop {
   id?: string;
@@ -31,6 +32,8 @@ export interface RouteRecord {
   status: 'DRAFT' | 'ACTIVE' | 'PUBLISHED' | 'INACTIVE' | 'ARCHIVED';
   total_distance_km: number;
   estimated_duration_minutes: number;
+  routing_fingerprint?: string | null;
+  distance_calculated_at?: string | null;
   version: number;
   stops_count?: number;
   created_at: string;
@@ -209,23 +212,66 @@ export const routeRepository = {
         rCode = await generateRouteCode(client);
       }
 
+      const depotName = data.depot || 'Pune Central Cold Depot';
+      let measuredDistanceKm = 0;
+      let measuredDurationMinutes = 0;
+      let routingFingerprint: string | null = null;
+      let distanceCalculatedAt: Date | null = null;
+
+      // If stops are finalized upon creation, calculate driving distance via centralized Google Routes service
+      if (data.stops && data.stops.length > 0) {
+        const shopIds = data.stops.map((s: any) => s.shopId);
+        const shopsRes = await client.query(
+          `SELECT id, address, city, latitude, longitude FROM shops WHERE id = ANY($1::uuid[])`,
+          [shopIds]
+        );
+        const shopMap = new Map(shopsRes.rows.map((r: any) => [r.id, r]));
+
+        const waypoints = data.stops.map((s: any) => {
+          const shop = shopMap.get(s.shopId);
+          return {
+            shopId: s.shopId,
+            latitude: shop?.latitude,
+            longitude: shop?.longitude,
+            address: shop?.address,
+            city: shop?.city,
+          };
+        });
+
+        const routingResult = await googleRoutesService.calculateRouteDistance({
+          depot: depotName,
+          stops: waypoints,
+          feature: 'ROUTE_CREATION',
+        });
+
+        if (routingResult) {
+          measuredDistanceKm = routingResult.distanceKm;
+          measuredDurationMinutes = routingResult.durationMinutes;
+          routingFingerprint = routingResult.fingerprint;
+          distanceCalculatedAt = new Date();
+        }
+      }
+
       const insertRouteRes = await client.query(
         `INSERT INTO routes (
           route_code, name, city, state, depot, description, status,
-          total_distance_km, estimated_duration_minutes, version
+          total_distance_km, estimated_duration_minutes, routing_fingerprint,
+          distance_calculated_at, version
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 1)
          RETURNING *`,
         [
           rCode,
           data.name.trim(),
           data.city || 'Pune',
           data.state || 'Maharashtra',
-          data.depot || 'Pune Central Cold Depot',
+          depotName,
           data.description || null,
           data.status || 'DRAFT',
-          data.totalDistanceKm || (data.stops ? data.stops.length * 4.5 : 0),
-          data.estimatedDurationMinutes || (data.stops ? data.stops.length * 15 : 0),
+          measuredDistanceKm,
+          measuredDurationMinutes,
+          routingFingerprint,
+          distanceCalculatedAt,
         ]
       );
       const newRoute = insertRouteRes.rows[0];
@@ -318,16 +364,53 @@ export const routeRepository = {
         );
       }
 
-      // Estimate distance and travel time based on stop count
-      const estDistance = parseFloat((stops.length * 4.2).toFixed(2));
-      const estDuration = stops.length * 15;
+      // Resolve coordinates and addresses for ordered stops
+      const shopIds = stops.map((s) => s.shopId);
+      const shopsRes = await client.query(
+        `SELECT id, address, city, latitude, longitude FROM shops WHERE id = ANY($1::uuid[])`,
+        [shopIds]
+      );
+      const shopMap = new Map(shopsRes.rows.map((r: any) => [r.id, r]));
 
-      // Update route version, metrics and updated_at
+      const waypoints = stops.map((s) => {
+        const shop = shopMap.get(s.shopId);
+        return {
+          shopId: s.shopId,
+          latitude: shop?.latitude,
+          longitude: shop?.longitude,
+          address: shop?.address,
+          city: shop?.city,
+        };
+      });
+
+      const depotName = currentRoute.depot || 'Pune Central Cold Depot';
+      const routingResult = await googleRoutesService.calculateRouteDistance({
+        depot: depotName,
+        stops: waypoints,
+        feature: 'ROUTE_STOPS_UPDATE',
+        existingFingerprint: currentRoute.routing_fingerprint,
+        existingDistanceKm: currentRoute.total_distance_km,
+      });
+
+      let finalDistance = Number(currentRoute.total_distance_km) || 0;
+      let finalDuration = Number(currentRoute.estimated_duration_minutes) || 0;
+      let finalFingerprint = currentRoute.routing_fingerprint || null;
+      let calcDate = currentRoute.distance_calculated_at || null;
+
+      if (routingResult) {
+        finalDistance = routingResult.distanceKm;
+        finalDuration = routingResult.durationMinutes;
+        finalFingerprint = routingResult.fingerprint;
+        calcDate = new Date();
+      }
+
+      // Update route version, metrics, fingerprint and updated_at
       await client.query(
         `UPDATE routes 
-         SET version = $1, total_distance_km = $2, estimated_duration_minutes = $3, updated_at = NOW() 
-         WHERE id = $4`,
-        [nextVersion, estDistance, estDuration, routeId]
+         SET version = $1, total_distance_km = $2, estimated_duration_minutes = $3,
+             routing_fingerprint = $4, distance_calculated_at = $5, updated_at = NOW() 
+         WHERE id = $6`,
+        [nextVersion, finalDistance, finalDuration, finalFingerprint, calcDate, routeId]
       );
 
       // Record immutable snapshot in route_versions
@@ -478,4 +561,48 @@ export const routeRepository = {
 
     return { missingIds, inactiveIds };
   },
+
+  async recalculateRouteDistance(routeId: string, actorId?: string): Promise<RouteRecord> {
+    const route = await this.findById(routeId);
+    if (!route) {
+      throw new Error('Route not found');
+    }
+
+    if (!route.stops || route.stops.length === 0) {
+      throw new Error('Cannot calculate road distance: Route has no assigned delivery stops.');
+    }
+
+    const waypoints = route.stops.map((s: any) => ({
+      shopId: s.shop_id || s.shopId,
+      latitude: s.shop_latitude,
+      longitude: s.shop_longitude,
+      address: s.shop_address,
+      city: s.shop_city,
+    }));
+
+    const depotName = route.depot || 'Pune Central Cold Depot';
+    const routingResult = await googleRoutesService.calculateRouteDistance({
+      depot: depotName,
+      stops: waypoints,
+      feature: 'MANUAL_RECALCULATION',
+      forceRecalculate: true,
+    });
+
+    if (!routingResult) {
+      throw new Error(
+        'Unable to calculate road distance via Google Routes API. Please check server configuration and waypoint coordinates/addresses.'
+      );
+    }
+
+    await query(
+      `UPDATE routes
+       SET total_distance_km = $1, estimated_duration_minutes = $2,
+           routing_fingerprint = $3, distance_calculated_at = NOW(), updated_at = NOW()
+       WHERE id = $4`,
+      [routingResult.distanceKm, routingResult.durationMinutes, routingResult.fingerprint, routeId]
+    );
+
+    return (await this.findById(routeId)) as RouteRecord;
+  },
 };
+
