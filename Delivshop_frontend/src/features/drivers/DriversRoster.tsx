@@ -514,13 +514,11 @@ export const DriversRoster: React.FC = () => {
                 }}
               >
                 <tr>
-                  <th style={{ width: '240px', minWidth: '220px' }}>Driver</th>
-                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>ID</th>
-                  <th style={{ width: '160px', minWidth: '145px' }}>Phone</th>
-                  <th style={{ width: '140px', minWidth: '130px', maxWidth: '150px' }}>Status</th>
-                  <th style={{ width: '210px', minWidth: '180px' }}>Assignment</th>
-                  <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>Drops Today</th>
-                  <th style={{ width: '110px', minWidth: '100px', maxWidth: '120px' }}>Account</th>
+                  <th style={{ width: '280px', minWidth: '220px' }}>Driver</th>
+                  <th style={{ width: '150px', minWidth: '130px', maxWidth: '160px' }}>ID</th>
+                  <th style={{ width: '180px', minWidth: '150px' }}>Phone</th>
+                  <th style={{ width: '150px', minWidth: '130px', maxWidth: '160px' }}>Status</th>
+                  <th style={{ width: '120px', minWidth: '100px', maxWidth: '130px' }}>Account</th>
                   <th style={{ width: '160px', minWidth: '150px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -627,60 +625,8 @@ export const DriversRoster: React.FC = () => {
                         {getOperationalStatusBadge(drv)}
                       </td>
 
-                      {/* 5. Current Assignment */}
-                      <td style={{ width: '210px', minWidth: '180px' }}>
-                        {drv.current_order_number ? (
-                          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                fontSize: '12px',
-                                color: '#0369A1',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              {drv.current_order_number}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: '11px',
-                                color: '#64748B',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              {drv.current_shop_name || 'En Route'}
-                            </div>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '11.5px', color: '#94A3B8', whiteSpace: 'nowrap' }}>
-                            {drv.is_active ? 'Unassigned • Standby' : 'Inactive • Off Duty'}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* 6. Today's Drops */}
-                      <td style={{ width: '110px', minWidth: '100px', maxWidth: '120px', textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '3px' }}>
-                          <span
-                            style={{
-                              fontVariantNumeric: 'tabular-nums',
-                              fontWeight: 700,
-                              fontSize: '13.5px',
-                              color: (drv.today_deliveries || 0) > 0 ? 'var(--color-navy)' : '#64748B',
-                            }}
-                          >
-                            {drv.today_deliveries || 0}
-                          </span>
-                          <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 500 }}>drops</span>
-                        </div>
-                      </td>
-
-                      {/* 7. Account */}
-                      <td style={{ width: '110px', minWidth: '100px', maxWidth: '120px' }}>
+                      {/* 5. Account */}
+                      <td style={{ width: '120px', minWidth: '100px', maxWidth: '130px' }}>
                         <Badge variant={drv.is_active ? 'success' : 'danger'}>
                           {drv.is_active ? 'Active' : 'Inactive'}
                         </Badge>

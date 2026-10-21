@@ -71,7 +71,7 @@ export const VehiclesOverview: React.FC = () => {
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(7);
   const [totalCount, setTotalCount] = useState(0);
 
   // Modals & Actions
@@ -111,6 +111,11 @@ export const VehiclesOverview: React.FC = () => {
 
   const handleDepotFilterChange = (val: string) => {
     setDepotFilter(val);
+    setPage(1);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
     setPage(1);
   };
 
@@ -642,9 +647,27 @@ export const VehiclesOverview: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="business-table-container">
+          <div
+            className="business-table-container"
+            tabIndex={0}
+            role="region"
+            aria-label="Fleet vehicles table"
+            style={{
+              maxHeight: pageSize > 7 ? '540px' : 'none',
+              overflowY: pageSize > 7 ? 'auto' : 'visible',
+              overflowX: 'auto',
+              position: 'relative',
+            }}
+          >
             <table className="business-table">
-              <thead>
+              <thead
+                style={{
+                  position: pageSize > 7 ? 'sticky' : 'static',
+                  top: 0,
+                  zIndex: 10,
+                  backgroundColor: '#F8FAFC',
+                }}
+              >
                 <tr>
                   <th style={{ width: '240px', minWidth: '220px' }}>Vehicle</th>
                   <th style={{ width: '200px', minWidth: '180px' }}>Type</th>
@@ -951,43 +974,45 @@ export const VehiclesOverview: React.FC = () => {
 
         {/* Table Pagination Footer */}
         <div className="table-pagination-footer">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
             <span className="pagination-info">
-              Showing <strong>{vehicles.length > 0 ? (page - 1) * pageSize + 1 : 0}</strong> -{' '}
-              <strong>{Math.min(page * pageSize, totalCount)}</strong> of <strong>{totalCount}</strong> vehicles
+              Showing <strong>{totalCount > 0 ? (page - 1) * pageSize + 1 : 0}</strong>–<strong>{totalCount > 0 ? Math.min(page * pageSize, totalCount) : 0}</strong> of <strong>{totalCount}</strong> vehicles
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Per page:</span>
+              <label htmlFor="vehicle-rows-per-page-select" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Rows per page:
+              </label>
               <select
+                id="vehicle-rows-per-page-select"
                 className="toolbar-select-field"
-                style={{ height: '28px', padding: '0 6px', fontSize: '11.5px' }}
+                style={{ height: '28px', padding: '0 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #CBD5E1' }}
                 value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setPage(1);
-                }}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               >
+                <option value={7}>7</option>
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
+                <option value={100}>100</option>
               </select>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-              Page {page} of {totalPages}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             </span>
-            <div className="pagination-buttons">
+            <div className="pagination-buttons" style={{ display: 'flex', gap: '6px' }}>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || loading}
                 title="Previous page"
+                aria-label="Previous page"
               >
                 <ChevronLeft size={14} />
-                <span>Prev</span>
+                <span>Previous</span>
               </Button>
               <Button
                 variant="secondary"
@@ -995,6 +1020,7 @@ export const VehiclesOverview: React.FC = () => {
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages || loading}
                 title="Next page"
+                aria-label="Next page"
               >
                 <span>Next</span>
                 <ChevronRight size={14} />
