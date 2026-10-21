@@ -1,23 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  Plus, Search, Navigation, MapPin, Clock, CheckCircle2, 
-  Layers, AlertTriangle, Truck, RefreshCw, Eye, ShieldCheck, 
-  AlertCircle, XCircle, ArrowRight, Route as RouteIcon, Trash2
+  Plus, Search, MapPin, CheckCircle2, 
+  Truck, RefreshCw, Eye, ShieldCheck, 
+  AlertCircle, X, Route as RouteIcon, Trash2,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
+import { Card } from '../../components/common/Card';
 import { api } from '../../services/api/endpoints';
 import { Route, RouteSummary } from '../../types';
 import { RouteCreationWizard } from './RouteCreationWizard';
-import { RouteDetailsDrawer } from './RouteDetailsDrawer';
 import { DeleteRouteModal } from './DeleteRouteModal';
-import { ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { useNavigation } from '../../context/NavigationContext';
 
 interface RoutesOverviewProps {
   onDispatchRun?: (route: Route) => void;
 }
 
 export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun }) => {
+  const { navigate } = useNavigation();
+
   const [routes, setRoutes] = useState<Route[]>([]);
   const [summary, setSummary] = useState<RouteSummary>({
     totalRoutes: 0,
@@ -35,7 +38,6 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Filters & Search
@@ -45,10 +47,12 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
   const [cityFilter, setCityFilter] = useState('ALL');
   const [depotFilter, setDepotFilter] = useState('ALL');
 
+  // Pagination (Default 7 per page, exactly matching Drivers & Vehicles)
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(7);
+
   // Modals state
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<Route | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -64,9 +68,39 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
+      setPage(1);
     }, 300);
     return () => clearTimeout(handler);
   }, [search]);
+
+  const handleStatusFilterChange = (val: string) => {
+    setStatusFilter(val);
+    setPage(1);
+  };
+
+  const handleCityFilterChange = (val: string) => {
+    setCityFilter(val);
+    setPage(1);
+  };
+
+  const handleDepotFilterChange = (val: string) => {
+    setDepotFilter(val);
+    setPage(1);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setStatusFilter('ALL');
+    setCityFilter('ALL');
+    setDepotFilter('ALL');
+    setPage(1);
+  };
 
   const fetchRoutesData = useCallback(async (isBackgroundRefresh = false) => {
     if (abortControllerRef.current) {
@@ -110,12 +144,10 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
         measuredRoutesCount: Number(summaryData.measuredRoutesCount) || 0,
         readinessPercentage: Number(summaryData.readinessPercentage) || 0,
       });
-
-      setLastSyncTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       console.error('Failed to load routes:', err);
-      setError(err?.message || 'Unable to connect to Delivshop route service. Please check your connection and retry.');
+      setError(err?.message || 'Unable to connect to route service. Please check your connection and retry.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -133,15 +165,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
 
   const handleRefresh = () => {
     fetchRoutesData(true);
-    showToast('Refreshing route database...');
-  };
-
-  const handleClearFilters = () => {
-    setSearch('');
-    setDebouncedSearch('');
-    setStatusFilter('ALL');
-    setCityFilter('ALL');
-    setDepotFilter('ALL');
+    showToast('Refreshing routes...');
   };
 
   const isFilterActive = search.trim() !== '' || statusFilter !== 'ALL' || cityFilter !== 'ALL' || depotFilter !== 'ALL';
@@ -149,11 +173,6 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
   // Extract unique cities & depots for dynamic dropdowns
   const availableCities = Array.from(new Set(routes.map(r => r.city).filter(Boolean)));
   const availableDepots = Array.from(new Set(routes.map(r => r.depot || r.depotName).filter(Boolean)));
-
-  const handleOpenDetails = (route: Route) => {
-    setSelectedRouteId(route.id);
-    setIsDetailsOpen(true);
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -164,11 +183,15 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
         return <Badge variant="warning">DRAFT</Badge>;
       case 'INACTIVE':
       case 'ARCHIVED':
-        return <Badge variant="neutral">{status}</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
   };
+
+  // Pagination slicing
+  const totalCount = routes.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const displayedRoutes = routes.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="page-container">
@@ -199,35 +222,10 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
         </div>
       )}
 
-      {/* 1. Page Header */}
+      {/* 1. Page Header (Simplified Title & Actions) */}
       <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 className="page-title">Delivery Routes</h1>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '2px 8px',
-                backgroundColor: 'var(--color-success-bg)',
-                border: '1px solid #BBF7D0',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--color-success)',
-              }}
-            >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }} />
-              <span>Live Database</span>
-            </div>
-          </div>
-          <p className="page-desc">
-            Create, organize, validate, and manage shop delivery routes across cities, states, and depots.
-            <span style={{ marginLeft: '10px', color: '#94A3B8', fontSize: '11.5px' }}>
-              Last synchronized: {lastSyncTime}
-            </span>
-          </p>
+          <h1 className="page-title">Routes</h1>
         </div>
 
         <div className="page-header-actions">
@@ -238,7 +236,7 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             disabled={refreshing || loading}
             icon={<RefreshCw size={15} className={refreshing ? 'spin-icon' : ''} />}
           >
-            {refreshing ? 'Syncing...' : 'Refresh'}
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
 
           <Button
@@ -247,70 +245,56 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             onClick={() => setIsWizardOpen(true)}
             icon={<Plus size={16} />}
           >
-            Create Delivery Route
+            Create Route
           </Button>
         </div>
       </div>
 
-      {/* 2. Responsive 4-Card Statistics Strip (Authoritative Backend Data) */}
+      {/* 2. Responsive 4-Card Statistics Strip (Clean & Compact) */}
       <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         
         {/* Card 1: Total Routes */}
-        <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => setStatusFilter('ALL')}>
+        <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => handleStatusFilterChange('ALL')}>
           <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <RouteIcon size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">TOTAL ROUTES</span>
             <span className="metric-value">{summary.totalRoutes}</span>
-            <span className="metric-trend" style={{ color: 'var(--color-primary)' }}>
-              {summary.activeRoutes} active templates
-            </span>
           </div>
         </div>
 
-        {/* Card 2: Published & Dispatchable */}
-        <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => setStatusFilter('PUBLISHED')}>
+        {/* Card 2: Published */}
+        <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => handleStatusFilterChange('PUBLISHED')}>
           <div className="metric-icon" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
             <ShieldCheck size={18} />
           </div>
           <div className="metric-info">
             <span className="metric-title">DISPATCH READY</span>
             <span className="metric-value">{summary.dispatchableRoutes ?? 0}</span>
-            <span className="metric-trend" style={{ color: summary.readinessPercentage && summary.readinessPercentage > 50 ? 'var(--color-success)' : 'var(--color-warning)' }}>
-              {summary.totalRoutes > 0 ? `${summary.readinessPercentage}% ready for runs` : '0% ready'}
-            </span>
           </div>
         </div>
 
-        {/* Card 3: Sequenced Stops */}
+        {/* Card 3: Total Stops */}
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
             <MapPin size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">SEQUENCED STOPS</span>
+            <span className="metric-title">TOTAL STOPS</span>
             <span className="metric-value">{summary.totalStopsConfigured ?? 0}</span>
-            <span className="metric-trend" style={{ color: '#64748B' }}>
-              Mapped retail shops
-            </span>
           </div>
         </div>
 
-        {/* Card 4: Average Route Distance */}
+        {/* Card 4: Average Distance */}
         <div className="metric-card">
           <div className="metric-icon" style={{ backgroundColor: '#E0F2FE', color: '#0369A1' }}>
-            <Clock size={18} />
+            <RouteIcon size={18} />
           </div>
           <div className="metric-info">
-            <span className="metric-title">AVG ROUTE DISTANCE</span>
+            <span className="metric-title">AVG DISTANCE</span>
             <span className="metric-value">
-              {summary.measuredRoutesCount && summary.measuredRoutesCount > 0 ? `${summary.avgDistanceKm} km` : 'Pending'}
-            </span>
-            <span className="metric-trend" style={{ color: '#0369A1' }}>
-              {summary.measuredRoutesCount && summary.measuredRoutesCount > 0
-                ? `Across ${summary.measuredRoutesCount} measured routes`
-                : 'No distance data yet'}
+              {summary.measuredRoutesCount && summary.measuredRoutesCount > 0 ? `${summary.avgDistanceKm} km` : '—'}
             </span>
           </div>
         </div>
@@ -323,11 +307,31 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             <Search size={14} className="search-input-icon" />
             <input
               type="text"
-              placeholder="Search by route code, route name, city, or depot..."
+              placeholder="Search routes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="toolbar-search-input"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                }}
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -336,11 +340,12 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
           <div className="filter-select-wrapper">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
               className="toolbar-select-field"
+              aria-label="Filter by route status"
             >
               <option value="ALL">All Statuses</option>
-              <option value="PUBLISHED">Published & Active</option>
+              <option value="PUBLISHED">Published</option>
               <option value="DRAFT">Draft</option>
               <option value="INACTIVE">Inactive</option>
               <option value="ARCHIVED">Archived</option>
@@ -351,8 +356,9 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
           <div className="filter-select-wrapper">
             <select
               value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
+              onChange={(e) => handleCityFilterChange(e.target.value)}
               className="toolbar-select-field"
+              aria-label="Filter by city"
             >
               <option value="ALL">All Cities</option>
               <option value="Pune">Pune</option>
@@ -370,8 +376,9 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             <div className="filter-select-wrapper">
               <select
                 value={depotFilter}
-                onChange={(e) => setDepotFilter(e.target.value)}
+                onChange={(e) => handleDepotFilterChange(e.target.value)}
                 className="toolbar-select-field"
+                aria-label="Filter by depot"
               >
                 <option value="ALL">All Depots</option>
                 {availableDepots.map(depot => (
@@ -385,184 +392,193 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
           {isFilterActive && (
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={handleClearFilters}
-              icon={<XCircle size={14} />}
-              className="btn-sm"
+              icon={<X size={14} />}
+              style={{ color: 'var(--color-danger)' }}
             >
-              Clear Filters
+              Clear
             </Button>
           )}
         </div>
       </div>
 
-      {/* 4. Routes Table & Content Surface */}
-      <div className="business-card no-padding">
-        
-        {/* Error Banner State with Retry Action */}
+      {/* 4. Routes Table Card */}
+      <Card title="Routes" noPadding>
         {error ? (
-          <div className="table-error-container" style={{ padding: '36px 20px', textAlign: 'center' }}>
-            <AlertCircle size={36} color="#B91C1C" style={{ margin: '0 auto 12px' }} />
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Unable to Load Delivery Routes</h3>
-            <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '440px', margin: '6px auto 16px' }}>
-              {error}
-            </p>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => fetchRoutesData(false)}
-              icon={<RefreshCw size={14} />}
-            >
-              Retry Loading Routes
+          <div style={{ padding: '30px', textAlign: 'center' }}>
+            <p style={{ color: '#B91C1C', fontSize: '13.5px', marginBottom: '12px' }}>{error}</p>
+            <Button variant="secondary" size="sm" onClick={() => fetchRoutesData(false)}>
+              Retry Connection
             </Button>
           </div>
-        ) : loading ? (
-          /* Skeleton Loading Placeholders */
-          <div style={{ padding: '16px' }}>
-            <div className="skeleton-row-box" />
-            <div className="skeleton-row-box" />
-            <div className="skeleton-row-box" />
-            <div className="skeleton-row-box" />
+        ) : loading && routes.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+            <RefreshCw size={24} className="spin-icon text-muted" style={{ margin: '0 auto 8px auto' }} />
+            <p style={{ fontSize: '13px' }}>Loading routes...</p>
           </div>
         ) : routes.length === 0 ? (
-          /* Genuine Empty State */
-          <div className="table-empty-container">
-            <RouteIcon size={40} className="empty-state-icon" />
-            <h3 className="empty-state-title">
-              {isFilterActive ? 'No Routes Match Your Filters' : 'No Delivery Routes Configured'}
-            </h3>
-            <p className="empty-state-desc" style={{ maxWidth: '440px', margin: '4px auto 16px' }}>
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
+            <RouteIcon size={36} style={{ margin: '0 auto 10px auto', opacity: 0.4 }} />
+            <h4 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              No matching routes found
+            </h4>
+            <p style={{ fontSize: '12.5px', marginTop: '4px', maxWidth: '420px', margin: '4px auto 16px auto' }}>
               {isFilterActive
-                ? 'Try resetting the city, status, or search query to see other routes.'
-                : 'Get started by creating your first sequenced shop delivery corridor across Maharashtra depots.'}
+                ? 'No routes match your active search and filter criteria.'
+                : 'No delivery routes are configured yet.'}
             </p>
             {isFilterActive ? (
-              <Button type="button" variant="secondary" onClick={handleClearFilters}>
-                Reset Search Filters
+              <Button variant="secondary" size="sm" onClick={handleClearFilters}>
+                Clear All Filters
               </Button>
             ) : (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => setIsWizardOpen(true)}
-                icon={<Plus size={16} />}
-              >
-                Create Your First Route
+              <Button variant="primary" onClick={() => setIsWizardOpen(true)} icon={<Plus size={15} />}>
+                Create Route
               </Button>
             )}
           </div>
         ) : (
-          /* Populated Routes Table */
-          <div className="business-table-container">
+          <div
+            className="business-table-container"
+            tabIndex={0}
+            role="region"
+            aria-label="Routes table"
+            style={{
+              maxHeight: pageSize > 7 ? '540px' : 'none',
+              overflowY: pageSize > 7 ? 'auto' : 'visible',
+              overflowX: 'auto',
+              position: 'relative',
+            }}
+          >
             <table className="business-table">
-              <thead>
+              <thead
+                style={{
+                  position: pageSize > 7 ? 'sticky' : 'static',
+                  top: 0,
+                  zIndex: 10,
+                  backgroundColor: '#F8FAFC',
+                }}
+              >
                 <tr>
-                  <th style={{ width: '130px' }}>Route Code</th>
-                  <th>Route Name & Corridor</th>
-                  <th>Operating Area & Depot</th>
-                  <th style={{ textAlign: 'center' }}>Stops</th>
-                  <th style={{ textAlign: 'center' }}>Road Distance</th>
-                  <th style={{ textAlign: 'center' }}>Status</th>
-                  <th>Dispatch Readiness</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ width: '240px', minWidth: '200px' }}>Route</th>
+                  <th style={{ width: '200px', minWidth: '160px' }}>Location</th>
+                  <th style={{ width: '100px', textAlign: 'center' }}>Stops</th>
+                  <th style={{ width: '130px', textAlign: 'center' }}>Distance</th>
+                  <th style={{ width: '120px', textAlign: 'center' }}>Status</th>
+                  <th style={{ width: '180px', minWidth: '160px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {routes.map((route) => {
-                  const stopsCount = route.stops_count ?? route.stopsCount ?? 0;
+                {displayedRoutes.map((route) => {
+                  const stopsCount = route.stops_count ?? route.stopsCount ?? route.stops?.length ?? 0;
                   const distanceKm = route.total_distance_km ?? route.estimatedDistanceKm;
                   const isDispatchable = (route.status === 'PUBLISHED' || route.status === 'ACTIVE') && stopsCount > 0;
 
                   return (
                     <tr key={route.id}>
-                      {/* Code */}
-                      <td>
-                        <span className="route-code-badge">
-                          {route.route_code || route.code}
-                        </span>
-                        <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px', fontFamily: 'monospace' }}>
-                          v{route.version || 1}
-                        </div>
-                      </td>
-
-                      {/* Name */}
-                      <td>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px' }}>
-                          {route.name}
-                        </div>
-                        {route.description && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {route.description}
+                      {/* 1. Route Name & Code */}
+                      <td style={{ width: '240px', minWidth: '200px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              backgroundColor: 'var(--color-navy)',
+                              color: '#FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <RouteIcon size={14} />
                           </div>
-                        )}
+                          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                            <div
+                              onClick={() => navigate(`/admin/routes/${route.id}`)}
+                              style={{
+                                fontWeight: 600,
+                                fontSize: '13px',
+                                color: 'var(--color-navy)',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                              title={route.name}
+                            >
+                              {route.name}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px' }}>
+                              <span
+                                style={{
+                                  fontFamily: 'monospace',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  color: 'var(--color-primary)',
+                                  backgroundColor: 'var(--color-primary-subtle)',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #6EE7B7',
+                                }}
+                              >
+                                {route.route_code || route.code}
+                              </span>
+                              <span style={{ fontSize: '10.5px', color: '#94A3B8' }}>
+                                v{route.version || 1}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </td>
 
-                      {/* City & Depot */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12.5px', fontWeight: 500 }}>
-                          <MapPin size={13} color="var(--color-primary)" />
-                          <span>{route.city}, {route.state}</span>
+                      {/* 2. City & Depot */}
+                      <td style={{ width: '200px', minWidth: '160px' }}>
+                        <div style={{ fontSize: '12.5px', fontWeight: 500, color: '#334155' }}>
+                          {route.city}, {route.state}
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>
-                          Depot: {route.depot || route.depotName || 'Central Hub'}
+                        <div style={{ fontSize: '11px', color: '#64748B', marginTop: '1px' }}>
+                          {route.depot || route.depotName || 'Central Hub'}
                         </div>
                       </td>
 
-                       {/* Stops Count */}
-                      <td style={{ textAlign: 'center' }}>
+                      {/* 3. Stops Count */}
+                      <td style={{ width: '100px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, fontSize: '13px', color: stopsCount > 0 ? 'var(--text-primary)' : 'var(--color-warning)' }}>
                           {stopsCount}
                         </span>
-                        <div style={{ fontSize: '10.5px', color: '#64748B' }}>
+                        <span style={{ fontSize: '10.5px', color: '#64748B', marginLeft: '3px' }}>
                           {stopsCount === 1 ? 'shop' : 'shops'}
-                        </div>
+                        </span>
                       </td>
 
-                      {/* Distance & Duration */}
-                      <td style={{ textAlign: 'center' }}>
+                      {/* 4. Distance & Est. Time */}
+                      <td style={{ width: '130px', textAlign: 'center' }}>
                         <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text-primary)' }}>
                           {distanceKm ? `${Number(distanceKm).toFixed(1)} km` : '—'}
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#64748B' }}>
                           {(route.estimated_duration_minutes || route.estimatedDurationMinutes)
                             ? `${Math.round(Number(route.estimated_duration_minutes || route.estimatedDurationMinutes))} mins`
-                            : 'Est. pending'}
+                            : 'Pending'}
                         </div>
                       </td>
 
-                      {/* Status */}
-                      <td style={{ textAlign: 'center' }}>
+                      {/* 5. Status */}
+                      <td style={{ width: '120px', textAlign: 'center' }}>
                         {getStatusBadge(route.status)}
                       </td>
 
-                      {/* Readiness */}
-                      <td>
-                        {isDispatchable ? (
-                          <span className="route-readiness-tag route-readiness-ready">
-                            <CheckCircle2 size={12} color="var(--color-success)" />
-                            <span>Dispatch Ready</span>
-                          </span>
-                        ) : stopsCount === 0 ? (
-                          <span className="route-readiness-tag route-readiness-warning">
-                            <AlertTriangle size={12} color="#B45309" />
-                            <span>Needs Stops (0)</span>
-                          </span>
-                        ) : (
-                          <span className="route-readiness-tag route-readiness-warning">
-                            <Clock size={12} color="#B45309" />
-                            <span>Draft (Unpublished)</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="table-actions-group" style={{ justifyContent: 'flex-end', gap: '6px' }}>
+                      {/* 6. Actions */}
+                      <td style={{ width: '180px', minWidth: '160px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px' }}>
                           <Button
                             type="button"
                             variant="secondary"
                             className="btn-table-action"
-                            onClick={() => handleOpenDetails(route)}
+                            onClick={() => navigate(`/admin/routes/${route.id}`)}
                             icon={<Eye size={13} />}
                           >
                             Details
@@ -580,19 +596,31 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
                             </Button>
                           )}
 
-                          <Button
+                          <button
                             type="button"
-                            variant="danger"
-                            className="btn-table-action"
                             onClick={() => {
                               setRouteToDelete(route);
                               setIsDeleteModalOpen(true);
                             }}
-                            icon={<Trash2 size={13} />}
-                            title="Delete / Archive Route"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              border: '1px solid #CBD5E1',
+                              backgroundColor: '#FFFFFF',
+                              color: '#64748B',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                            className="hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+                            title="Delete route"
+                            aria-label={`Delete route ${route.name}`}
                           >
-                            Delete
-                          </Button>
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -602,7 +630,64 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             </table>
           </div>
         )}
-      </div>
+
+        {/* Table Pagination Footer (Identical to Drivers and Vehicles) */}
+        <div className="table-pagination-footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <span className="pagination-info">
+              Showing <strong>{totalCount > 0 ? (page - 1) * pageSize + 1 : 0}</strong>–<strong>{totalCount > 0 ? Math.min(page * pageSize, totalCount) : 0}</strong> of <strong>{totalCount}</strong> routes
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label htmlFor="route-rows-per-page-select" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Rows per page:
+              </label>
+              <select
+                id="route-rows-per-page-select"
+                className="toolbar-select-field"
+                style={{ height: '28px', padding: '0 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #CBD5E1' }}
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                <option value={7}>7</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+            </span>
+            <div className="pagination-buttons" style={{ display: 'flex', gap: '6px' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                title="Previous page"
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={14} />
+                <span>Previous</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || loading}
+                title="Next page"
+                aria-label="Next page"
+              >
+                <span>Next</span>
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* 5. Route Creation Wizard Modal */}
       {isWizardOpen && (
@@ -610,41 +695,16 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
           isOpen={isWizardOpen}
           onClose={() => setIsWizardOpen(false)}
           onRouteCreated={(newRoute) => {
-            showToast(`New delivery route ${newRoute.route_code || ''} created successfully`);
+            showToast(`Route ${newRoute.route_code || ''} created successfully`);
             fetchRoutesData(false);
           }}
           onOpenDetails={(routeId) => {
-            setSelectedRouteId(routeId);
-            setIsDetailsOpen(true);
+            navigate(`/admin/routes/${routeId}`);
           }}
         />
       )}
 
-      {/* 6. Route Details Drawer */}
-      {isDetailsOpen && (
-        <RouteDetailsDrawer
-          routeId={selectedRouteId}
-          isOpen={isDetailsOpen}
-          onClose={() => {
-            setIsDetailsOpen(false);
-            setSelectedRouteId(null);
-          }}
-          onEdit={(updatedRoute) => {
-            fetchRoutesData(true);
-            showToast(`Route ${updatedRoute.route_code || ''} published and ready for dispatch!`);
-          }}
-          onDispatchRun={onDispatchRun}
-          onDelete={(routeId) => {
-            const target = routes.find(r => r.id === routeId);
-            if (target) {
-              setRouteToDelete(target);
-              setIsDeleteModalOpen(true);
-            }
-          }}
-        />
-      )}
-
-      {/* 7. Delete Confirmation Modal */}
+      {/* 6. Delete Confirmation Modal */}
       {isDeleteModalOpen && routeToDelete && (
         <DeleteRouteModal
           route={routeToDelete}
@@ -653,12 +713,8 @@ export const RoutesOverview: React.FC<RoutesOverviewProps> = ({ onDispatchRun })
             setIsDeleteModalOpen(false);
             setRouteToDelete(null);
           }}
-          onDeleted={(deletedId) => {
-            showToast(`Route ${routeToDelete.route_code || ''} was successfully archived.`);
-            if (selectedRouteId === deletedId) {
-              setIsDetailsOpen(false);
-              setSelectedRouteId(null);
-            }
+          onDeleted={() => {
+            showToast(`Route ${routeToDelete.route_code || ''} deleted.`);
             fetchRoutesData(false);
           }}
         />

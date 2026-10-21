@@ -413,11 +413,8 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0F172A' }}>
-                Create Delivery Route Corridor
+                Create Route
               </h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: '#64748B' }}>
-                End-to-end corridor setup, location validation, and verified shop assignment
-              </p>
             </div>
           </div>
 
@@ -450,9 +447,9 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
             }}
           >
             {[
-              { num: 1, title: 'Step 1: Route Details' },
-              { num: 2, title: 'Step 2: Location & Depot' },
-              { num: 3, title: 'Step 3: Shop Assignment' },
+              { num: 1, title: 'Step 1: Details' },
+              { num: 2, title: 'Step 2: Location' },
+              { num: 3, title: 'Step 3: Stops' },
             ].map((s) => {
               const isCompleted = step > s.num;
               const isCurrent = step === s.num;
@@ -633,16 +630,16 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   className="btn btn-secondary"
                   onClick={onClose}
                   style={{
-                    padding: '10px 22px',
+                    padding: '8px 20px',
                     borderRadius: '8px',
                     fontWeight: 600,
                     fontSize: '13px',
                     background: '#FFFFFF',
-                    border: '1px solid #A7AE9F',
+                    border: '1px solid #CBD5E1',
                     cursor: 'pointer',
                   }}
                 >
-                  Done & Close
+                  Done
                 </button>
                 {onOpenDetails && (
                   <button
@@ -653,7 +650,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       onOpenDetails(createdRoute.id);
                     }}
                     style={{
-                      padding: '10px 24px',
+                      padding: '8px 20px',
                       borderRadius: '8px',
                       fontWeight: 600,
                       fontSize: '13px',
@@ -663,10 +660,10 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: '6px',
                     }}
                   >
-                    <span>View Route Profile</span>
+                    <span>View Route</span>
                     <ExternalLink size={14} />
                   </button>
                 )}
@@ -677,30 +674,6 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
               {/* STEP 1: ROUTE DETAILS */}
               {step === 1 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  {/* Automated Code Notice */}
-                  <div
-                    style={{
-                      background: '#F0FDF4',
-                      border: '1px solid #BBF7D0',
-                      borderRadius: '8px',
-                      padding: '12px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      fontSize: '13px',
-                      color: '#166534',
-                    }}
-                  >
-                    <Info size={18} color="#059669" style={{ flexShrink: 0 }} />
-                    <div>
-                      <strong>Automatic Route Code Generation:</strong> The unique Route Code (e.g.{' '}
-                      <code style={{ background: '#DCFCE7', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                        RTE-20261016-001
-                      </code>
-                      ) will be automatically assigned by the backend server to ensure collision-free sequencing.
-                    </div>
-                  </div>
-
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label required" style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B', marginBottom: '4px', display: 'block' }}>
                       Route Name
@@ -708,7 +681,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="e.g. Nashik City • College Road & Gangapur Corridor"
+                      placeholder="e.g. Pune Central - Kothrud Express"
                       required
                       value={name}
                       onChange={(e) => {
@@ -716,33 +689,30 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                         setError(null);
                       }}
                       style={{
-                        height: '42px',
-                        fontSize: '13.5px',
+                        height: '38px',
+                        fontSize: '13px',
                         borderRadius: '6px',
-                        border: '1px solid #A7AE9F',
+                        border: '1px solid #CBD5E1',
                         padding: '0 12px',
                         width: '100%',
                       }}
                     />
-                    <span style={{ fontSize: '11.5px', color: '#64748B', marginTop: '4px', display: 'block' }}>
-                      Meaningful descriptive title used by dispatchers and drivers during morning runs
-                    </span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label" style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B', marginBottom: '4px', display: 'block' }}>
-                        Route Category / Type
+                        Category
                       </label>
                       <select
                         className="form-control"
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                         style={{
-                          height: '42px',
+                          height: '38px',
                           fontSize: '13px',
                           borderRadius: '6px',
-                          border: '1px solid #A7AE9F',
+                          border: '1px solid #CBD5E1',
                           padding: '0 10px',
                           width: '100%',
                           background: '#FFFFFF',
@@ -758,7 +728,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
 
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label required" style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B', marginBottom: '4px', display: 'block' }}>
-                        Starting Distribution Depot / Hub
+                        Depot
                       </label>
                       <input
                         type="text"
@@ -1332,7 +1302,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                   className="btn btn-primary"
                   onClick={handleNext}
                 >
-                  Continue to Step {step + 1}
+                  Next
                 </button>
               ) : (
                 <>
@@ -1348,7 +1318,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     }}
                   >
                     <Save size={14} />
-                    <span>Save as Draft</span>
+                    <span>Save Draft</span>
                   </button>
                   <button
                     type="button"
@@ -1356,7 +1326,7 @@ export const RouteCreationWizard: React.FC<RouteCreationWizardProps> = ({
                     disabled={loading || selectedStops.length === 0}
                     onClick={() => handleSaveRoute(true)}
                   >
-                    {loading ? 'Creating Route...' : 'Validate & Publish Route'}
+                    {loading ? 'Creating Route...' : 'Create Route'}
                   </button>
                 </>
               )}

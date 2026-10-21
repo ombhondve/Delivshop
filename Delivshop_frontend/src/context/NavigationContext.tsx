@@ -9,6 +9,7 @@ export interface RouteState {
   companyId: string | null;
   driverId: string | null;
   vehicleId: string | null;
+  routeId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
 }
@@ -21,6 +22,7 @@ interface NavigationContextValue {
   companyId: string | null;
   driverId: string | null;
   vehicleId: string | null;
+  routeId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
   navigate: (to: string) => void;
@@ -36,6 +38,7 @@ export function parsePath(pathname: string): {
   companyId: string | null;
   driverId: string | null;
   vehicleId: string | null;
+  routeId: string | null;
   isNotFound: boolean;
   isLogin: boolean;
 } {
@@ -50,6 +53,7 @@ export function parsePath(pathname: string): {
       companyId: null,
       driverId: null,
       vehicleId: null,
+      routeId: null,
       isNotFound: false,
       isLogin: true,
     };
@@ -64,6 +68,7 @@ export function parsePath(pathname: string): {
       companyId: decodeURIComponent(companyMatch[1]),
       driverId: null,
       vehicleId: null,
+      routeId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -78,6 +83,7 @@ export function parsePath(pathname: string): {
       companyId: null,
       driverId: null,
       vehicleId: null,
+      routeId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -92,6 +98,7 @@ export function parsePath(pathname: string): {
       companyId: null,
       driverId: decodeURIComponent(driverMatch[1]),
       vehicleId: null,
+      routeId: null,
       isNotFound: false,
       isLogin: false,
     };
@@ -106,6 +113,22 @@ export function parsePath(pathname: string): {
       companyId: null,
       driverId: null,
       vehicleId: decodeURIComponent(vehicleMatch[1]),
+      routeId: null,
+      isNotFound: false,
+      isLogin: false,
+    };
+  }
+
+  // 6. Check /routes/:routeId and /admin/routes/:routeId
+  const routeMatch = cleanPath.match(/^(?:\/admin)?\/routes\/([^\/]+)$/);
+  if (routeMatch) {
+    return {
+      activeTab: 'routes',
+      shopId: null,
+      companyId: null,
+      driverId: null,
+      vehicleId: null,
+      routeId: decodeURIComponent(routeMatch[1]),
       isNotFound: false,
       isLogin: false,
     };
@@ -152,18 +175,20 @@ export function parsePath(pathname: string): {
       companyId: null,
       driverId: null,
       vehicleId: null,
+      routeId: null,
       isNotFound: false,
       isLogin: false,
     };
   }
 
-  // 7. Unknown route -> Not Found
+  // 8. Unknown route -> Not Found
   return {
     activeTab: 'dashboard',
     shopId: null,
     companyId: null,
     driverId: null,
     vehicleId: null,
+    routeId: null,
     isNotFound: true,
     isLogin: false,
   };
@@ -220,6 +245,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     companyId: routeDetails.companyId,
     driverId: routeDetails.driverId,
     vehicleId: routeDetails.vehicleId,
+    routeId: routeDetails.routeId,
     isNotFound: routeDetails.isNotFound,
     isLogin: routeDetails.isLogin,
     navigate,

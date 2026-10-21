@@ -19,6 +19,7 @@ import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { CinematicLoginExperience } from '../features/auth/locker/CinematicLoginExperience';
 import { DriverDetailPage } from '../features/drivers/DriverDetailPage';
 import { VehicleDetailPage } from '../features/vehicles/VehicleDetailPage';
+import { RouteDetailPage } from '../features/routes/RouteDetailPage';
 
 import { VehiclesOverview } from '../features/vehicles/VehiclesOverview';
 import { RoutesOverview } from '../features/routes/RoutesOverview';
@@ -26,7 +27,7 @@ import { AssignmentsOverview } from '../features/assignments/AssignmentsOverview
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 
 const MainContent: React.FC = () => {
-  const { path, activeTab, selectTab, shopId, companyId, driverId, vehicleId, isNotFound, isLogin, navigate } = useNavigation();
+  const { path, activeTab, selectTab, shopId, companyId, driverId, vehicleId, routeId, isNotFound, isLogin, navigate } = useNavigation();
   const { user, loading } = useAuth();
 
   // If unauthenticated and on a protected route, safely redirect to /login?redirect=...
@@ -90,6 +91,11 @@ const MainContent: React.FC = () => {
     // Dedicated Vehicle Details page when route is /vehicles/:vehicleId or /admin/vehicles/:vehicleId
     if (activeTab === 'vehicles' && vehicleId) {
       return <VehicleDetailPage vehicleId={vehicleId} />;
+    }
+
+    // Dedicated Route Details page when route is /routes/:routeId or /admin/routes/:routeId
+    if (activeTab === 'routes' && routeId) {
+      return <RouteDetailPage routeId={routeId} />;
     }
 
     switch (activeTab) {

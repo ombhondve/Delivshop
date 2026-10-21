@@ -997,6 +997,8 @@ export interface RouteStop {
   is_location_verified?: boolean;
   delivery_contact_name?: string | null;
   delivery_contact_phone?: string | null;
+  sequence_order?: number;
+  shop?: Shop;
 }
 
 export interface RouteVersion {
@@ -1026,6 +1028,7 @@ export interface Route {
   depotName?: string;
   depotAddress?: string;
   description?: string | null;
+  category?: string;
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'PUBLISHED' | 'ARCHIVED';
   total_distance_km: number;
   estimatedDistanceKm?: number;
@@ -1134,6 +1137,9 @@ export interface DeliveryRun {
   deleted_by?: string | null;
   deletion_reason?: string | null;
   stops?: DeliveryRunStop[];
+  code?: string;
+  driver?: DriverUser;
+  vehicle?: Vehicle;
 }
 
 export interface AssignmentSummary {

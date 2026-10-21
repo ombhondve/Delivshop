@@ -358,7 +358,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                 className={`drawer-tab-btn ${activeTab === 'stops' ? 'is-active' : ''}`}
               >
                 <MapPin size={15} />
-                <span>Stops Sequence ({route.stops?.length || route.stops_count || 0})</span>
+                <span>Stops ({route.stops?.length || route.stops_count || 0})</span>
               </button>
               <button
                 type="button"
@@ -366,7 +366,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                 className={`drawer-tab-btn ${activeTab === 'pickups' ? 'is-active' : ''}`}
               >
                 <Building2 size={15} />
-                <span>Supplier Pickups ({(pickupRequirements?.supplierPickups ?? pickupRequirements?.companies ?? []).length})</span>
+                <span>Pickups ({(pickupRequirements?.supplierPickups ?? pickupRequirements?.companies ?? []).length})</span>
               </button>
               <button
                 type="button"
@@ -374,7 +374,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                 className={`drawer-tab-btn ${activeTab === 'map' ? 'is-active' : ''}`}
               >
                 <Navigation size={15} />
-                <span>Corridor Map</span>
+                <span>Map</span>
               </button>
               <button
                 type="button"
@@ -390,7 +390,7 @@ export const RouteDetailsDrawer: React.FC<RouteDetailsDrawerProps> = ({
                 className={`drawer-tab-btn ${activeTab === 'runs' ? 'is-active' : ''}`}
               >
                 <Truck size={15} />
-                <span>Dispatch History ({runs.length})</span>
+                <span>History ({runs.length})</span>
               </button>
             </div>
 

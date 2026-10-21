@@ -109,11 +109,8 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#991B1B' }}>
-                Delete Delivery Route
+                Delete Route
               </h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: '#64748B' }}>
-                Safely archive route corridor from active operations
-              </p>
             </div>
           </div>
 
@@ -159,81 +156,18 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
             </div>
           )}
 
-          {/* Route Summary Card */}
-          <div
-            style={{
-              background: '#F8FAFC',
-              border: '1px solid #D6D3C8',
-              borderRadius: '8px',
-              padding: '14px 16px',
-              marginBottom: '16px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span
-                style={{
-                  fontFamily: 'monospace',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  color: 'var(--color-primary)',
-                  background: 'var(--color-primary-subtle)',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  border: '1px solid #6EE7B7',
-                }}
-              >
-                {route.route_code || route.code}
-              </span>
-              <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
-                Version v{route.version || 1}
-              </span>
-            </div>
-
-            <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0F172A', marginBottom: '6px' }}>
-              {route.name}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12.5px', color: '#64748B' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <MapPin size={13} color="var(--color-primary)" />
-                <span>{route.city}, {route.state}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Store size={13} color="var(--color-primary)" />
-                <span>{stopsCount} {stopsCount === 1 ? 'shop stop' : 'shop stops'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Data Preservation Assurance */}
-          <div
-            style={{
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
-              borderRadius: '8px',
-              padding: '12px 14px',
-              marginBottom: '16px',
-              fontSize: '12.5px',
-              color: '#166534',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '8px',
-            }}
-          >
-            <CheckCircle2 size={16} color="#059669" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div>
-              <strong>Historical Data Safe:</strong> Deleting this route will soft-archive its template. Shop records, past deliveries, orders, driver payroll, and client accounts are <strong>never</strong> deleted.
-            </div>
-          </div>
+          <p style={{ fontSize: '13.5px', color: '#334155', marginBottom: '16px', lineHeight: 1.5 }}>
+            Are you sure you want to delete route <strong>{route.name}</strong> ({route.route_code || route.code})?
+          </p>
 
           {/* Reason Input */}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label
               htmlFor="deletion-reason"
               className="form-label"
-              style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}
+              style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '4px', display: 'block' }}
             >
-              Reason for Deletion (Audit Trail)
+              Reason (optional)
             </label>
             <input
               id="deletion-reason"
@@ -241,14 +175,14 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
               className="form-control"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Route retired, seasonal consolidation..."
+              placeholder="e.g. Route retired or consolidated"
               disabled={loading}
               style={{
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '13px',
                 borderRadius: '6px',
-                border: '1px solid #A7AE9F',
+                border: '1px solid #CBD5E1',
               }}
             />
           </div>
@@ -259,7 +193,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
           style={{
             padding: '16px 24px',
             background: '#F8FAFC',
-            borderTop: '1px solid #D6D3C8',
+            borderTop: '1px solid #E2E8F0',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '10px',
@@ -276,7 +210,7 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
               fontWeight: 600,
               borderRadius: '6px',
               background: '#FFFFFF',
-              border: '1px solid #A7AE9F',
+              border: '1px solid #CBD5E1',
               color: '#475569',
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
@@ -304,11 +238,11 @@ export const DeleteRouteModal: React.FC<DeleteRouteModalProps> = ({
             }}
           >
             {loading ? (
-              <span>Archiving...</span>
+              <span>Deleting...</span>
             ) : (
               <>
                 <Trash2 size={14} />
-                <span>Confirm Delete Route</span>
+                <span>Delete</span>
               </>
             )}
           </button>
