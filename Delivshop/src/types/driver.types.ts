@@ -131,6 +131,16 @@ export interface DeliveryRun {
   vehicle_code?: string;
   vehicle_type?: string;
   capacity_crates?: number;
+  start_location_name?: string | null;
+  start_latitude?: number | null;
+  start_longitude?: number | null;
+  start_address?: string | null;
+  start_place_id?: string | null;
+  return_location_name?: string | null;
+  return_latitude?: number | null;
+  return_longitude?: number | null;
+  return_address?: string | null;
+  return_place_id?: string | null;
   stops?: DeliveryRunStop[];
 }
 

@@ -1036,6 +1036,32 @@ export interface Route {
   estimatedDurationMinutes?: number;
   version: number;
   returnToDepot?: boolean;
+  start_location_name?: string | null;
+  start_latitude?: number | null;
+  start_longitude?: number | null;
+  start_address?: string | null;
+  start_place_id?: string | null;
+  return_location_name?: string | null;
+  return_latitude?: number | null;
+  return_longitude?: number | null;
+  return_address?: string | null;
+  return_place_id?: string | null;
+
+  startLocationName?: string | null;
+  startLatitude?: number | null;
+  startLongitude?: number | null;
+  startAddress?: string | null;
+  startLocationLat?: number | null;
+  startLocationLng?: number | null;
+  startLocationAddress?: string | null;
+  returnLocationName?: string | null;
+  returnLatitude?: number | null;
+  returnLongitude?: number | null;
+  returnAddress?: string | null;
+  returnLocationLat?: number | null;
+  returnLocationLng?: number | null;
+  returnLocationAddress?: string | null;
+
   stops_count?: number;
   stopsCount?: number;
   active_runs_count?: number;

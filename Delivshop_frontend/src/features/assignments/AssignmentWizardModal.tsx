@@ -8,6 +8,7 @@ import { api } from '../../services/api/endpoints';
 import { Route, Vehicle, DriverUser } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
+import { GoogleLocationPicker, LocationValue } from '../../components/common/GoogleLocationPicker';
 
 interface AssignmentWizardModalProps {
   isOpen: boolean;
@@ -38,6 +39,28 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
   const [routes, setRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(preselectedRoute || null);
   const [routeSearch, setRouteSearch] = useState('');
+
+  // Start Location and Return Location configuration
+  const [startLocation, setStartLocation] = useState<LocationValue>({
+    name: 'Pune Central Cold Depot',
+    latitude: 18.5204,
+    longitude: 73.8567,
+    address: 'Hadapsar Industrial Estate, Pune, Maharashtra',
+  });
+  const [showStartPicker, setShowStartPicker] = useState(false);
+
+  const [returnLocation, setReturnLocation] = useState<LocationValue>({
+    name: 'Pune Central Cold Depot',
+    latitude: 18.5204,
+    longitude: 73.8567,
+    address: 'Hadapsar Industrial Estate, Pune, Maharashtra',
+  });
+  const [showReturnPicker, setShowReturnPicker] = useState(false);
+
+  // Derived Supplier Collection Stops and Sequenced Stops
+  const [collectionStops, setCollectionStops] = useState<any[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+  const [fullRouteDetails, setFullRouteDetails] = useState<any | null>(null);
 
   // Step 3: Driver Selection
   const [drivers, setDrivers] = useState<DriverUser[]>([]);
@@ -97,18 +120,60 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
     }
   }, []);
 
+  // Function to load route locations and derived collection stops
+  const loadRouteDetailsAndCollections = useCallback(async (route: Route) => {
+    // Populate start and return locations from route data
+    setStartLocation({
+      name: route.start_location_name || route.startLocationName || route.depot || 'Pune Central Cold Depot',
+      latitude: Number(route.start_latitude ?? route.startLatitude ?? 18.5204),
+      longitude: Number(route.start_longitude ?? route.startLongitude ?? 73.8567),
+      address: route.start_address || route.startAddress || (route.depot ? `${route.depot}, Pune, Maharashtra` : 'Hadapsar Industrial Estate, Pune, Maharashtra'),
+    });
+
+    setReturnLocation({
+      name: route.return_location_name || route.returnLocationName || route.depot || 'Pune Central Cold Depot',
+      latitude: Number(route.return_latitude ?? route.returnLatitude ?? 18.5204),
+      longitude: Number(route.return_longitude ?? route.returnLongitude ?? 73.8567),
+      address: route.return_address || route.returnAddress || (route.depot ? `${route.depot}, Pune, Maharashtra` : 'Hadapsar Industrial Estate, Pune, Maharashtra'),
+    });
+
+    try {
+      setLoadingCollections(true);
+      const [routeRes, pickupRes]: any = await Promise.all([
+        api.routes.get(route.id).catch(() => null),
+        api.routes.getPickupRequirements(route.id).catch(() => null),
+      ]);
+
+      const rData = routeRes?.data || routeRes;
+      if (rData) {
+        setFullRouteDetails(rData);
+      }
+
+      const pData = pickupRes?.data || pickupRes;
+      const comps = pData?.companies || pData?.supplierPickups || [];
+      setCollectionStops(comps);
+    } catch (err) {
+      console.warn('Could not load derived collection stops for route:', err);
+    } finally {
+      setLoadingCollections(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       loadPrerequisites();
       if (preselectedRoute) {
         setSelectedRoute(preselectedRoute);
+        loadRouteDetailsAndCollections(preselectedRoute);
       }
     } else {
       setStep(1);
       setValidationResult(null);
       setDispatchError(null);
+      setCollectionStops([]);
+      setFullRouteDetails(null);
     }
-  }, [isOpen, preselectedRoute, loadPrerequisites]);
+  }, [isOpen, preselectedRoute, loadPrerequisites, loadRouteDetailsAndCollections]);
 
   // Handle escape key
   useEffect(() => {
@@ -157,6 +222,33 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
     setSubmitting(true);
     setDispatchError(null);
 
+    // Validate that required locations have valid coordinates before publishing
+    if (
+      isNaN(startLocation.latitude) ||
+      startLocation.latitude < -90 ||
+      startLocation.latitude > 90 ||
+      isNaN(startLocation.longitude) ||
+      startLocation.longitude < -180 ||
+      startLocation.longitude > 180
+    ) {
+      setDispatchError('Start Location coordinates are invalid or missing. Please calibrate on map before dispatch.');
+      setSubmitting(false);
+      return;
+    }
+
+    if (
+      isNaN(returnLocation.latitude) ||
+      returnLocation.latitude < -90 ||
+      returnLocation.latitude > 90 ||
+      isNaN(returnLocation.longitude) ||
+      returnLocation.longitude < -180 ||
+      returnLocation.longitude > 180
+    ) {
+      setDispatchError('Return Location coordinates are invalid or missing. Please calibrate on map before dispatch.');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       await api.assignments.create({
         routeId: selectedRoute.id,
@@ -164,6 +256,8 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
         vehicleId: selectedVehicle.id,
         deliveryDate,
         notes: dispatchNotes ? `[Depot: ${depot} | Departure: ${plannedTime}] ${dispatchNotes}` : `[Depot: ${depot} | Departure: ${plannedTime}]`,
+        startLocation,
+        returnLocation,
       });
 
       onAssignmentCreated();
@@ -543,6 +637,148 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Selected Route Locations Corridor */}
+              {selectedRoute && (
+                <div
+                  style={{
+                    marginTop: '8px',
+                    padding: '16px',
+                    borderRadius: '10px',
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #D6D3C8',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                        Route Location Corridor & Derived Stops
+                      </h4>
+                      <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0 0' }}>
+                        Operational stages: Start Location → Supplier Collections (from order products) → Delivery Stops → Return Location.
+                      </p>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#0284C7', backgroundColor: '#E0F2FE', padding: '2px 8px', borderRadius: '4px' }}>
+                      {selectedRoute.route_code || 'ROUTE'}
+                    </span>
+                  </div>
+
+                  {/* 4 STAGES GRID */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {/* 1. START LOCATION */}
+                    <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#F0F9FF', border: '1px solid #BAE6FD' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0369A1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#0284C7', color: '#FFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10.5px' }}>1</span>
+                          Start Location
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowStartPicker(true)}
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: '#0284C7',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Edit Pin
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#0F172A' }}>{startLocation.name}</div>
+                      <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>{startLocation.address}</div>
+                      <code style={{ fontSize: '10.5px', color: '#0369A1', fontFamily: 'monospace', display: 'block', marginTop: '4px' }}>
+                        {startLocation.latitude.toFixed(6)}, {startLocation.longitude.toFixed(6)}
+                      </code>
+                    </div>
+
+                    {/* 4. RETURN LOCATION */}
+                    <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#991B1B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#DC2626', color: '#FFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10.5px' }}>4</span>
+                          Return Location
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowReturnPicker(true)}
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: '#DC2626',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Edit Pin
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#0F172A' }}>{returnLocation.name}</div>
+                      <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>{returnLocation.address}</div>
+                      <code style={{ fontSize: '10.5px', color: '#991B1B', fontFamily: 'monospace', display: 'block', marginTop: '4px' }}>
+                        {returnLocation.latitude.toFixed(6)}, {returnLocation.longitude.toFixed(6)}
+                      </code>
+                    </div>
+                  </div>
+
+                  {/* 2. DERIVED SUPPLIER COLLECTION LOCATIONS */}
+                  <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#92400E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#D97706', color: '#FFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10.5px' }}>2</span>
+                        Derived Supplier Collection Locations ({collectionStops.length} stops identified)
+                      </span>
+                      {loadingCollections && <span style={{ fontSize: '11px', color: '#92400E' }}>Refreshing...</span>}
+                    </div>
+
+                    {collectionStops.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                        {collectionStops.map((stop, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', backgroundColor: '#FFFFFF', padding: '6px 10px', borderRadius: '4px', border: '1px solid #FEF3C7' }}>
+                            <div>
+                              <strong>{stop.companyName}</strong> • {stop.city || 'Pune'}
+                              <span style={{ display: 'block', color: '#64748B', fontSize: '10.5px' }}>
+                                {stop.addressLine1 || 'Supplier Warehouse'}
+                              </span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              {stop.hasCoordinates ? (
+                                <Badge variant="success">GPS Verified</Badge>
+                              ) : (
+                                <Badge variant="danger">No GPS</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '11.5px', color: '#92400E' }}>
+                        No orders currently assigned to this route or pending collection. When orders are assigned, collection stops are derived automatically from the supplying companies.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. SEQUENCED DELIVERY STOPS */}
+                  <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#16A34A', color: '#FFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10.5px' }}>3</span>
+                        Sequenced Delivery Stops ({fullRouteDetails?.stops?.length || selectedRoute.stops_count || 0} retail shops)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -948,6 +1184,23 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
                   </div>
                 </div>
 
+                {/* Corridor Overview in Summary */}
+                <div style={{ borderTop: '1px solid #D6D3C8', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155' }}>
+                    Run Corridor Overview:
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
+                    <div style={{ padding: '8px', borderRadius: '6px', backgroundColor: '#E0F2FE' }}>
+                      <strong style={{ color: '#0369A1' }}>Start: </strong>
+                      <span>{startLocation.name} ({startLocation.latitude.toFixed(4)}, {startLocation.longitude.toFixed(4)})</span>
+                    </div>
+                    <div style={{ padding: '8px', borderRadius: '6px', backgroundColor: '#FEE2E2' }}>
+                      <strong style={{ color: '#991B1B' }}>Return: </strong>
+                      <span>{returnLocation.name} ({returnLocation.latitude.toFixed(4)}, {returnLocation.longitude.toFixed(4)})</span>
+                    </div>
+                  </div>
+                </div>
+
                 {dispatchNotes && (
                   <div style={{ borderTop: '1px solid #D6D3C8', paddingTop: '10px', fontSize: '12.5px', color: '#475569' }}>
                     <span style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600 }}>Notes: </span>
@@ -1055,6 +1308,47 @@ export const AssignmentWizardModal: React.FC<AssignmentWizardModalProps> = ({
             </Button>
           )}
         </div>
+
+        {/* Google Location Picker Modals */}
+        {showStartPicker && (
+          <GoogleLocationPicker
+            isOpen={showStartPicker}
+            title="Configure Run Start Location"
+            label="Calibrate the physical departure gate, yard, or depot for this run"
+            badgeLabel="START LOCATION"
+            pinColor="#0284C7"
+            value={startLocation}
+            initialLatitude={startLocation.latitude}
+            initialLongitude={startLocation.longitude}
+            initialName={startLocation.name}
+            initialAddress={startLocation.address}
+            onSave={(loc) => {
+              setStartLocation(loc);
+              setShowStartPicker(false);
+            }}
+            onCancel={() => setShowStartPicker(false)}
+          />
+        )}
+
+        {showReturnPicker && (
+          <GoogleLocationPicker
+            isOpen={showReturnPicker}
+            title="Configure Run Return Location"
+            label="Calibrate where the vehicle must return after completing deliveries"
+            badgeLabel="RETURN LOCATION"
+            pinColor="#DC2626"
+            value={returnLocation}
+            initialLatitude={returnLocation.latitude}
+            initialLongitude={returnLocation.longitude}
+            initialName={returnLocation.name}
+            initialAddress={returnLocation.address}
+            onSave={(loc) => {
+              setReturnLocation(loc);
+              setShowReturnPicker(false);
+            }}
+            onCancel={() => setShowReturnPicker(false)}
+          />
+        )}
 
       </div>
     </div>

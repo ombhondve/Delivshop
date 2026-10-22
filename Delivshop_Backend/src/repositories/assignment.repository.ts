@@ -99,6 +99,14 @@ export const assignmentRepository = {
     const sql = `
       SELECT dr.*,
              r.route_code, r.name as route_name, r.city as route_city, r.depot as route_depot,
+             COALESCE(dr.start_location_name, r.start_location_name, r.depot) as start_location_name,
+             COALESCE(dr.start_latitude, r.start_latitude, 18.5204) as start_latitude,
+             COALESCE(dr.start_longitude, r.start_longitude, 73.8567) as start_longitude,
+             COALESCE(dr.start_address, r.start_address) as start_address,
+             COALESCE(dr.return_location_name, r.return_location_name, r.depot) as return_location_name,
+             COALESCE(dr.return_latitude, r.return_latitude, 18.5204) as return_latitude,
+             COALESCE(dr.return_longitude, r.return_longitude, 73.8567) as return_longitude,
+             COALESCE(dr.return_address, r.return_address) as return_address,
              u.name as driver_name, u.employee_id as driver_employee_id, u.phone as driver_phone,
              v.registration_number as vehicle_registration, v.vehicle_code, v.vehicle_type, v.capacity_crates
       FROM delivery_runs dr
@@ -147,6 +155,14 @@ export const assignmentRepository = {
     const runRes = await query(
       `SELECT dr.*,
               r.route_code, r.name as route_name, r.city as route_city, r.depot as route_depot, r.total_distance_km, r.estimated_duration_minutes,
+              COALESCE(dr.start_location_name, r.start_location_name, r.depot) as start_location_name,
+              COALESCE(dr.start_latitude, r.start_latitude, 18.5204) as start_latitude,
+              COALESCE(dr.start_longitude, r.start_longitude, 73.8567) as start_longitude,
+              COALESCE(dr.start_address, r.start_address) as start_address,
+              COALESCE(dr.return_location_name, r.return_location_name, r.depot) as return_location_name,
+              COALESCE(dr.return_latitude, r.return_latitude, 18.5204) as return_latitude,
+              COALESCE(dr.return_longitude, r.return_longitude, 73.8567) as return_longitude,
+              COALESCE(dr.return_address, r.return_address) as return_address,
               u.name as driver_name, u.employee_id as driver_employee_id, u.phone as driver_phone, u.license_number as driver_license,
               v.registration_number as vehicle_registration, v.vehicle_code, v.vehicle_type, v.capacity_crates, v.capacity_kg, v.fuel_type, v.is_refrigerated
        FROM delivery_runs dr
@@ -293,6 +309,8 @@ export const assignmentRepository = {
       vehicleId: string;
       deliveryDate: string;
       notes?: string;
+      startLocation?: { name?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null };
+      returnLocation?: { name?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null };
     },
     creatorId?: string
   ): Promise<DeliveryRunRecord> {
@@ -324,6 +342,25 @@ export const assignmentRepository = {
       const seq = String((countRes.rows[0]?.c || 0) + 1).padStart(2, '0');
       const runCode = `RUN-${dateStr}-${seq}`;
 
+      // Fetch route details including stops, start location, and return location
+      const routeRes = await client.query(
+        `SELECT depot, start_location_name, start_latitude, start_longitude, start_address,
+                return_location_name, return_latitude, return_longitude, return_address
+         FROM routes WHERE id = $1`,
+        [data.routeId]
+      );
+      const r = routeRes.rows[0] || {};
+
+      const startName = data.startLocation?.name || r.start_location_name || r.depot || 'Pune Central Cold Depot';
+      const startLat = data.startLocation?.latitude ?? r.start_latitude ?? 18.5204;
+      const startLng = data.startLocation?.longitude ?? r.start_longitude ?? 73.8567;
+      const startAddr = data.startLocation?.address || r.start_address;
+
+      const returnName = data.returnLocation?.name || r.return_location_name || r.depot || 'Pune Central Cold Depot';
+      const returnLat = data.returnLocation?.latitude ?? r.return_latitude ?? 18.5204;
+      const returnLng = data.returnLocation?.longitude ?? r.return_longitude ?? 73.8567;
+      const returnAddr = data.returnLocation?.address || r.return_address;
+
       // Fetch route stops to snapshot into delivery_run_stops
       const routeStopsRes = await client.query(
         `SELECT shop_id, stop_sequence, delivery_instructions FROM route_stops WHERE route_id = $1 ORDER BY stop_sequence ASC`,
@@ -331,13 +368,15 @@ export const assignmentRepository = {
       );
       const stops = routeStopsRes.rows;
 
-      // Insert delivery run
+      // Insert delivery run with snapshot start and return locations
       const insertRunRes = await client.query(
         `INSERT INTO delivery_runs (
           run_code, route_id, driver_id, vehicle_id, delivery_date,
-          status, planned_stops_count, completed_stops_count, notes, created_by
+          status, planned_stops_count, completed_stops_count, notes, created_by,
+          start_location_name, start_latitude, start_longitude, start_address,
+          return_location_name, return_latitude, return_longitude, return_address
          )
-         VALUES ($1, $2, $3, $4, $5::date, 'ASSIGNED', $6, 0, $7, $8)
+         VALUES ($1, $2, $3, $4, $5::date, 'ASSIGNED', $6, 0, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          RETURNING *`,
         [
           runCode,
@@ -348,6 +387,14 @@ export const assignmentRepository = {
           stops.length,
           data.notes || null,
           creatorId || null,
+          startName,
+          startLat,
+          startLng,
+          startAddr,
+          returnName,
+          returnLat,
+          returnLng,
+          returnAddr,
         ]
       );
       const newRun = insertRunRes.rows[0];

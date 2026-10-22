@@ -68,11 +68,22 @@ class GoogleRoutesService {
   }
 
   /**
-   * Deterministic fingerprint computation based on depot and ordered sequence of stops.
+   * Deterministic fingerprint computation based on depot, start/return locations, and ordered sequence of stops.
    * Any change in stops, coordinates, or order changes the hash.
    */
-  public computeFingerprint(depot: string, stops: RouteWaypointInput[]): string {
+  public computeFingerprint(
+    depot: string,
+    stops: RouteWaypointInput[],
+    startLocation?: { latitude?: number | null; longitude?: number | null; address?: string | null } | null,
+    returnLocation?: { latitude?: number | null; longitude?: number | null; address?: string | null } | null
+  ): string {
     const normDepot = (depot || '').trim().toLowerCase();
+    const startStr = startLocation
+      ? `${startLocation.latitude != null ? Number(startLocation.latitude).toFixed(5) : ''},${startLocation.longitude != null ? Number(startLocation.longitude).toFixed(5) : ''}:${(startLocation.address || '').trim().toLowerCase()}`
+      : '';
+    const returnStr = returnLocation
+      ? `${returnLocation.latitude != null ? Number(returnLocation.latitude).toFixed(5) : ''},${returnLocation.longitude != null ? Number(returnLocation.longitude).toFixed(5) : ''}:${(returnLocation.address || '').trim().toLowerCase()}`
+      : '';
     const stopsFingerprint = stops.map((s, idx) => {
       const lat = s.latitude !== undefined && s.latitude !== null ? Number(s.latitude).toFixed(5) : '';
       const lng = s.longitude !== undefined && s.longitude !== null ? Number(s.longitude).toFixed(5) : '';
@@ -83,7 +94,7 @@ class GoogleRoutesService {
 
     return crypto
       .createHash('sha256')
-      .update([normDepot, ...stopsFingerprint].join('|'))
+      .update([normDepot, startStr, returnStr, ...stopsFingerprint].join('|'))
       .digest('hex')
       .substring(0, 32);
   }
@@ -146,18 +157,20 @@ class GoogleRoutesService {
     depot: string;
     stops: RouteWaypointInput[];
     feature: RoutingFeature;
+    startLocation?: { latitude?: number | null; longitude?: number | null; address?: string | null } | null;
+    returnLocation?: { latitude?: number | null; longitude?: number | null; address?: string | null } | null;
     existingFingerprint?: string | null;
     existingDistanceKm?: number | null;
     forceRecalculate?: boolean;
   }): Promise<RoutingResult | null> {
-    const { depot, stops, feature, existingFingerprint, existingDistanceKm, forceRecalculate } = params;
+    const { depot, stops, feature, startLocation, returnLocation, existingFingerprint, existingDistanceKm, forceRecalculate } = params;
 
     if (!stops || stops.length === 0) {
       return null;
     }
 
     // 1. Generate fingerprint for this ordered sequence
-    const fingerprint = this.computeFingerprint(depot, stops);
+    const fingerprint = this.computeFingerprint(depot, stops, startLocation, returnLocation);
 
     // 2. Reuse check: If not forced and existing fingerprint matches with valid distance, reuse without API call
     if (
@@ -206,7 +219,7 @@ class GoogleRoutesService {
     // 6. Build the execution promise
     const executionPromise = (async () => {
       try {
-        const result = await this.executeRoutesApiRequest(depot, stops, apiKey, fingerprint, feature);
+        const result = await this.executeRoutesApiRequest(depot, stops, apiKey, fingerprint, feature, startLocation, returnLocation);
         if (result) {
           this.memoryCache.set(fingerprint, { result, timestamp: Date.now() });
         }
@@ -228,14 +241,21 @@ class GoogleRoutesService {
     stops: RouteWaypointInput[],
     apiKey: string,
     fingerprint: string,
-    feature: RoutingFeature
+    feature: RoutingFeature,
+    startLocation?: { latitude?: number | null; longitude?: number | null; address?: string | null } | null,
+    returnLocation?: { latitude?: number | null; longitude?: number | null; address?: string | null } | null
   ): Promise<RoutingResult | null> {
     // Determine origin, intermediates, and destination
-    // Origin is the depot (or first stop if depot is unavailable)
-    const depotWaypoint = this.formatGoogleWaypoint(depot);
+    // Origin is Start Location if provided, otherwise depot
+    const originWaypoint = startLocation
+      ? this.formatGoogleWaypoint(startLocation)
+      : this.formatGoogleWaypoint(depot);
+    
+    // Return Location waypoint if configured
+    const returnWaypoint = returnLocation ? this.formatGoogleWaypoint(returnLocation) : null;
     const stopWaypoints = stops.map((s) => this.formatGoogleWaypoint(s)).filter(Boolean);
 
-    if (stopWaypoints.length === 0) {
+    if (stopWaypoints.length === 0 && !returnWaypoint) {
       return null;
     }
 
@@ -243,18 +263,30 @@ class GoogleRoutesService {
     let destination: any;
     let intermediates: any[] = [];
 
-    if (depotWaypoint) {
-      origin = depotWaypoint;
-      destination = stopWaypoints[stopWaypoints.length - 1];
-      intermediates = stopWaypoints.slice(0, stopWaypoints.length - 1);
-    } else {
-      if (stopWaypoints.length === 1) {
-        // Single stop with no depot: cannot compute route between 1 point
-        return null;
+    if (originWaypoint) {
+      origin = originWaypoint;
+      if (returnWaypoint) {
+        // Full loop: Start Location -> All Stops -> Return Location
+        destination = returnWaypoint;
+        intermediates = stopWaypoints;
+      } else {
+        // No return point: Start Location -> Intermediates -> Final Stop
+        destination = stopWaypoints[stopWaypoints.length - 1];
+        intermediates = stopWaypoints.slice(0, stopWaypoints.length - 1);
       }
-      origin = stopWaypoints[0];
-      destination = stopWaypoints[stopWaypoints.length - 1];
-      intermediates = stopWaypoints.slice(1, stopWaypoints.length - 1);
+    } else {
+      if (returnWaypoint) {
+        origin = stopWaypoints[0];
+        destination = returnWaypoint;
+        intermediates = stopWaypoints.slice(1);
+      } else {
+        if (stopWaypoints.length === 1) {
+          return null;
+        }
+        origin = stopWaypoints[0];
+        destination = stopWaypoints[stopWaypoints.length - 1];
+        intermediates = stopWaypoints.slice(1, stopWaypoints.length - 1);
+      }
     }
 
     const payload = {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, MapPin, Play, Flag } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Route } from '../../types';
 import { Button } from '../../components/common/Button';
+import { GoogleLocationPicker, LocationValue } from '../../components/common/GoogleLocationPicker';
 
 interface EditRouteModalProps {
   route: Route | null;
@@ -27,6 +28,20 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [startLocation, setStartLocation] = useState<LocationValue>({
+    name: 'Pune Central Cold Depot',
+    latitude: 18.5204,
+    longitude: 73.8567,
+    address: 'Central Logistics Hub, Pune, Maharashtra',
+  });
+  const [returnLocation, setReturnLocation] = useState<LocationValue>({
+    name: 'Pune Central Cold Depot',
+    latitude: 18.5204,
+    longitude: 73.8567,
+    address: 'Central Logistics Hub, Pune, Maharashtra',
+  });
+  const [activePickerModal, setActivePickerModal] = useState<'start' | 'return' | null>(null);
+
   useEffect(() => {
     if (route) {
       setName(route.name || '');
@@ -36,6 +51,45 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
       setState(route.state || 'Maharashtra');
       setDescription(route.description || '');
       setStatus(route.status || 'DRAFT');
+
+      const rStartLat = route.start_latitude ?? route.startLocationLat;
+      const rStartLng = route.start_longitude ?? route.startLocationLng;
+      if (rStartLat !== undefined && rStartLat !== null && rStartLng !== undefined && rStartLng !== null) {
+        setStartLocation({
+          name: route.start_location_name || route.startLocationName || route.depot || 'Route Start Location',
+          latitude: Number(rStartLat),
+          longitude: Number(rStartLng),
+          address: route.start_address || route.startLocationAddress || '',
+          placeId: route.start_place_id,
+        });
+      } else {
+        setStartLocation({
+          name: route.depot || 'Pune Central Cold Depot',
+          latitude: 18.5204,
+          longitude: 73.8567,
+          address: `${route.city || 'Pune'}, ${route.state || 'Maharashtra'}`,
+        });
+      }
+
+      const rReturnLat = route.return_latitude ?? route.returnLocationLat;
+      const rReturnLng = route.return_longitude ?? route.returnLocationLng;
+      if (rReturnLat !== undefined && rReturnLat !== null && rReturnLng !== undefined && rReturnLng !== null) {
+        setReturnLocation({
+          name: route.return_location_name || route.returnLocationName || route.depot || 'Route Return Location',
+          latitude: Number(rReturnLat),
+          longitude: Number(rReturnLng),
+          address: route.return_address || route.returnLocationAddress || '',
+          placeId: route.return_place_id,
+        });
+      } else {
+        setReturnLocation({
+          name: route.depot || 'Pune Central Cold Depot',
+          latitude: 18.5204,
+          longitude: 73.8567,
+          address: `${route.city || 'Pune'}, ${route.state || 'Maharashtra'}`,
+        });
+      }
+
       setError(null);
     }
   }, [route, isOpen]);
@@ -60,6 +114,20 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
         state: state.trim(),
         description: description.trim() || undefined,
         status,
+        startLocation: {
+          name: startLocation.name,
+          latitude: startLocation.latitude,
+          longitude: startLocation.longitude,
+          address: startLocation.address,
+          placeId: startLocation.placeId,
+        },
+        returnLocation: {
+          name: returnLocation.name,
+          latitude: returnLocation.latitude,
+          longitude: returnLocation.longitude,
+          address: returnLocation.address,
+          placeId: returnLocation.placeId,
+        },
       });
 
       const updated = res?.data || res;
@@ -94,7 +162,7 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
         className="modal-dialog"
         style={{
           width: '100%',
-          maxWidth: '560px',
+          maxWidth: '620px',
           background: '#FFFFFF',
           borderRadius: '12px',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
@@ -272,6 +340,88 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
               />
             </div>
 
+            {/* Route Locations Configuration Section */}
+            <div style={{ padding: '14px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Route Locations (Origin & Return Loop)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Start Location Card */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Play size={14} color="#059669" fill="#059669" />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#065F46' }}>Start Location</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActivePickerModal('start')}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        backgroundColor: '#ECFDF5',
+                        color: '#059669',
+                        border: '1px solid #A7F3D0',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Edit Pin
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#0F172A' }}>
+                    {startLocation.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px', fontFamily: 'monospace' }}>
+                    {startLocation.latitude.toFixed(5)}, {startLocation.longitude.toFixed(5)}
+                  </div>
+                  {startLocation.address && (
+                    <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {startLocation.address}
+                    </div>
+                  )}
+                </div>
+
+                {/* Return Location Card */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Flag size={14} color="#2563EB" fill="#2563EB" />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E40AF' }}>Return Location</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActivePickerModal('return')}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        backgroundColor: '#EFF6FF',
+                        color: '#2563EB',
+                        border: '1px solid #BFDBFE',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Edit Pin
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#0F172A' }}>
+                    {returnLocation.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px', fontFamily: 'monospace' }}>
+                    {returnLocation.latitude.toFixed(5)}, {returnLocation.longitude.toFixed(5)}
+                  </div>
+                  {returnLocation.address && (
+                    <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {returnLocation.address}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Description */}
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
@@ -281,7 +431,7 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional notes about this delivery corridor..."
-                rows={3}
+                rows={2}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -315,6 +465,26 @@ export const EditRouteModal: React.FC<EditRouteModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Embedded Location Picker Modal */}
+      {activePickerModal && (
+        <GoogleLocationPicker
+          title={activePickerModal === 'start' ? 'Select Start Location (Vehicle Origin)' : 'Select Return Location (End of Route)'}
+          value={activePickerModal === 'start' ? startLocation : returnLocation}
+          onSave={(loc) => {
+            if (activePickerModal === 'start') {
+              setStartLocation(loc);
+            } else {
+              setReturnLocation(loc);
+            }
+            setActivePickerModal(null);
+          }}
+          onCancel={() => setActivePickerModal(null)}
+          pinColor={activePickerModal === 'start' ? '#059669' : '#2563EB'}
+          badgeLabel={activePickerModal === 'start' ? 'START LOCATION' : 'RETURN LOCATION'}
+        />
+      )}
     </div>
   );
 };
+

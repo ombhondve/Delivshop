@@ -17,6 +17,22 @@ export const createAssignmentSchema = z.object({
     vehicleId: z.string().uuid('Invalid vehicle ID'),
     deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date format must be YYYY-MM-DD'),
     notes: z.string().trim().max(1000).optional().nullable(),
+    startLocation: z
+      .object({
+        name: z.string().trim().max(255).optional().nullable(),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        address: z.string().trim().max(1000).optional().nullable(),
+      })
+      .optional(),
+    returnLocation: z
+      .object({
+        name: z.string().trim().max(255).optional().nullable(),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        address: z.string().trim().max(1000).optional().nullable(),
+      })
+      .optional(),
   }),
 });
 

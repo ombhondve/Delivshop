@@ -29,6 +29,16 @@ export interface RouteRecord {
   state: string;
   depot: string;
   description: string | null;
+  start_location_name?: string | null;
+  start_latitude?: number | null;
+  start_longitude?: number | null;
+  start_address?: string | null;
+  start_place_id?: string | null;
+  return_location_name?: string | null;
+  return_latitude?: number | null;
+  return_longitude?: number | null;
+  return_address?: string | null;
+  return_place_id?: string | null;
   status: 'DRAFT' | 'ACTIVE' | 'PUBLISHED' | 'INACTIVE' | 'ARCHIVED';
   total_distance_km: number;
   estimated_duration_minutes: number;
@@ -190,6 +200,16 @@ export const routeRepository = {
       state?: string;
       depot?: string;
       description?: string;
+      startLocation?: { name?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null; placeId?: string | null };
+      returnLocation?: { name?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null; placeId?: string | null };
+      startLocationName?: string | null;
+      startLatitude?: number | null;
+      startLongitude?: number | null;
+      startAddress?: string | null;
+      returnLocationName?: string | null;
+      returnLatitude?: number | null;
+      returnLongitude?: number | null;
+      returnAddress?: string | null;
       status?: 'DRAFT' | 'ACTIVE' | 'PUBLISHED' | 'INACTIVE' | 'ARCHIVED';
       totalDistanceKm?: number;
       estimatedDurationMinutes?: number;
@@ -213,6 +233,16 @@ export const routeRepository = {
       }
 
       const depotName = data.depot || 'Pune Central Cold Depot';
+      const startName = data.startLocation?.name || data.startLocationName || depotName;
+      const startLat = data.startLocation?.latitude ?? data.startLatitude ?? 18.5204;
+      const startLng = data.startLocation?.longitude ?? data.startLongitude ?? 73.8567;
+      const startAddr = data.startLocation?.address || data.startAddress || (depotName + ', Pune, Maharashtra');
+
+      const returnName = data.returnLocation?.name || data.returnLocationName || depotName;
+      const returnLat = data.returnLocation?.latitude ?? data.returnLatitude ?? 18.5204;
+      const returnLng = data.returnLocation?.longitude ?? data.returnLongitude ?? 73.8567;
+      const returnAddr = data.returnLocation?.address || data.returnAddress || (depotName + ', Pune, Maharashtra');
+
       let measuredDistanceKm = 0;
       let measuredDurationMinutes = 0;
       let routingFingerprint: string | null = null;
@@ -241,6 +271,16 @@ export const routeRepository = {
         const routingResult = await googleRoutesService.calculateRouteDistance({
           depot: depotName,
           stops: waypoints,
+          startLocation: {
+            latitude: startLat,
+            longitude: startLng,
+            address: startAddr,
+          },
+          returnLocation: {
+            latitude: returnLat,
+            longitude: returnLng,
+            address: returnAddr,
+          },
           feature: 'ROUTE_CREATION',
         });
 
@@ -255,10 +295,12 @@ export const routeRepository = {
       const insertRouteRes = await client.query(
         `INSERT INTO routes (
           route_code, name, city, state, depot, description, status,
+          start_location_name, start_latitude, start_longitude, start_address,
+          return_location_name, return_latitude, return_longitude, return_address,
           total_distance_km, estimated_duration_minutes, routing_fingerprint,
           distance_calculated_at, version
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 1)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 1)
          RETURNING *`,
         [
           rCode,
@@ -268,6 +310,14 @@ export const routeRepository = {
           depotName,
           data.description || null,
           data.status || 'DRAFT',
+          startName,
+          startLat,
+          startLng,
+          startAddr,
+          returnName,
+          returnLat,
+          returnLng,
+          returnAddr,
           measuredDistanceKm,
           measuredDurationMinutes,
           routingFingerprint,
@@ -387,6 +437,16 @@ export const routeRepository = {
       const routingResult = await googleRoutesService.calculateRouteDistance({
         depot: depotName,
         stops: waypoints,
+        startLocation: {
+          latitude: currentRoute.start_latitude,
+          longitude: currentRoute.start_longitude,
+          address: currentRoute.start_address,
+        },
+        returnLocation: {
+          latitude: currentRoute.return_latitude,
+          longitude: currentRoute.return_longitude,
+          address: currentRoute.return_address,
+        },
         feature: 'ROUTE_STOPS_UPDATE',
         existingFingerprint: currentRoute.routing_fingerprint,
         existingDistanceKm: currentRoute.total_distance_km,
@@ -448,7 +508,38 @@ export const routeRepository = {
       payload.estimated_duration_minutes = payload.estimatedDurationMinutes;
     }
 
-    const allowed = ['name', 'city', 'state', 'depot', 'description', 'status', 'total_distance_km', 'estimated_duration_minutes'];
+    // Map nested startLocation object to database fields
+    if (payload.startLocation) {
+      if (payload.startLocation.name !== undefined) payload.start_location_name = payload.startLocation.name;
+      if (payload.startLocation.latitude !== undefined) payload.start_latitude = payload.startLocation.latitude;
+      if (payload.startLocation.longitude !== undefined) payload.start_longitude = payload.startLocation.longitude;
+      if (payload.startLocation.address !== undefined) payload.start_address = payload.startLocation.address;
+      if (payload.startLocation.placeId !== undefined) payload.start_place_id = payload.startLocation.placeId;
+    }
+    if (payload.startLocationName !== undefined) payload.start_location_name = payload.startLocationName;
+    if (payload.startLatitude !== undefined) payload.start_latitude = payload.startLatitude;
+    if (payload.startLongitude !== undefined) payload.start_longitude = payload.startLongitude;
+    if (payload.startAddress !== undefined) payload.start_address = payload.startAddress;
+
+    // Map nested returnLocation object to database fields
+    if (payload.returnLocation) {
+      if (payload.returnLocation.name !== undefined) payload.return_location_name = payload.returnLocation.name;
+      if (payload.returnLocation.latitude !== undefined) payload.return_latitude = payload.returnLocation.latitude;
+      if (payload.returnLocation.longitude !== undefined) payload.return_longitude = payload.returnLocation.longitude;
+      if (payload.returnLocation.address !== undefined) payload.return_address = payload.returnLocation.address;
+      if (payload.returnLocation.placeId !== undefined) payload.return_place_id = payload.returnLocation.placeId;
+    }
+    if (payload.returnLocationName !== undefined) payload.return_location_name = payload.returnLocationName;
+    if (payload.returnLatitude !== undefined) payload.return_latitude = payload.returnLatitude;
+    if (payload.returnLongitude !== undefined) payload.return_longitude = payload.returnLongitude;
+    if (payload.returnAddress !== undefined) payload.return_address = payload.returnAddress;
+
+    const allowed = [
+      'name', 'city', 'state', 'depot', 'description', 'status',
+      'total_distance_km', 'estimated_duration_minutes',
+      'start_location_name', 'start_latitude', 'start_longitude', 'start_address', 'start_place_id',
+      'return_location_name', 'return_latitude', 'return_longitude', 'return_address', 'return_place_id'
+    ];
 
     for (const key of allowed) {
       if (payload[key] !== undefined) {

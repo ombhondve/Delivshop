@@ -83,6 +83,17 @@ export default function DispatchDetailsScreen() {
     }
   };
 
+  const handleNavigateToLocation = (latitude?: number | null, longitude?: number | null, label?: string) => {
+    if (latitude && longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert('Navigation Error', 'Could not launch maps application.');
+      });
+    } else {
+      Alert.alert('Coordinates Missing', `${label || 'Location'} coordinates are not set.`);
+    }
+  };
+
   const handleVerifyProximity = async (supplier: DriverPickupStop) => {
     if (!dispatch) return;
     setVerifyingProximity(true);
@@ -434,13 +445,54 @@ export default function DispatchDetailsScreen() {
           </View>
         </View>
 
+        {/* Stage 1: Start Location Card */}
+        <View style={styles.corridorLocationCard}>
+          <View style={styles.corridorLocationHeader}>
+            <View style={[styles.corridorIconBadge, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
+              <Ionicons name="play-circle" size={20} color="#059669" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={styles.corridorStageTag}>STAGE 1 • START LOCATION</Text>
+                <View style={[styles.supplierBadge, styles.badgeCollected]}>
+                  <Text style={[styles.supplierBadgeText, styles.badgeTextCollected]}>ORIGIN</Text>
+                </View>
+              </View>
+              <Text style={styles.corridorLocationTitle}>
+                {dispatch.start_location_name || dispatch.route_depot || 'Vehicle Start Depot'}
+              </Text>
+              <Text style={styles.corridorLocationAddress} numberOfLines={2}>
+                {dispatch.start_address || 'Depot Hub / Journey Starting Point'}
+              </Text>
+              {dispatch.start_latitude && dispatch.start_longitude && (
+                <View style={styles.gpsRow}>
+                  <Ionicons name="location" size={12} color="#059669" />
+                  <Text style={styles.gpsCoordText}>
+                    GPS: {Number(dispatch.start_latitude).toFixed(4)}, {Number(dispatch.start_longitude).toFixed(4)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          {dispatch.start_latitude && dispatch.start_longitude && (
+            <TouchableOpacity
+              style={[styles.navBtn, { marginTop: 8 }]}
+              onPress={() => handleNavigateToLocation(dispatch.start_latitude, dispatch.start_longitude, 'Start Location')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="navigate-outline" size={15} color={DelivColors.deepEmerald} />
+              <Text style={styles.navBtnText}>Navigate to Start Location</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Supplier Pickup Stops List (Required Pickups before Store Deliveries) */}
         {pickupsData && pickupsData.pickups && pickupsData.pickups.length > 0 && (
           <View style={styles.supplierSection}>
             <View style={styles.stopsHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="cube" size={16} color={DelivColors.deepEmerald} />
-                <Text style={styles.stopsHeading}>SUPPLIER PICKUP STOPS</Text>
+                <Text style={styles.stopsHeading}>STAGE 2 • SUPPLIER PICKUP STOPS</Text>
               </View>
               <Text style={styles.stopsCount}>
                 {pickupsData.completedPickups} / {pickupsData.totalPickups} completed
@@ -581,7 +633,7 @@ export default function DispatchDetailsScreen() {
 
         {/* Sequenced Route Stops List */}
         <View style={styles.stopsHeader}>
-          <Text style={styles.stopsHeading}>SEQUENCED ROUTE STOPS</Text>
+          <Text style={styles.stopsHeading}>STAGE 3 • SEQUENCED DELIVERY STOPS</Text>
           <Text style={styles.stopsCount}>{totalStops} store locations</Text>
         </View>
 
@@ -593,6 +645,47 @@ export default function DispatchDetailsScreen() {
             onPress={() => handleStopPress(stop)}
           />
         ))}
+
+        {/* Stage 4: Return Location Card */}
+        <View style={[styles.corridorLocationCard, { marginTop: 12, marginBottom: 24 }]}>
+          <View style={styles.corridorLocationHeader}>
+            <View style={[styles.corridorIconBadge, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
+              <Ionicons name="flag" size={20} color="#2563EB" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[styles.corridorStageTag, { color: '#2563EB' }]}>STAGE 4 • RETURN LOCATION</Text>
+                <View style={[styles.supplierBadge, { backgroundColor: '#DBEAFE' }]}>
+                  <Text style={[styles.supplierBadgeText, { color: '#1D4ED8' }]}>DESTINATION</Text>
+                </View>
+              </View>
+              <Text style={styles.corridorLocationTitle}>
+                {dispatch.return_location_name || dispatch.route_depot || 'Return Depot / Warehouse'}
+              </Text>
+              <Text style={styles.corridorLocationAddress} numberOfLines={2}>
+                {dispatch.return_address || 'End of journey return location'}
+              </Text>
+              {dispatch.return_latitude && dispatch.return_longitude && (
+                <View style={styles.gpsRow}>
+                  <Ionicons name="location" size={12} color="#2563EB" />
+                  <Text style={[styles.gpsCoordText, { color: '#2563EB' }]}>
+                    GPS: {Number(dispatch.return_latitude).toFixed(4)}, {Number(dispatch.return_longitude).toFixed(4)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          {dispatch.return_latitude && dispatch.return_longitude && (
+            <TouchableOpacity
+              style={[styles.navBtn, { marginTop: 8, borderColor: '#93C5FD' }]}
+              onPress={() => handleNavigateToLocation(dispatch.return_latitude, dispatch.return_longitude, 'Return Location')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="navigate-outline" size={15} color="#1D4ED8" />
+              <Text style={[styles.navBtnText, { color: '#1D4ED8' }]}>Navigate to Return Location</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
 
       {/* Skip / Fail Stop Modal */}
@@ -1340,5 +1433,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: DelivColors.white,
+  },
+  corridorLocationCard: {
+    backgroundColor: DelivColors.white,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+  },
+  corridorLocationHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  corridorIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  corridorStageTag: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#059669',
+    letterSpacing: 0.5,
+  },
+  corridorLocationTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: DelivColors.textPrimary,
+    marginTop: 2,
+  },
+  corridorLocationAddress: {
+    fontSize: 12,
+    color: DelivColors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
   },
 });

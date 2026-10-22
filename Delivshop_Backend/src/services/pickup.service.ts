@@ -69,6 +69,18 @@ export interface PickupRequirementsResponse {
   driverId?: string;
   driverName?: string;
   vehicleRegistration?: string;
+  startLocation?: {
+    name?: string | null;
+    latitude: number;
+    longitude: number;
+    address?: string | null;
+  };
+  returnLocation?: {
+    name?: string | null;
+    latitude: number;
+    longitude: number;
+    address?: string | null;
+  };
   totalPickups?: number;
   completedPickups?: number;
   totalProductsCount?: number;
@@ -105,7 +117,15 @@ export const pickupService = {
 
     if (params.runId) {
       const runRes = await query(
-        `SELECT dr.*, r.name as route_name, r.route_code,
+        `SELECT dr.*, r.name as route_name, r.route_code, r.depot as route_depot,
+                COALESCE(dr.start_location_name, r.start_location_name, r.depot) as start_location_name,
+                COALESCE(dr.start_latitude, r.start_latitude, 18.5204) as start_latitude,
+                COALESCE(dr.start_longitude, r.start_longitude, 73.8567) as start_longitude,
+                COALESCE(dr.start_address, r.start_address) as start_address,
+                COALESCE(dr.return_location_name, r.return_location_name, r.depot) as return_location_name,
+                COALESCE(dr.return_latitude, r.return_latitude, 18.5204) as return_latitude,
+                COALESCE(dr.return_longitude, r.return_longitude, 73.8567) as return_longitude,
+                COALESCE(dr.return_address, r.return_address) as return_address,
                 u.name as driver_name, u.employee_id as driver_employee_id,
                 v.registration_number as vehicle_registration
          FROM delivery_runs dr
@@ -128,10 +148,19 @@ export const pickupService = {
       if (rRes.rows.length === 0) {
         throw new AppError('Route template not found', 404);
       }
+      const r = rRes.rows[0];
       run = {
         route_id: routeId,
-        route_name: rRes.rows[0].name,
-        route_code: rRes.rows[0].route_code,
+        route_name: r.name,
+        route_code: r.route_code,
+        start_location_name: r.start_location_name || r.depot || 'Pune Central Cold Depot',
+        start_latitude: r.start_latitude != null ? Number(r.start_latitude) : 18.5204,
+        start_longitude: r.start_longitude != null ? Number(r.start_longitude) : 73.8567,
+        start_address: r.start_address || null,
+        return_location_name: r.return_location_name || r.depot || 'Pune Central Cold Depot',
+        return_latitude: r.return_latitude != null ? Number(r.return_latitude) : 18.5204,
+        return_longitude: r.return_longitude != null ? Number(r.return_longitude) : 73.8567,
+        return_address: r.return_address || null,
       };
     } else {
       throw new AppError('Either runId or routeId is required to calculate pickup requirements', 400);
@@ -505,6 +534,18 @@ export const pickupService = {
       driverId: run?.driver_id,
       driverName: run?.driver_name,
       vehicleRegistration: run?.vehicle_registration,
+      startLocation: {
+        name: run?.start_location_name || run?.depot || 'Pune Central Cold Depot',
+        latitude: run?.start_latitude != null ? Number(run.start_latitude) : 18.5204,
+        longitude: run?.start_longitude != null ? Number(run.start_longitude) : 73.8567,
+        address: run?.start_address || null,
+      },
+      returnLocation: {
+        name: run?.return_location_name || run?.depot || 'Pune Central Cold Depot',
+        latitude: run?.return_latitude != null ? Number(run.return_latitude) : 18.5204,
+        longitude: run?.return_longitude != null ? Number(run.return_longitude) : 73.8567,
+        address: run?.return_address || null,
+      },
       totalPickups: companies.length,
       completedPickups,
       totalProductsCount,

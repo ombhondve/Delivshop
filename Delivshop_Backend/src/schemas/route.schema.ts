@@ -6,6 +6,14 @@ export const routeIdParamSchema = z.object({
   }),
 });
 
+export const locationCoordinateSchema = z.object({
+  name: z.string().trim().max(255).optional().nullable(),
+  latitude: z.number().min(-90, 'Latitude must be between -90 and 90').max(90, 'Latitude must be between -90 and 90'),
+  longitude: z.number().min(-180, 'Longitude must be between -180 and 180').max(180, 'Longitude must be between -180 and 180'),
+  address: z.string().trim().max(1000).optional().nullable(),
+  placeId: z.string().trim().max(255).optional().nullable(),
+});
+
 export const createRouteSchema = z.object({
   body: z.object({
     routeCode: z.string().trim().max(50).optional(),
@@ -14,6 +22,16 @@ export const createRouteSchema = z.object({
     state: z.string().trim().max(100).default('Maharashtra'),
     depot: z.string().trim().max(150).default('Pune Central Cold Depot'),
     description: z.string().trim().max(1000).optional().nullable(),
+    startLocation: locationCoordinateSchema.optional(),
+    returnLocation: locationCoordinateSchema.optional(),
+    startLocationName: z.string().trim().max(255).optional().nullable(),
+    startLatitude: z.number().min(-90).max(90).optional().nullable(),
+    startLongitude: z.number().min(-180).max(180).optional().nullable(),
+    startAddress: z.string().trim().max(1000).optional().nullable(),
+    returnLocationName: z.string().trim().max(255).optional().nullable(),
+    returnLatitude: z.number().min(-90).max(90).optional().nullable(),
+    returnLongitude: z.number().min(-180).max(180).optional().nullable(),
+    returnAddress: z.string().trim().max(1000).optional().nullable(),
     status: z
       .enum(['DRAFT', 'ACTIVE', 'PUBLISHED', 'INACTIVE', 'ARCHIVED'], {
         errorMap: () => ({
@@ -49,6 +67,16 @@ export const updateRouteSchema = z.object({
     state: z.string().trim().max(100).optional(),
     depot: z.string().trim().max(150).optional(),
     description: z.string().trim().max(1000).optional().nullable(),
+    startLocation: locationCoordinateSchema.optional(),
+    returnLocation: locationCoordinateSchema.optional(),
+    startLocationName: z.string().trim().max(255).optional().nullable(),
+    startLatitude: z.number().min(-90).max(90).optional().nullable(),
+    startLongitude: z.number().min(-180).max(180).optional().nullable(),
+    startAddress: z.string().trim().max(1000).optional().nullable(),
+    returnLocationName: z.string().trim().max(255).optional().nullable(),
+    returnLatitude: z.number().min(-90).max(90).optional().nullable(),
+    returnLongitude: z.number().min(-180).max(180).optional().nullable(),
+    returnAddress: z.string().trim().max(1000).optional().nullable(),
     status: z
       .enum(['DRAFT', 'ACTIVE', 'PUBLISHED', 'INACTIVE', 'ARCHIVED'], {
         errorMap: () => ({

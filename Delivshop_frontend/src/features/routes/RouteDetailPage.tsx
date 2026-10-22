@@ -23,6 +23,8 @@ import {
   History,
   Calendar,
   Layers,
+  Play,
+  Flag,
 } from 'lucide-react';
 import { api } from '../../services/api/endpoints';
 import { Route, DeliveryRun, PickupRequirementsResponse, RouteStop, RouteVersion } from '../../types';
@@ -904,6 +906,123 @@ export const RouteDetailPage: React.FC<RouteDetailPageProps> = ({ routeId }) => 
       {/* Tab 1: Overview */}
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Corridor Locations Flow Card */}
+          <Card title="Corridor Route Locations (4 Stages)">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+              {/* Stage 1: Start Location */}
+              <div style={{ padding: '14px', borderRadius: '8px', border: '1px solid #A7F3D0', backgroundColor: '#F0FDF4' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#047857', letterSpacing: '0.04em' }}>
+                    STAGE 1 • START LOCATION
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#DCFCE7', color: '#15803D' }}>
+                    ORIGIN
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#059669', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Play size={16} fill="#FFFFFF" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>
+                      {route.start_location_name || route.startLocationName || route.depot || 'Vehicle Start Depot'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+                      {route.start_address || route.startLocationAddress || 'Depot Hub / Journey Starting Point'}
+                    </div>
+                    {(route.start_latitude || route.startLocationLat) && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontFamily: 'monospace', fontSize: '11.5px', color: '#047857' }}>
+                        <MapPin size={12} />
+                        <span>{Number(route.start_latitude ?? route.startLocationLat).toFixed(5)}, {Number(route.start_longitude ?? route.startLocationLng).toFixed(5)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stage 2: Supplier Collection Stops */}
+              <div style={{ padding: '14px', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', letterSpacing: '0.04em' }}>
+                    STAGE 2 • SUPPLIER PICKUPS
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#E2E8F0', color: '#334155' }}>
+                    DERIVED
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#475569', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Building2 size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>
+                      {supplierPickups.length > 0 ? `${supplierPickups.length} Supplier Companies` : 'Derived from Order Items'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+                      {supplierPickups.length > 0 ? 'Fulfillment points based on ordered products' : 'Automatically resolved when orders assigned'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stage 3: Delivery Stops */}
+              <div style={{ padding: '14px', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', letterSpacing: '0.04em' }}>
+                    STAGE 3 • DELIVERY STOPS
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#E2E8F0', color: '#334155' }}>
+                    {stops.length} DROPS
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#1E293B', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Truck size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>
+                      {stops.length > 0 ? `${stops.length} Sequenced Shops` : 'No delivery drops yet'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+                      {stops.length > 0 ? `${stops[0]?.shop?.name || stops[0]?.shop_name || 'Stop 1'} ...` : 'Configure in Stops tab'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stage 4: Return Location */}
+              <div style={{ padding: '14px', borderRadius: '8px', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#1D4ED8', letterSpacing: '0.04em' }}>
+                    STAGE 4 • RETURN LOCATION
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#DBEAFE', color: '#1E40AF' }}>
+                    DESTINATION
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#2563EB', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Flag size={16} fill="#FFFFFF" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>
+                      {route.return_location_name || route.returnLocationName || route.depot || 'Vehicle Return Depot'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+                      {route.return_address || route.returnLocationAddress || 'End of journey loop depot'}
+                    </div>
+                    {(route.return_latitude || route.returnLocationLat) && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontFamily: 'monospace', fontSize: '11.5px', color: '#1D4ED8' }}>
+                        <MapPin size={12} />
+                        <span>{Number(route.return_latitude ?? route.returnLocationLat).toFixed(5)}, {Number(route.return_longitude ?? route.returnLocationLng).toFixed(5)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           <Card title="Corridor Configuration & Parameters">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
               <div>
